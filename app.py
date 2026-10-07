@@ -30,6 +30,7 @@ from master_data import (
     item_owner,
     SCOPE_SHARED,
     SCOPE_USER,
+    DEFAULT_INFRA_OWNER,
     SCOPE_LABELS,
     accounting_class,
     default_invest_type,
@@ -1788,6 +1789,57 @@ with tab_infra:
         df_inf = df_site[infra_mask]
         st.markdown(f"#### {site_label(selected_site)}")
 
+        def _infra_row(item, invest_type, qty, price, month, dept, reason):
+            entity = (df_site["entity"].mode().iloc[0] if "entity" in df_site.columns and not df_site["entity"].dropna().empty else "DDC")
+            row = {"entity": entity, "location": SITE_NAME.get(selected_site, selected_site), "quantity": float(qty),
+                   "unit_price": float(price), "dept_proposing": dept or item_owner(item, master),
+                   "dept_using": "Dùng chung toàn site", "need_type": qt.NEED_INFRA, "need_reason": reason,
+                   "detail_work": "Hạ tầng CNTT dùng chung"}
+            apply_it_catalog(row, master, item=item, invest_type=invest_type)
+            for m in months:
+                row[f"pct_{m}"] = 1.0 if m == month else 0.0
+            return row
+
+        def _confirm_infra_saved(expected: int, action: str):
+            saved = [l for l in db.load_lines(budget_year, [selected_site]) if l.get("need_type") == qt.NEED_INFRA]
+            where = "PostgreSQL" if db.using_server_db() else "SQLite"
+            if len(saved) == expected:
+                st.session_state["flash"] = (f"✅ {action} – CSDL {where} hiện có {len(saved)} hạng mục hạ tầng của {site_label(selected_site)} "
+                                             f"(tổng {format_vnd(sum(l.get('total_budget', 0) for l in saved))}).")
+            else:
+                st.session_state["flash"] = (f"⚠️ {action} nhưng CSDL {where} đang có {len(saved)} dòng hạ tầng (mong đợi {expected}) – "
+                                             "vui lòng kiểm tra lại.")
+
+        # Form thêm từng hạng mục (ổn định hơn nhập trực tiếp trên lưới)
+        if can_edit:
+            with st.expander("➕ Thêm hạng mục hạ tầng", expanded=df_inf.empty):
+                with st.form("infra_add_form", clear_on_submit=True):
+                    fa1, fa2, fa3 = st.columns([2.2, 1, 1])
+                    f_item_lbl = fa1.selectbox("(*) Hạng mục hạ tầng", list(sh_label.values()), index=None,
+                                               placeholder="Chọn hạng mục...")
+                    f_inv = fa2.selectbox("(*) Hình thức", INVEST_TYPES)
+                    f_month = fa3.selectbox("(*) Tháng triển khai", months)
+                    fb1, fb2, fb3 = st.columns([1, 1, 2.2])
+                    f_qty = fb1.number_input("(*) Số lượng", min_value=1, value=1, step=1)
+                    f_price = fb2.number_input("Đơn giá (VNĐ, 0 = giá danh mục)", min_value=0, value=0, step=1_000_000)
+                    f_dept = fb3.selectbox("Phòng đề xuất", owners_list := sorted({item_owner(it, master) for it in shared_items} | set(dept_list)),
+                                           index=owners_list.index(DEFAULT_INFRA_OWNER) if DEFAULT_INFRA_OWNER in owners_list else 0)
+                    f_reason = st.text_input("(*) Căn cứ / lý do", placeholder="VD: Triển khai hệ thống DWH; thay firewall hết hỗ trợ...")
+                    if st.form_submit_button("➕ Thêm vào ngân sách hạ tầng", type="primary", use_container_width=True):
+                        if not f_item_lbl:
+                            st.error("Chưa chọn Hạng mục hạ tầng.")
+                        elif not f_reason.strip():
+                            st.error("Cần ghi Căn cứ / lý do.")
+                        else:
+                            it = sh_by_code[sh_by_label[f_item_lbl]]
+                            new = _infra_row(it, f_inv, f_qty, f_price or it.get("price", 0), f_month, f_dept, f_reason.strip())
+                            st.session_state["infra_version"] = st.session_state.get("infra_version", 0) + 1
+                            save_site(pd.concat([df_site, pd.DataFrame([new])], ignore_index=True), selected_site)
+                            _confirm_infra_saved(len(df_inf) + 1, f"Đã thêm '{it['name']}'")
+                            st.rerun()
+
+        st.markdown("##### Danh sách hạng mục hạ tầng của site (sửa / xóa trực tiếp trên bảng)")
+
         def first_month(r):
             for m in months:
                 if qt._num(r.get(f"pct_{m}")) > 0:
@@ -1848,6 +1900,9 @@ with tab_infra:
                 for m in months:
                     row[f"pct_{m}"] = 1.0 if m == r.get("month") else 0.0
                 new_rows.append(row)
+            if not new_rows and df_inf.empty:
+                errs.append("Bảng chưa có dòng nào được ghi nhận. Dùng mục '➕ Thêm hạng mục hạ tầng' ở trên để thêm, "
+                            "hoặc khi nhập trên bảng hãy nhấn Enter sau ô cuối trước khi bấm Lưu")
             if not new_rows and not df_inf.empty and not st.session_state.get("infra_confirm_clear"):
                 errs.append(f"Bảng đang trống – không lưu để tránh xóa {len(df_inf)} dòng hạ tầng hiện có. "
                             "Nếu muốn xóa hết, tích 'Xác nhận xóa toàn bộ hạ tầng của site' rồi bấm Lưu")
@@ -1857,15 +1912,7 @@ with tab_infra:
                 st.session_state["infra_version"] = st.session_state.get("infra_version", 0) + 1
                 st.session_state.pop("infra_confirm_clear", None)
                 save_site(pd.concat([df_site[~infra_mask], pd.DataFrame(new_rows)], ignore_index=True), selected_site)
-                # đọc lại từ CSDL để xác nhận đã ghi thật
-                saved = [l for l in db.load_lines(budget_year, [selected_site]) if l.get("need_type") == qt.NEED_INFRA]
-                where = "PostgreSQL" if db.using_server_db() else "SQLite"
-                if len(saved) == len(new_rows):
-                    st.session_state["flash"] = (f"✅ Đã lưu {len(new_rows)} hạng mục hạ tầng CNTT dùng chung của {site_label(selected_site)} "
-                                                 f"vào CSDL {where} (tổng {format_vnd(sum(l.get('total_budget', 0) for l in saved))}).")
-                else:
-                    st.session_state["flash"] = (f"⚠️ Đã gửi {len(new_rows)} dòng nhưng CSDL {where} đang có {len(saved)} dòng hạ tầng – "
-                                                 "vui lòng kiểm tra lại.")
+                _confirm_infra_saved(len(new_rows), f"Đã lưu bảng hạ tầng ({len(new_rows)} dòng)")
                 st.rerun()
 
 
