@@ -1363,9 +1363,10 @@ with tab_input:
                          column_order=[c for c in column_order if c != "_order"])
             edited_df = df_curr
         else:
+            main_editor_key = f"editor_{budget_year}_{selected_site}_{st.session_state.get('editor_version', 0)}"
             edited_df = st.data_editor(
                 df_curr,
-                key=f"editor_{budget_year}_{selected_site}_{st.session_state.get('editor_version', 0)}",
+                key=main_editor_key,
                 column_order=column_order,
                 num_rows="dynamic",
                 use_container_width=True,
@@ -1399,8 +1400,12 @@ with tab_input:
             )
 
         # Check if edits happened
-        if can_edit and not edited_df.equals(df_curr):
-            # Recalculate totals and persist
+        # Chỉ lưu khi người dùng thật sự sửa bảng (Streamlit ghi nhận ô sửa / dòng thêm / dòng xóa).
+        # So sánh DataFrame đơn thuần có thể khác do kiểu dữ liệu -> tự lưu & chạy lại trang ngoài ý muốn,
+        # làm mất các dòng đang nhập ở bảng khác (vd. Hạ tầng CNTT).
+        _ed_state = st.session_state.get(main_editor_key) if can_edit else None
+        _has_edits = isinstance(_ed_state, dict) and any(_ed_state.get(k) for k in ("edited_rows", "added_rows", "deleted_rows"))
+        if can_edit and _has_edits and not edited_df.equals(df_curr):
             save_view(edited_df)
             st.rerun()
 
@@ -1796,7 +1801,7 @@ with tab_infra:
         } for _, r in df_inf.iterrows()], columns=["item", "invest_type", "quantity", "unit_price", "month", "dept_proposing", "need_reason"])
         owners = sorted({item_owner(it, master) for it in shared_items} | set(dept_list))
         ed_inf = st.data_editor(
-            df_edit, key=f"infra_{budget_year}_{selected_site}_{st.session_state.get('editor_version', 0)}",
+            df_edit, key=f"infra_{budget_year}_{selected_site}_{st.session_state.get('infra_version', 0)}",
             num_rows="dynamic" if can_edit else "fixed", disabled=not can_edit, use_container_width=True, hide_index=True,
             column_config={
                 "item": st.column_config.SelectboxColumn("Hạng mục hạ tầng", options=list(sh_label.values()), required=True, width="large"),
@@ -1813,6 +1818,8 @@ with tab_infra:
                        + " · ".join(f"{k}: {format_vnd_short(v)}" for k, v in g.items()))
         if can_edit:
             st.caption("Nhập xong ô cuối cùng, nhấn **Enter** (hoặc bấm ra ngoài bảng) rồi mới bấm Lưu, để ô vừa gõ được ghi nhận.")
+        if can_edit and not df_inf.empty:
+            st.checkbox("Xác nhận xóa toàn bộ hạ tầng của site (chỉ khi muốn lưu bảng trống)", key="infra_confirm_clear")
         if can_edit and st.button("💾 Lưu hạ tầng CNTT của site", type="primary", key="infra_save"):
             new_rows, errs = [], []
             entity = (df_site["entity"].mode().iloc[0] if "entity" in df_site.columns and not df_site["entity"].dropna().empty else "DDC")
@@ -1841,9 +1848,14 @@ with tab_infra:
                 for m in months:
                     row[f"pct_{m}"] = 1.0 if m == r.get("month") else 0.0
                 new_rows.append(row)
+            if not new_rows and not df_inf.empty and not st.session_state.get("infra_confirm_clear"):
+                errs.append(f"Bảng đang trống – không lưu để tránh xóa {len(df_inf)} dòng hạ tầng hiện có. "
+                            "Nếu muốn xóa hết, tích 'Xác nhận xóa toàn bộ hạ tầng của site' rồi bấm Lưu")
             if errs:
                 st.error("Chưa lưu – " + "; ".join(errs))
             else:
+                st.session_state["infra_version"] = st.session_state.get("infra_version", 0) + 1
+                st.session_state.pop("infra_confirm_clear", None)
                 save_site(pd.concat([df_site[~infra_mask], pd.DataFrame(new_rows)], ignore_index=True), selected_site)
                 # đọc lại từ CSDL để xác nhận đã ghi thật
                 saved = [l for l in db.load_lines(budget_year, [selected_site]) if l.get("need_type") == qt.NEED_INFRA]
