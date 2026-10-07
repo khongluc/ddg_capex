@@ -15,6 +15,7 @@ DB_PATH = os.environ.get("ICOST_DB_PATH", os.path.join(BASE_DIR, "data", "icost.
 ROLE_ADMIN = "admin"        # Toàn quyền: phân quyền, duyệt, danh mục, mọi site
 ROLE_VIEWER = "viewer"      # Xem & xuất báo cáo tất cả site, không sửa
 ROLE_SITE_IT = "site_it"    # Lập ngân sách cho các site được phân
+ROLE_DEPT = "dept"          # Lập & xem ngân sách của đúng phòng ban được phân (theo site)
 ROLE_PENDING = "pending"    # Đã đăng nhập, chờ admin phân quyền
 ROLE_DISABLED = "disabled"  # Bị khóa
 
@@ -22,6 +23,7 @@ ROLE_LABELS = {
     ROLE_ADMIN: "Quản trị (Admin)",
     ROLE_VIEWER: "Xem tổng hợp",
     ROLE_SITE_IT: "IT Site - Lập ngân sách",
+    ROLE_DEPT: "Phòng ban - Lập ngân sách phòng mình",
     ROLE_PENDING: "Chờ phân quyền",
     ROLE_DISABLED: "Khóa",
 }
@@ -53,6 +55,12 @@ CREATE TABLE IF NOT EXISTS user_sites (
     email      TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
     site_code  TEXT NOT NULL,
     PRIMARY KEY (email, site_code)
+);
+CREATE TABLE IF NOT EXISTS user_depts (
+    email      TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+    site_code  TEXT NOT NULL,
+    dept       TEXT NOT NULL,
+    PRIMARY KEY (email, site_code, dept)
 );
 CREATE TABLE IF NOT EXISTS budget_lines (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -155,6 +163,8 @@ def get_user(email: str) -> Optional[Dict[str, Any]]:
         user = dict(row)
         user["sites"] = [r["site_code"] for r in conn.execute(
             "SELECT site_code FROM user_sites WHERE email = ? ORDER BY site_code", (email,))]
+        user["depts"] = [(r["site_code"], r["dept"]) for r in conn.execute(
+            "SELECT site_code, dept FROM user_depts WHERE email = ? ORDER BY site_code, dept", (email,))]
         return user
 
 
@@ -178,12 +188,16 @@ def list_users() -> List[Dict[str, Any]]:
         site_map: Dict[str, List[str]] = {}
         for r in conn.execute("SELECT email, site_code FROM user_sites ORDER BY site_code"):
             site_map.setdefault(r["email"], []).append(r["site_code"])
+        dept_map: Dict[str, List] = {}
+        for r in conn.execute("SELECT email, site_code, dept FROM user_depts ORDER BY site_code, dept"):
+            dept_map.setdefault(r["email"], []).append((r["site_code"], r["dept"]))
     for u in users:
         u["sites"] = site_map.get(u["email"], [])
+        u["depts"] = dept_map.get(u["email"], [])
     return users
 
 
-def save_user(email: str, name: str, role: str, sites: List[str], actor: str):
+def save_user(email: str, name: str, role: str, sites: List[str], actor: str, depts: List = None):
     email = email.strip().lower()
     if role not in ROLE_LABELS:
         raise ValueError(f"Vai trò không hợp lệ: {role}")
@@ -195,7 +209,11 @@ def save_user(email: str, name: str, role: str, sites: List[str], actor: str):
         conn.execute("DELETE FROM user_sites WHERE email = ?", (email,))
         conn.executemany("INSERT INTO user_sites(email, site_code) VALUES (?,?)",
                          [(email, s) for s in sorted(set(sites))])
-    log(actor, "save_user", json.dumps({"email": email, "role": role, "sites": sites}, ensure_ascii=False))
+        if depts is not None:  # None = giữ nguyên phòng ban đã phân
+            conn.execute("DELETE FROM user_depts WHERE email = ?", (email,))
+            conn.executemany("INSERT INTO user_depts(email, site_code, dept) VALUES (?,?,?)",
+                             [(email, s, d) for s, d in sorted({(s, d) for s, d in depts})])
+    log(actor, "save_user", json.dumps({"email": email, "role": role, "sites": sites, "depts": depts}, ensure_ascii=False))
 
 
 def delete_user(email: str, actor: str):

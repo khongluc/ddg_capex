@@ -22,6 +22,7 @@ class CurrentUser:
     name: str
     role: str
     sites: List[str] = field(default_factory=list)  # site codes
+    depts: List = field(default_factory=list)       # (site code, phòng ban) cho vai trò Phòng ban
 
     @property
     def is_admin(self) -> bool:
@@ -31,14 +32,25 @@ class CurrentUser:
     def sees_all_sites(self) -> bool:
         return self.role in (db.ROLE_ADMIN, db.ROLE_VIEWER)
 
+    @property
+    def is_dept_user(self) -> bool:
+        return self.role == db.ROLE_DEPT
+
+    def allowed_depts(self, site_code: str) -> List[str]:
+        return [d for s, d in self.depts if s == site_code]
+
     def visible_sites(self, all_site_codes: List[str]) -> List[str]:
         if self.sees_all_sites:
             return list(all_site_codes)
+        if self.is_dept_user:
+            return [s for s in all_site_codes if s in {sc for sc, _ in self.depts}]
         return [s for s in all_site_codes if s in self.sites]
 
     def can_edit_site(self, site_code: str, status: str) -> bool:
         if self.is_admin:
             return True
+        if self.is_dept_user:
+            return bool(self.allowed_depts(site_code)) and status in db.EDITABLE_STATUSES
         return self.role == db.ROLE_SITE_IT and site_code in self.sites and status in db.EDITABLE_STATUSES
 
 
@@ -176,7 +188,10 @@ def require_login() -> CurrentUser:
         _render_blocked(user, "⏳ Tài khoản đang chờ quản trị phân quyền")
     if user["role"] == db.ROLE_DISABLED:
         _render_blocked(user, "⛔ Tài khoản đã bị khóa")
+    if user["role"] == db.ROLE_DEPT and not user.get("depts"):
+        _render_blocked(user, "⏳ Tài khoản chưa được phân phòng ban lập ngân sách")
     if user["role"] == db.ROLE_SITE_IT and not user["sites"]:
         _render_blocked(user, "⏳ Tài khoản chưa được phân site lập ngân sách")
 
-    return CurrentUser(email=user["email"], name=user.get("name") or name, role=user["role"], sites=user["sites"])
+    return CurrentUser(email=user["email"], name=user.get("name") or name, role=user["role"], sites=user["sites"],
+                       depts=user.get("depts", []))

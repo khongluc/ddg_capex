@@ -205,6 +205,14 @@ def rows_for_site(df: pd.DataFrame, site_code: str, months, year_code: str):
 
 
 def save_site(df: pd.DataFrame, site_code: str):
+    if current_user.is_dept_user:
+        allowed = {dept_key(d) for d in current_user.allowed_depts(site_code)}
+        mine = df[df["dept_proposing"].map(dept_key).isin(allowed)] if "dept_proposing" in df.columns else df.iloc[0:0]
+        stored = pd.DataFrame(db.load_lines(budget_year, [site_code]))
+        if not stored.empty:
+            stored = stored.drop(columns=["site_code"], errors="ignore")
+            stored = stored[~stored["dept_proposing"].map(dept_key).isin(allowed)] if "dept_proposing" in stored.columns else stored
+        df = pd.concat([stored, mine], ignore_index=True)
     db.replace_lines(budget_year, site_code, rows_for_site(df, site_code, months, year_code), actor=current_user.email)
     st.session_state["editor_version"] = st.session_state.get("editor_version", 0) + 1
 
@@ -340,6 +348,9 @@ with st.sidebar:
     df_site = pd.DataFrame(db.load_lines(budget_year, scope_sites))
     if selected_site != ALL_SITES and "site_code" in df_site.columns:
         df_site = df_site.drop(columns=["site_code"])
+    if current_user.is_dept_user and selected_site != ALL_SITES and "dept_proposing" in df_site.columns:
+        _allowed = {dept_key(d) for d in current_user.allowed_depts(selected_site)}
+        df_site = df_site[df_site["dept_proposing"].map(dept_key).isin(_allowed)].reset_index(drop=True)
     df_site["_order"] = range(len(df_site))
 
     # Phòng ban: danh mục chuẩn + tên phòng ban đang có trong dữ liệu (không trùng hoa/thường)
@@ -351,7 +362,9 @@ with st.sidebar:
             if d.strip() and dept_key(d) not in known:
                 dept_list.append(d.strip())
                 known.add(dept_key(d))
-    selected_dept = st.selectbox("Phòng ban lập ngân sách", [ALL_DEPTS] + dept_list,
+    if current_user.is_dept_user:
+        dept_list = current_user.allowed_depts(selected_site)
+    selected_dept = st.selectbox("Phòng ban lập ngân sách", ([] if current_user.is_dept_user else [ALL_DEPTS]) + dept_list,
                                  help="Lọc bảng & báo cáo theo phòng ban đề xuất. Dòng thêm mới được gán cho phòng ban này.")
     dept_prop = selected_dept if selected_dept != ALL_DEPTS else "Tất cả phòng ban"
 
@@ -372,7 +385,7 @@ with st.sidebar:
     st.markdown("#### 🔄 Hành động Nhanh")
     if st.button("🔄 Làm mới", use_container_width=True):
         st.rerun()
-    if can_edit:
+    if can_edit and not current_user.is_dept_user:
         with st.popover("🗑️ Xóa toàn bộ dòng của site", use_container_width=True):
             st.warning(f"Xóa toàn bộ hạng mục năm {budget_year} của {site_label(selected_site)}?")
             if st.button("Xác nhận xóa", type="primary"):
@@ -420,7 +433,9 @@ if selected_site != ALL_SITES:
             st.caption("👁️ Tài khoản chỉ có quyền xem.")
     with sc2:
         invalid_rows = int((~df_site["pct_valid"].fillna(False).astype(bool)).sum()) if "pct_valid" in df_site.columns else 0
-        if status in db.EDITABLE_STATUSES and can_edit:
+        if current_user.is_dept_user and status in db.EDITABLE_STATUSES:
+            st.caption("Lập xong, báo IT site / admin nộp ngân sách của site.")
+        if status in db.EDITABLE_STATUSES and can_edit and not current_user.is_dept_user:
             if st.button("📨 Nộp ngân sách site để duyệt", use_container_width=True, disabled=df_site.empty,
                          help="Nộp toàn bộ ngân sách của site (tất cả phòng ban)"):
                 missing_reason = 0
@@ -1573,7 +1588,9 @@ with tab_infra:
     sh_by_code = {it["code"]: it for it in shared_items}
     infra_mask = (df_site["need_type"] == qt.NEED_INFRA) if "need_type" in df_site.columns else pd.Series(False, index=df_site.index)
 
-    if selected_site == ALL_SITES:
+    if current_user.is_dept_user:
+        st.info("Hạ tầng CNTT dùng chung do Phòng CNTT lập. Tài khoản phòng ban chỉ lập ngân sách của phòng mình.")
+    elif selected_site == ALL_SITES:
         df_inf_all = df_site[infra_mask]
         if df_inf_all.empty:
             st.info("Chưa có site nào khai báo hạ tầng dùng chung. Chọn một site ở thanh bên trái để nhập.")
@@ -2065,6 +2082,7 @@ if tab_admin is not None:
                 "Họ tên": u.get("name") or "",
                 "Vai trò": db.ROLE_LABELS.get(u["role"], u["role"]),
                 "Site được phân": ", ".join(site_label(c) for c in u["sites"]),
+                "Phòng ban được phân": "; ".join(f"{site_label(s)} · {d}" for s, d in u.get("depts", [])),
                 "Đăng nhập qua": u.get("provider") or "",
                 "Lần đăng nhập cuối": u.get("last_login") or "",
             } for u in users])
@@ -2092,8 +2110,14 @@ if tab_admin is not None:
                     u_role = st.selectbox("Vai trò", role_keys, index=role_keys.index(default_role),
                                           format_func=lambda r: db.ROLE_LABELS[r])
                     u_sites = st.multiselect("Site được phân lập ngân sách", site_codes,
-                                             default=[] if existing is None else [c for c in existing["sites"] if c in site_codes],
+                                             default=[] if existing is None else sorted(
+                                                 {c for c in existing["sites"] if c in site_codes}
+                                                 | {s for s, _ in existing.get("depts", []) if s in site_codes}),
                                              format_func=site_label)
+                    dept_choices = sorted(set(dept_list) | {d for _, d in (existing or {}).get("depts", [])})
+                    u_depts = st.multiselect("Phòng ban được phân (chỉ dùng cho vai trò Phòng ban)", dept_choices,
+                                             default=sorted({d for _, d in (existing or {}).get("depts", [])}),
+                                             help="Người dùng được lập & xem ngân sách của các phòng này tại các site đã chọn")
                 fb1, fb2 = st.columns([3, 1])
                 submitted = fb1.form_submit_button("💾 Lưu phân quyền", use_container_width=True, type="primary")
                 deleted = fb2.form_submit_button("🗑️ Xóa tài khoản", use_container_width=True, disabled=existing is None)
@@ -2106,10 +2130,14 @@ if tab_admin is not None:
                     st.error("Email không hợp lệ.")
                 elif u_role == db.ROLE_SITE_IT and not u_sites:
                     st.error("Vai trò IT Site cần được phân ít nhất 1 site.")
+                elif u_role == db.ROLE_DEPT and not (u_sites and u_depts):
+                    st.error("Vai trò Phòng ban cần chọn ít nhất 1 site và 1 phòng ban.")
                 elif removing_last_admin and u_role != db.ROLE_ADMIN:
                     st.error("Không thể hạ quyền Admin cuối cùng của hệ thống.")
                 else:
-                    db.save_user(target_email, u_name, u_role, u_sites, actor=current_user.email)
+                    db.save_user(target_email, u_name, u_role, [] if u_role == db.ROLE_DEPT else u_sites,
+                                 actor=current_user.email,
+                                 depts=[(s, d) for s in u_sites for d in u_depts] if u_role == db.ROLE_DEPT else [])
                     st.session_state["flash"] = f"Đã lưu quyền cho {target_email}: {db.ROLE_LABELS[u_role]}" + (
                         f" – site: {', '.join(u_sites)}" if u_sites else "")
                     st.rerun()
