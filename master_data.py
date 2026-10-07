@@ -260,6 +260,45 @@ _DB_CACHE: Dict[str, Any] = {"value": None, "at": 0.0}
 _DB_CACHE_TTL = 15  # giây - tránh đọc CSDL nhiều lần trong 1 lần chạy lại
 
 
+def _merge_catalog_seed(data: Dict[str, Any]) -> bool:
+    """Danh mục trong CSDL được admin sửa nên không ghi đè bằng file. Khi file master_data.json có đợt bổ sung mới
+    (catalog_seed tăng), chỉ thêm các hạng mục của đợt đó chưa có trong CSDL và điền hãng còn trống - chạy 1 lần."""
+    if not os.path.exists(MASTER_DATA_FILE):
+        return False
+    try:
+        with open(MASTER_DATA_FILE, "r", encoding="utf-8") as f:
+            file_data = json.load(f)
+    except Exception:
+        return False
+    file_seed = int(file_data.get("catalog_seed") or 0)
+    applied = int(data.get("catalog_seed") or 0)
+    if file_seed <= applied:
+        return False
+    items = data.setdefault("standard_items", [])
+    by_code = {it.get("code"): it for it in items}
+    names = {str(it.get("name", "")).strip().lower() for it in items}
+    for it in file_data.get("standard_items", []):
+        cur = by_code.get(it.get("code"))
+        if cur is not None and cur.get("name") == it.get("name"):
+            if it.get("vendor") and not cur.get("vendor"):
+                cur["vendor"] = it["vendor"]
+            continue
+        if int(it.get("seed") or 0) > applied and str(it.get("name", "")).strip().lower() not in names:
+            new = dict(it)
+            if cur is not None:  # mã đã bị hạng mục khác (admin tự thêm) dùng -> cấp mã kế tiếp trong nhóm
+                n = 1
+                while f"{new['group']}-{n:03d}" in by_code:
+                    n += 1
+                new["code"] = f"{new['group']}-{n:03d}"
+            items.append(new)
+            by_code[new["code"]] = new
+            names.add(str(new.get("name", "")).strip().lower())
+    order = {g.get("code"): i for i, g in enumerate(data.get("it_groups", []))}
+    data["standard_items"] = sorted(items, key=lambda it: (order.get(it.get("group"), 99), str(it.get("code"))))
+    data["catalog_seed"] = file_seed
+    return True
+
+
 def load_master_data() -> Dict[str, Any]:
     """Danh mục: lấy từ CSDL khi chạy PostgreSQL (đã lưu), không có thì lấy file master_data.json, cuối cùng là mặc định."""
     import time as _time
@@ -271,6 +310,8 @@ def load_master_data() -> Dict[str, Any]:
         raw = _db.get_setting("master_data")
         if raw:
             data = json.loads(raw)
+            if _merge_catalog_seed(data):
+                save_master_data(data)
             _DB_CACHE.update(value=data, at=_time.time())
             return _copy.deepcopy(data)
     if os.path.exists(MASTER_DATA_FILE):
