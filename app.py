@@ -458,11 +458,13 @@ tab_names = [
     "📈 Khấu hao & Thẩm định",
     "⚙️ Quản lý Danh mục",
 ]
+ADMIN_TAB = "👥 Phân quyền & Tiến độ"
 if current_user.is_admin:
-    tab_names.append("👥 Phân quyền & Tiến độ")
-_tabs = st.tabs(tab_names)
-tab_dash, tab_input, tab_quota, tab_infra, tab_excel, tab_depreciation, tab_master = _tabs[:7]
-tab_admin = _tabs[7] if current_user.is_admin else None
+    tab_names.insert(1, ADMIN_TAB)  # ngay sau Dashboard để admin không phải tìm
+_tabs = dict(zip(tab_names, st.tabs(tab_names)))
+tab_dash, tab_input, tab_quota, tab_infra, tab_excel, tab_depreciation, tab_master = [
+    _tabs[n] for n in tab_names if n != ADMIN_TAB]
+tab_admin = _tabs.get(ADMIN_TAB)
 
 # =====================================================================
 # TAB 1: DASHBOARD
