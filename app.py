@@ -157,27 +157,64 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Format currency helper
+# Định dạng số tiền: phân cách hàng nghìn theo nhóm 3 chữ số.
+# Bảng (data_editor/dataframe) dùng định dạng "localized" của trình duyệt -> chữ trong app cũng theo
+# cùng ngôn ngữ trình duyệt để thống nhất: tiếng Việt 1.234.567,89 – tiếng Anh 1,234,567.89.
+MONEY_FMT = "localized"
+
+
+def _vi_locale() -> bool:
+    try:
+        return str(st.context.locale or "").lower().startswith("vi")
+    except Exception:
+        return False
+
+
+def fmt_num(x, decimals: int = 0) -> str:
+    """Số có phân cách hàng nghìn (theo ngôn ngữ trình duyệt)."""
+    try:
+        x = float(x)
+    except (TypeError, ValueError):
+        x = 0.0
+    if pd.isna(x):
+        x = 0.0
+    out = f"{x:,.{decimals}f}"
+    if _vi_locale():
+        out = out.replace(",", "\x00").replace(".", ",").replace("\x00", ".")
+    return out
+
+
+def plot_separators() -> str:
+    """Ký tự thập phân + nghìn cho Plotly."""
+    return ",." if _vi_locale() else ".,"
+
+
 def format_vnd(amount: float) -> str:
     """Format money into VND with billions notation"""
-    if pd.isna(amount) or amount is None:
+    if amount is None or pd.isna(amount):
         return "0 VNĐ"
     amount = float(amount)
     if abs(amount) >= 1_000_000_000:
-        return f"{amount:,.0f} VNĐ ({amount/1e9:,.2f} tỷ)"
+        return f"{fmt_num(amount)} VNĐ ({fmt_num(amount / 1e9, 2)} tỷ)"
     elif abs(amount) >= 1_000_000:
-        return f"{amount:,.0f} VNĐ ({amount/1e6:,.2f} tr)"
-    return f"{amount:,.0f} VNĐ"
+        return f"{fmt_num(amount)} VNĐ ({fmt_num(amount / 1e6, 2)} tr)"
+    return f"{fmt_num(amount)} VNĐ"
+
+def plot_chart(fig, **kw):
+    fig.update_layout(separators=plot_separators())
+    st.plotly_chart(fig, **kw)
+
 
 def format_vnd_short(amount: float) -> str:
     """Short format for charts"""
-    if pd.isna(amount) or amount is None:
+    if amount is None or pd.isna(amount):
         return "0"
     amount = float(amount)
     if abs(amount) >= 1_000_000_000:
-        return f"{amount/1e9:,.2f} tỷ"
+        return f"{fmt_num(amount / 1e9, 2)} tỷ"
     elif abs(amount) >= 1_000_000:
-        return f"{amount/1e6:,.1f} tr"
-    return f"{amount:,.0f}"
+        return f"{fmt_num(amount / 1e6, 1)} tr"
+    return fmt_num(amount)
 
 # =====================================================================
 # ĐĂNG NHẬP & PHÂN QUYỀN
@@ -599,7 +636,7 @@ def render_admin_page():
             "Ghi chú duyệt": statuses.get(c, {}).get("note") or "",
         } for c in site_codes])
         st.dataframe(prog, use_container_width=True, hide_index=True,
-                     column_config={"Tổng ngân sách (VNĐ)": st.column_config.NumberColumn(format="%d")})
+                     column_config={"Tổng ngân sách (VNĐ)": st.column_config.NumberColumn(format=MONEY_FMT)})
         done = sum(1 for c in site_codes if statuses.get(c, {}).get("status") == db.STATUS_APPROVED)
         st.progress(done / len(site_codes) if site_codes else 0.0, text=f"Đã duyệt {done}/{len(site_codes)} site")
         st.caption("Để duyệt / trả lại: chọn site ở thanh bên trái, nút thao tác nằm ngay dưới tiêu đề trang.")
@@ -699,8 +736,8 @@ with tab_dash:
             st.markdown(f"""
             <div class="kpi-card">
                 <div class="kpi-title">Tổng Ngân sách CapEx</div>
-                <div class="kpi-value">{total_capex/1e9:,.2f} <span style="font-size:16px;font-weight:500;">tỷ VNĐ</span></div>
-                <div class="kpi-sub">{total_capex:,.0f} VNĐ</div>
+                <div class="kpi-value">{fmt_num(total_capex / 1e9, 2)} <span style="font-size:16px;font-weight:500;">tỷ VNĐ</span></div>
+                <div class="kpi-sub">{fmt_num(total_capex)} VNĐ</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -718,7 +755,7 @@ with tab_dash:
             <div class="kpi-card">
                 <div class="kpi-title">Nhóm Chiếm Tỷ trọng Cao Nhất</div>
                 <div class="kpi-value" style="font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_html.escape(str(top_cat))}</div>
-                <div class="kpi-sub">{top_cat_val/1e9:,.2f} tỷ VNĐ ({(top_cat_val/total_capex*100 if total_capex>0 else 0):.1f}%)</div>
+                <div class="kpi-sub">{fmt_num(top_cat_val / 1e9, 2)} tỷ VNĐ ({fmt_num(top_cat_val / total_capex * 100 if total_capex > 0 else 0, 1)}%)</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -770,7 +807,7 @@ with tab_dash:
                 hovertemplate="<b>%{label}</b><br>Ngân sách: %{value:,.0f} VNĐ<br>Tỷ lệ: %{percent}"
             )
             fig_ent.update_layout(margin=dict(t=10, b=10, l=10, r=10), height=320)
-            st.plotly_chart(fig_ent, use_container_width=True)
+            plot_chart(fig_ent, use_container_width=True)
 
         with c2:
             st.markdown("##### 🏗️ Phân bổ theo Loại Tài sản Cấp 1")
@@ -786,8 +823,8 @@ with tab_dash:
                 color_continuous_scale="Blues"
             )
             fig_cat.update_layout(margin=dict(t=10, b=10, l=10, r=10), height=320, coloraxis_showscale=False)
-            fig_cat.update_traces(hovertemplate="<b>%{y}</b><br>Ngân sách: %{x:.2f} tỷ VNĐ")
-            st.plotly_chart(fig_cat, use_container_width=True)
+            fig_cat.update_traces(hovertemplate="<b>%{y}</b><br>Ngân sách: %{x:,.2f} tỷ VNĐ")
+            plot_chart(fig_cat, use_container_width=True)
 
         # CHARTS ROW 2: Monthly Disbursement Cash Flow & Site
         c3, c4 = st.columns([1.3, 1])
@@ -804,7 +841,7 @@ with tab_dash:
                 y=monthly_sums,
                 name="Giải ngân tháng (Tỷ VNĐ)",
                 marker_color="#1E4E8C",
-                hovertemplate="Tháng: %{x}<br>Giải ngân: %{y:.2f} tỷ VNĐ"
+                hovertemplate="Tháng: %{x}<br>Giải ngân: %{y:,.2f} tỷ VNĐ"
             ))
             fig_cash.add_trace(go.Scatter(
                 x=months,
@@ -814,7 +851,7 @@ with tab_dash:
                 line=dict(color="#E11D48", width=3),
                 marker=dict(size=6),
                 yaxis="y2",
-                hovertemplate="Lũy kế đến %{x}: %{y:.2f} tỷ VNĐ"
+                hovertemplate="Lũy kế đến %{x}: %{y:,.2f} tỷ VNĐ"
             ))
             fig_cash.update_layout(
                 margin=dict(t=20, b=20, l=20, r=20),
@@ -823,7 +860,7 @@ with tab_dash:
                 yaxis=dict(title="Tháng (Tỷ VNĐ)"),
                 yaxis2=dict(title="Lũy kế (Tỷ VNĐ)", overlaying="y", side="right")
             )
-            st.plotly_chart(fig_cash, use_container_width=True)
+            plot_chart(fig_cash, use_container_width=True)
 
         with c4:
             st.markdown("##### 📍 Phân bổ theo Vị trí / Nhà máy")
@@ -838,10 +875,10 @@ with tab_dash:
             fig_site.update_traces(
                 textposition='inside',
                 textinfo='percent+label',
-                hovertemplate="<b>%{label}</b><br>Ngân sách: %{value:.2f} tỷ VNĐ"
+                hovertemplate="<b>%{label}</b><br>Ngân sách: %{value:,.2f} tỷ VNĐ"
             )
             fig_site.update_layout(margin=dict(t=10, b=10, l=10, r=10), height=340)
-            st.plotly_chart(fig_site, use_container_width=True)
+            plot_chart(fig_site, use_container_width=True)
 
         # CƠ CẤU: trang bị theo định biên / hạ tầng dùng chung / phát sinh mới
         if "need_type" in df_site.columns and not df_site.empty:
@@ -865,7 +902,7 @@ with tab_dash:
                 df_dept[q] = df_dept[cols].sum(axis=1) if cols else 0.0
             d_tab1, d_tab2, d_tab3, d_tab4 = st.tabs(["Phòng ban × Quý giải ngân", "Phòng ban × Nhóm CNTT",
                                                       "Phòng ban × CAPEX/CCDC/OPEX", "Phòng ban × Định biên / Phát sinh"])
-            money = st.column_config.NumberColumn(format="%d")
+            money = st.column_config.NumberColumn(format=MONEY_FMT)
 
             def _with_total(t: pd.DataFrame) -> pd.DataFrame:
                 t = t.sort_values("Tổng ngân sách", ascending=False)
@@ -919,9 +956,9 @@ with tab_dash:
                 fig_grp = px.bar(df_grp, x="budget_bil", y="it_group", orientation="h",
                                  labels={"budget_bil": "Ngân sách (Tỷ VNĐ)", "it_group": "Nhóm CNTT"},
                                  color_discrete_sequence=["#1E4E8C"])
-                fig_grp.update_traces(hovertemplate="<b>%{y}</b><br>Ngân sách: %{x:.2f} tỷ VNĐ")
+                fig_grp.update_traces(hovertemplate="<b>%{y}</b><br>Ngân sách: %{x:,.2f} tỷ VNĐ")
                 fig_grp.update_layout(margin=dict(t=10, b=10, l=10, r=10), height=360)
-                st.plotly_chart(fig_grp, use_container_width=True)
+                plot_chart(fig_grp, use_container_width=True)
             with c6:
                 st.markdown("##### 🧾 Phân loại Hạch toán")
                 df_acc = (df_filtered.assign(capex_type=df_filtered.get("capex_type", pd.Series(dtype=str)).fillna("Chưa phân loại"))
@@ -931,7 +968,7 @@ with tab_dash:
                                  color_discrete_map={"CAPEX": "#0F2C59", "CCDC": "#3B82F6", "OPEX": "#F59E0B", "Chưa phân loại": "#CBD5E1"})
                 fig_acc.update_traces(textinfo="percent+label", hovertemplate="<b>%{label}</b><br>%{value:,.0f} VNĐ<br>%{percent}")
                 fig_acc.update_layout(margin=dict(t=10, b=10, l=10, r=10), height=360, showlegend=False)
-                st.plotly_chart(fig_acc, use_container_width=True)
+                plot_chart(fig_acc, use_container_width=True)
                 st.caption("CAPEX: TSCĐ (≥ 30tr/đơn vị) · CCDC: phân bổ dần TK 242 · OPEX: thuê bao, dịch vụ")
 
         st.markdown("##### 🏆 Top 10 Hạng mục Ngân sách Đầu tư Lớn nhất")
@@ -1075,9 +1112,9 @@ with tab_input:
                         "Mã": st.column_config.TextColumn("Mã", disabled=True, width="small"),
                         "Tên thiết bị / Hạng mục": st.column_config.TextColumn("Tên thiết bị / Hạng mục", disabled=True, width="large"),
                         "ĐVT": st.column_config.TextColumn("ĐVT", disabled=True, width="small"),
-                        "Giá tham chiếu (VNĐ)": st.column_config.NumberColumn("Đơn giá chuẩn (VNĐ)", disabled=True, format="%d"),
+                        "Giá tham chiếu (VNĐ)": st.column_config.NumberColumn("Đơn giá chuẩn (VNĐ)", disabled=True, format=MONEY_FMT),
                         "Phân loại": st.column_config.TextColumn("Phân loại", disabled=True, width="small"),
-                        "Số lượng": st.column_config.NumberColumn("Số lượng cần mua", min_value=0, step=1, format="%d", required=True),
+                        "Số lượng": st.column_config.NumberColumn("Số lượng cần mua", min_value=0, step=1, format=MONEY_FMT, required=True),
                         "Ghi chú / Đối tượng": st.column_config.TextColumn("Ghi chú / Đối tượng sử dụng", width="medium")
                     }
                 )
@@ -1366,7 +1403,10 @@ with tab_input:
 
         if not can_edit:
             st.dataframe(df_curr, use_container_width=True, height=450, hide_index=True,
-                         column_order=[c for c in column_order if c != "_order"])
+                         column_order=[c for c in column_order if c != "_order"],
+                         column_config={**{c: st.column_config.NumberColumn(format=MONEY_FMT) for c in df_curr.columns
+                                           if c in ("quantity", "unit_price", "total_budget", "total_val") or c.startswith("val_")},
+                                        "total_pct": st.column_config.ProgressColumn(min_value=0.0, max_value=1.0, format="%.0f%%")})
             edited_df = df_curr
         else:
             main_editor_key = f"editor_{budget_year}_{selected_site}_{st.session_state.get('editor_version', 0)}"
@@ -1383,9 +1423,9 @@ with tab_input:
                     "location": st.column_config.TextColumn("Vị trí/Site", disabled=True),
                     "asset_cat1": st.column_config.SelectboxColumn("Loại TS 1", options=[c["name"] for c in master.get("asset_cat1", [])]),
                     "item_name": st.column_config.TextColumn("Tên Tài sản", width="large", required=True),
-                    "quantity": st.column_config.NumberColumn("Số lượng", min_value=1, format="%d"),
-                    "unit_price": st.column_config.NumberColumn("Đơn giá (VNĐ)", format="%d"),
-                    "total_budget": st.column_config.NumberColumn("Tổng ngân sách (VNĐ)", format="%d", disabled=True),
+                    "quantity": st.column_config.NumberColumn("Số lượng", min_value=1, format=MONEY_FMT),
+                    "unit_price": st.column_config.NumberColumn("Đơn giá (VNĐ)", format=MONEY_FMT),
+                    "total_budget": st.column_config.NumberColumn("Tổng ngân sách (VNĐ)", format=MONEY_FMT, disabled=True),
                     "total_pct": st.column_config.ProgressColumn("Tổng % Phân kỳ", min_value=0.0, max_value=1.0, format="%.0f%%"),
                     "project_code": st.column_config.TextColumn("Mã công trình", disabled=True),
                     "item_code": st.column_config.TextColumn("Mã hạng mục", disabled=True),
@@ -1401,7 +1441,8 @@ with tab_input:
                     "capex_type": st.column_config.TextColumn("CAPEX/CCDC/OPEX", disabled=True),
                     "need_type": st.column_config.SelectboxColumn("Loại nhu cầu", options=qt.NEED_TYPES),
                     "need_reason": st.column_config.TextColumn("Lý do / căn cứ", width="medium"),
-                    "auto_quota": None
+                    "auto_quota": None,
+                    **{c: st.column_config.NumberColumn(format=MONEY_FMT, disabled=True) for c in df_curr.columns if c.startswith("val_") or c == "total_val"},
                 }
             )
 
@@ -1447,7 +1488,7 @@ with tab_quota:
             **{"Thiết bị mua thêm/thay (VNĐ)": ("hw", "sum"), "Phần mềm mua mới (VNĐ)": ("sw_new", "sum"),
                "Gia hạn bản quyền (VNĐ)": ("sw_renew", "sum"), "Tổng nhu cầu (VNĐ)": ("propose_value", "sum")}).reset_index()
 
-    money_cfg = {c: st.column_config.NumberColumn(format="%d") for c in [
+    money_cfg = {c: st.column_config.NumberColumn(format=MONEY_FMT) for c in [
         "Thiết bị mua thêm/thay (VNĐ)", "Phần mềm mua mới (VNĐ)", "Gia hạn bản quyền (VNĐ)", "Tổng nhu cầu (VNĐ)",
         "Ngân sách định biên đã tạo (VNĐ)", "Thành tiền (VNĐ)", "Đơn giá"]}
 
@@ -1491,8 +1532,8 @@ with tab_quota:
                                    f"Chọn năm {fy} ở thanh bên trái trước khi áp dụng.")
                     h1, h2, h3, h4 = st.columns(4)
                     h1.metric("Vị trí", f"{len(P):,}")
-                    h2.metric("Nhân sự thực tế", f"{P['actual'].sum():,.0f}")
-                    h3.metric(f"Định biên {fy}", f"{P['plan'].sum():,.0f}")
+                    h2.metric("Nhân sự thực tế", fmt_num(P['actual'].sum()))
+                    h3.metric(f"Định biên {fy}", fmt_num(P['plan'].sum()))
                     h4.metric("Phòng ban × site", f"{P.groupby(['site', 'dept']).ngroups}")
                     if roster["issues"]:
                         with st.popover(f"⚠️ {len(roster['issues'])} dòng lỗi dữ liệu trong file (đã xử lý tạm)"):
@@ -1630,7 +1671,7 @@ with tab_quota:
             summary = summary.sort_values("Tổng nhu cầu (VNĐ)" if "Tổng nhu cầu (VNĐ)" in summary.columns else "Nhân sự định biên", ascending=False)
             total_row = summary.sum(numeric_only=True)
             s1, s2, s3 = st.columns(3)
-            s1.metric("Nhân sự hiện có → định biên", f"{total_row['Nhân sự hiện có']:,.0f} → {total_row['Nhân sự định biên']:,.0f}")
+            s1.metric("Nhân sự hiện có → định biên", f"{fmt_num(total_row['Nhân sự hiện có'])} → {fmt_num(total_row['Nhân sự định biên'])}")
             s2.metric("Phòng ban × site", f"{len(summary)}")
             s3.metric("Tổng nhu cầu CNTT theo định biên", format_vnd(total_row.get("Tổng nhu cầu (VNĐ)", 0)))
             summary["site_code"] = summary["site_code"].map(site_label)
@@ -1651,8 +1692,8 @@ with tab_quota:
             column_config={
                 "kit": st.column_config.SelectboxColumn("Vị trí / Bộ trang bị tiêu chuẩn", options=list(kit_label.values()),
                                                         required=True, width="large"),
-                "hc_current": st.column_config.NumberColumn("Nhân sự hiện có", min_value=0, step=1, format="%d"),
-                "hc_plan": st.column_config.NumberColumn(f"Nhân sự định biên {budget_year}", min_value=0, step=1, format="%d"),
+                "hc_current": st.column_config.NumberColumn("Nhân sự hiện có", min_value=0, step=1, format=MONEY_FMT),
+                "hc_plan": st.column_config.NumberColumn(f"Nhân sự định biên {budget_year}", min_value=0, step=1, format=MONEY_FMT),
             })
         k1, k2 = st.columns(2)
         k1.metric("Nhân sự hiện có", f"{int(pd.to_numeric(ed_hc['hc_current'], errors='coerce').fillna(0).sum())} người")
@@ -1681,11 +1722,11 @@ with tab_quota:
             use_container_width=True, hide_index=True,
             column_config={
                 "item": st.column_config.SelectboxColumn("Hạng mục", options=list(item_label.values()), required=True, width="large"),
-                "dinh_muc": st.column_config.NumberColumn("Định mức (tự tính)", disabled=True, format="%d"),
-                "quota_override": st.column_config.NumberColumn("Định biên điều chỉnh", min_value=0, step=1, format="%d",
+                "dinh_muc": st.column_config.NumberColumn("Định mức (tự tính)", disabled=True, format=MONEY_FMT),
+                "quota_override": st.column_config.NumberColumn("Định biên điều chỉnh", min_value=0, step=1, format=MONEY_FMT,
                                                                 help="Để trống = dùng định mức tự tính"),
-                "current_qty": st.column_config.NumberColumn("Hiện có", min_value=0, step=1, format="%d"),
-                "replace_qty": st.column_config.NumberColumn("Cần thay thế", min_value=0, step=1, format="%d"),
+                "current_qty": st.column_config.NumberColumn("Hiện có", min_value=0, step=1, format=MONEY_FMT),
+                "replace_qty": st.column_config.NumberColumn("Cần thay thế", min_value=0, step=1, format=MONEY_FMT),
                 "note": st.column_config.TextColumn("Ghi chú"),
             })
 
@@ -1719,14 +1760,14 @@ with tab_quota:
                  "propose_qty", "price", "propose_value", "basis"]]
             st.dataframe(show, use_container_width=True, hide_index=True, column_config={
                 "catalog_code": "Mã", "item_name": st.column_config.TextColumn("Hạng mục", width="medium"), "kind": "Loại", "unit": "ĐVT",
-                "quota": st.column_config.NumberColumn("Định biên", format="%d"),
-                "current_qty": st.column_config.NumberColumn("Hiện có", format="%d"),
-                "add_qty": st.column_config.NumberColumn("Mua bổ sung", format="%d"),
-                "renew_qty": st.column_config.NumberColumn("Gia hạn", format="%d"),
-                "replace_qty": st.column_config.NumberColumn("Thay thế", format="%d"),
-                "propose_qty": st.column_config.NumberColumn("Tổng đề xuất", format="%d"),
-                "price": st.column_config.NumberColumn("Đơn giá", format="%d"),
-                "propose_value": st.column_config.NumberColumn("Thành tiền (VNĐ)", format="%d"),
+                "quota": st.column_config.NumberColumn("Định biên", format=MONEY_FMT),
+                "current_qty": st.column_config.NumberColumn("Hiện có", format=MONEY_FMT),
+                "add_qty": st.column_config.NumberColumn("Mua bổ sung", format=MONEY_FMT),
+                "renew_qty": st.column_config.NumberColumn("Gia hạn", format=MONEY_FMT),
+                "replace_qty": st.column_config.NumberColumn("Thay thế", format=MONEY_FMT),
+                "propose_qty": st.column_config.NumberColumn("Tổng đề xuất", format=MONEY_FMT),
+                "price": st.column_config.NumberColumn("Đơn giá", format=MONEY_FMT),
+                "propose_value": st.column_config.NumberColumn("Thành tiền (VNĐ)", format=MONEY_FMT),
                 "basis": st.column_config.TextColumn("Căn cứ", width="large"),
             })
             is_sw = needs["kind"].astype(str).str.startswith("software")
@@ -1789,7 +1830,7 @@ with tab_infra:
                 index="site", columns="it_group", values="total_budget", aggfunc="sum", fill_value=0)
             pv["Tổng (VNĐ)"] = pv.sum(axis=1)
             st.dataframe(pv.sort_values("Tổng (VNĐ)", ascending=False), use_container_width=True,
-                         column_config={c: st.column_config.NumberColumn(format="%d") for c in pv.columns})
+                         column_config={c: st.column_config.NumberColumn(format=MONEY_FMT) for c in pv.columns})
     else:
         df_inf = df_site[infra_mask]
         st.markdown(f"#### {site_label(selected_site)}")
@@ -1863,8 +1904,8 @@ with tab_infra:
             column_config={
                 "item": st.column_config.SelectboxColumn("Hạng mục hạ tầng", options=list(sh_label.values()), required=True, width="large"),
                 "invest_type": st.column_config.SelectboxColumn("Hình thức", options=INVEST_TYPES, required=True),
-                "quantity": st.column_config.NumberColumn("Số lượng", min_value=1, step=1, format="%d", required=True),
-                "unit_price": st.column_config.NumberColumn("Đơn giá (VNĐ, trống = giá danh mục)", min_value=0, format="%d"),
+                "quantity": st.column_config.NumberColumn("Số lượng", min_value=1, step=1, format=MONEY_FMT, required=True),
+                "unit_price": st.column_config.NumberColumn("Đơn giá (VNĐ, trống = giá danh mục)", min_value=0, format=MONEY_FMT),
                 "month": st.column_config.SelectboxColumn("Tháng triển khai", options=months, required=True),
                 "dept_proposing": st.column_config.SelectboxColumn("Phòng đề xuất (trống = phòng phụ trách)", options=owners),
                 "need_reason": st.column_config.TextColumn("Căn cứ / lý do (bắt buộc)", width="large"),
@@ -2047,7 +2088,7 @@ with tab_depreciation:
                     color_discrete_sequence=["#0F2C59"]
                 )
                 fig_dep.update_layout(margin=dict(t=30, b=10, l=10, r=10), height=300)
-                st.plotly_chart(fig_dep, use_container_width=True)
+                plot_chart(fig_dep, use_container_width=True)
 
                 # Dataframe of depreciation
                 disp_dep = dep_df.copy()
@@ -2113,7 +2154,7 @@ with tab_depreciation:
             y=[cf / 1e9 for cf in cfs],
             marker_color=["#EF4444" if cf < 0 else "#10B981" for cf in cfs],
             name="Dòng tiền ròng (Tỷ VNĐ)",
-            hovertemplate="Năm: %{x}<br>Dòng tiền: %{y:.2f} tỷ VNĐ"
+            hovertemplate="Năm: %{x}<br>Dòng tiền: %{y:,.2f} tỷ VNĐ"
         ))
         fig_cf.update_layout(
             title="Dòng tiền Dự án theo các Năm (Tỷ VNĐ)",
@@ -2121,7 +2162,7 @@ with tab_depreciation:
             height=280,
             margin=dict(t=35, b=10, l=10, r=10)
         )
-        st.plotly_chart(fig_cf, use_container_width=True)
+        plot_chart(fig_cf, use_container_width=True)
 
 
 # =====================================================================
@@ -2178,7 +2219,7 @@ with tab_master:
                 "unit": st.column_config.TextColumn("ĐVT"),
                 "kind": st.column_config.SelectboxColumn("Loại", options=list(kinds_cfg), required=True,
                                                          help=" | ".join(f"{k}: {v}" for k, v in kinds_cfg.items())),
-                "price": st.column_config.NumberColumn("Đơn giá tham chiếu (VNĐ)", min_value=0, format="%d", required=True),
+                "price": st.column_config.NumberColumn("Đơn giá tham chiếu (VNĐ)", min_value=0, format=MONEY_FMT, required=True),
                 "aliases": st.column_config.TextColumn("Tên cũ / tên gọi khác (cách nhau bởi ;)", width="medium",
                                                        help="Dùng để tự nhận diện dòng ngân sách cũ hoặc file Excel"),
                 "note": st.column_config.TextColumn("Ghi chú"),
