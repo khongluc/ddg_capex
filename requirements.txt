@@ -1,5 +1,6 @@
-streamlit>=1.45
-Authlib>=1.3.2
+# Phiên bản đã kiểm tra cùng nhau: Authlib 1.8.0 làm st.login lỗi ("NoneType object does not support item assignment"), 1.5.2 chạy đúng
+streamlit==1.45.1
+Authlib==1.5.2
 pandas
 numpy
 openpyxl
