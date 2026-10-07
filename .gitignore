@@ -1,0 +1,17 @@
+# Bí mật & dữ liệu vận hành - KHÔNG đưa lên Git
+.streamlit/secrets.toml
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# File Excel nghiệp vụ (có họ tên, mã nhân viên, số liệu tài chính) - tải lên qua giao diện app
+*.xlsx
+*.xls
+
+# Sao lưu, nháp, cache
+master_data.backup*.json
+it_catalog_dump.json
+scratch_inspect.json
+__pycache__/
+.claude/

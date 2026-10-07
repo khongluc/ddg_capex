@@ -1,0 +1,3777 @@
+{
+  "entities": [
+    {
+      "code": "A01",
+      "name": "DDC"
+    },
+    {
+      "code": "A04",
+      "name": "DD2"
+    },
+    {
+      "code": "A05",
+      "name": "DD3"
+    },
+    {
+      "code": "A02",
+      "name": "DMT"
+    },
+    {
+      "code": "A06",
+      "name": "DNS"
+    },
+    {
+      "code": "A07",
+      "name": "DVT"
+    }
+  ],
+  "sites": [
+    {
+      "code": "AHA",
+      "name": "NM An Hạ"
+    },
+    {
+      "code": "LAN",
+      "name": "NM Long An"
+    },
+    {
+      "code": "BCH",
+      "name": "NM Bình Chánh"
+    },
+    {
+      "code": "QNG",
+      "name": "NM Miền Trung"
+    },
+    {
+      "code": "BSO",
+      "name": "NX Ba Son"
+    },
+    {
+      "code": "NSO",
+      "name": "NM Nghi Sơn"
+    },
+    {
+      "code": "VTA",
+      "name": "NM Vũng Tàu"
+    },
+    {
+      "code": "TCO",
+      "name": "Thi công/Công Trường"
+    },
+    {
+      "code": "BDA",
+      "name": "VP Bạch Đằng"
+    }
+  ],
+  "asset_cat1": [
+    {
+      "name": "A. Nhà cửa, vật kiến trúc",
+      "code3": "01",
+      "code4": "04"
+    },
+    {
+      "name": "B. Máy móc thiết bị",
+      "code3": "02",
+      "code4": "03"
+    },
+    {
+      "name": "C. Phương tiện vận tải",
+      "code3": "03",
+      "code4": "04"
+    },
+    {
+      "name": "D. Thiết bị, dụng cụ quản lý",
+      "code3": "04",
+      "code4": "05"
+    },
+    {
+      "name": "E. Bản quyền, Phần mềm",
+      "code3": "05",
+      "code4": "06"
+    }
+  ],
+  "asset_cat2": [
+    "A1. NCVK: Xây dựng mới",
+    "A2. NCVK: Nâng cấp, mở rộng",
+    "A3. NCVK: Bảo trì, bảo dưỡng",
+    "B1. MMTB: Mua mới",
+    "B2. MMTB: Nâng cấp",
+    "B3. MMTB: Bảo trì, bảo dưỡng",
+    "C1. PTVT: Mua mới",
+    "C2. PTVT: Nâng cấp",
+    "C3. PTVT: Bảo trì, bảo dưỡng",
+    "D1. TBQL: Mua mới",
+    "D2. TBQL: Nâng cấp, thay thế",
+    "D3. TBQL: Bảo trì, bảo dưỡng",
+    "E1. BQPM: Mua mới",
+    "E2. BQPM: Gia hạn, nâng cấp",
+    "E3. BQPM: Bảo trì"
+  ],
+  "cost_lv1": [
+    "01. Chi phí pháp lý",
+    "02. Chi phí đất đai",
+    "03. Chi phí xây dựng",
+    "04. Chi phí MMTB",
+    "05. Đầu tư PT vận tải",
+    "06. Chi phí tư vấn",
+    "07. Chi phí QLDA",
+    "08. Chi phí dự phòng",
+    "09. Chi phí tài chính",
+    "10. Chi phí khác"
+  ],
+  "cost_lv2": [
+    "01.01. Chi phí lập báo cáo nghiên cứu khả thi",
+    "01.02. Chi phí thẩm tra báo cáo nghiênCứu khả thi",
+    "01.03. Chi phí khảo sát đo vẽ bản đồ hiện trạng tỷ lệ 1/500",
+    "01.04. Chi phí xin điều chỉnh quy hoạch, phê duyệt chủ trương đầu tư dự án…",
+    "01.05. Chi phí khảo sát địa chất công trình",
+    "01.06. Chi phí giám sát công tác khảo sát",
+    "01.07. Chi phí thiết kế",
+    "01.08. Chi phí thẩm tra thiết kế xây dựng",
+    "01.09. Chi phí XPXD",
+    "01.10. Báo Cáo đánh giá tác động môi trường (ĐTM)",
+    "01.11. Thẩm duyệt PCCC",
+    "01.12. Chi phí thỏa thuận đấu nối hạ tầng (điện, nước, TLLL…)",
+    "01.13. Chi phí ký quỹ dự án",
+    "01.14. Chi phí lập hồ sơ nhiệm vụ và đồ án quy hoạch chi tiết (1/500)",
+    "01.15. Chi phí thực hiện điều Chỉnh GCN đầu tư",
+    "01.16. Chi phí lập thiết kế cơ sở, thiết kế bản vẽ kỹ thuật thi công",
+    "01.17. Chi phí thẩm tra thiết kế cơ sở và thiết kế BVTC",
+    "01.18. Chi phí thẩm định thiết kế cơ sở và thiết kế BVTC",
+    "01.99. Chi phí pháp lý khác",
+    "02.01. Chi phí thuê đất",
+    "02.02. Chi phí bồi thường GPMB",
+    "02.03. Chi phí Chuyển đổi mục đích sử dụng đất",
+    "02.04. Chi phí nộp tiền sử dụng đất",
+    "02.05. Chi phí Cấp GCN QSDĐ",
+    "02.99. Chi phí đất đai khác",
+    "03.01. Chi phí phá dỡ, làm hàng rào tạm, văn phòng ban QLDA",
+    "03.02. Chi phí lập hồ sơ mời thầu, đánh giá hồ sơ dự thầu thi công xây dựng",
+    "03.03. Chi phí lập hồ sơ mời thầu, đánh giá hồ sơ dự thầu cung cấp vật tư thiết bị",
+    "03.04. Chi phí giám sát thi công xây dựng",
+    "03.05. Chi phí giám sát lắp đặt thiết bị",
+    "03.06. Chi phí bảo hiểm công trình",
+    "03.07. Chi phí nghiệm thu bàn giao",
+    "03.08. Chi phí hạ tầng",
+    "03.09. Chi phí nền nhà xưởng (san lấp, nền nhà, mở rộng, thoát nước)",
+    "03.10. Chi phí xây lấp (xây dựng hoàn thiện nhà xưởng/nhà văn phòng)",
+    "03.11. Chi phí kết cấu thép",
+    "03.12. Chi phí M&E",
+    "03.13. Chi phí nhà xưởng vật kiến trúc xây mới",
+    "03.14. Chi phí nhà xưởng vật kiến trúc cải tạo sửa chữa",
+    "03.15. Chi phí san lấp",
+    "03.16. Chi phí ra phá bom mìn",
+    "03.99. Chi phí xây dựng khác",
+    "04.01. Máy móc thiết bị đầu tư mới",
+    "04.02. Máy móc thiết bị sửa chữa nâng cấp",
+    "04.03. Thiết bị quản lý - Thiết bị CNTT",
+    "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+    "04.05. Thiết bị quản lý - Bản quyền sáng chế",
+    "04.06. Thiết bị quản lý - Thiết bị văn phòng",
+    "04.99. Chi phí máy móc thiết bị khác",
+    "05.01. PTVT - Đường bộ",
+    "05.02. PTVT - Bốc dỡ, nâng hàng",
+    "05.99. PTVT - Khác",
+    "06.01. Chi phí tư vấn QS (kiểm soát khối lượng)",
+    "06.02. Chi phí giám sát thi công công trình",
+    "06.03. Chi phí giám sát công tác khảo sát",
+    "06.04. Chi phí tư vấn pháp lý (Thuê 3rd-parties)",
+    "06.99. Chi phí tư vấn khác",
+    "07.01. Nhân sự",
+    "07.02. Tuyển dụng",
+    "07.03. Đào tạo",
+    "07.04. Hành chính",
+    "07.05. Vận chuyển đi lại",
+    "07.06. Hạ tầng, trang thiết bị",
+    "07.07. Dịch vụ văn phòng",
+    "07.08. Tư vấn, dịch thuật",
+    "07.09. Kiểm toán",
+    "07.10. Phát triển bền vững (Chứng chỉ/ Tài trợ/ R&D)",
+    "07.11. Bảo hành",
+    "07.12. Chi phí HSE",
+    "07.13. Chi phí NCR",
+    "07.99. Chi phí quản lý dự án khác",
+    "08.01. Dự phòng chi phí pháp lý",
+    "08.02. Dự phòng chi phí đất đai",
+    "08.03. Dự phòng chi phí xây dựng ",
+    "08.04. Dự phòng chi phí MMTB",
+    "08.05. Dự phòng chi phí PTVT",
+    "08.06. Dự phòng chi phí tư vấn",
+    "08.07. Dự phòng chi phí quản lý dự án",
+    "08.99. Chi phí dự phòng chung dự án",
+    "09.01. Chi phí lãi vay trung - dài hạn",
+    "09.02. Chi phí lãi vay hoạt động kinh doanh",
+    "09.99. Chi phí tài chính khác",
+    "10.01. Chi phí lập văn phòng tạm Ban QLDA",
+    "10.02. Chi phí ngoại giao thủ tục hành chính",
+    "10.99. Chi phí tổng hợp"
+  ],
+  "divisions": [
+    "Đại Hội Đồng Cổ Đông",
+    "Hội Đồng Quản Trị",
+    "Ban Kiểm Soát",
+    "Chủ Tịch Hội Đồng Quản Trị",
+    "Ban Tổng Giám Đốc",
+    "Khối Kinh Doanh",
+    "Khối Dịch Vụ Kinh Doanh",
+    "Khối Quản Lý Dự Án",
+    "Khối Quản Lý Sản Xuất",
+    "Khối Sản Xuất",
+    "Khối Thi Công",
+    "Khối Vận Hành",
+    "Khối Tài Chính Kế Toán",
+    "Khối Chuỗi Cung Ứng",
+    "Khối Đầu Tư",
+    "Ban Chiến Lược"
+  ],
+  "departments": [
+    "Đại Hội Đồng Cổ Đông",
+    "Hội Đồng Quản Trị",
+    "Ban Kiểm Soát",
+    "Chủ Tịch Hội Đồng Quản Trị",
+    "Ban Tổng Giám Đốc",
+    "Ban Trợ Lý, Thư Ký",
+    "Kiểm Soát Nội Bộ",
+    "DDC.DA - Đỗ Trí Tuấn",
+    "DDC.DA - Hồ Hoài Trung",
+    "DDC.DA - Hoàng Hữu Hiếu",
+    "DDC.DA - Nguyễn Trí Nhiên",
+    "DDC.DA - Nguyễn Văn Cường",
+    "DDC.DA - Trương Xuân Cơ",
+    "DDC.DA - Đặng Văn Hòa",
+    "DDC.DA - KDQT 1",
+    "DDC.DA - KDQT 2",
+    "DDC.DA - KDQT 3",
+    "Phòng Kế Hoạch Kinh Doanh",
+    "Phòng Quản Lý Hợp Đồng Và Ngân Sách",
+    "Phòng Đấu Thầu 1",
+    "Phòng Đấu Thầu 2",
+    "Phòng Marketing",
+    "Phòng Kỹ Thuật Thiết Kế - Kết Cấu",
+    "Phòng Kỹ Thuật Thiết Kế - Cơ Khí Chế Tạo",
+    "Phòng Kế Hoạch Dự Án",
+    "Phòng Quản Lý Dự Án",
+    "Phòng Quản Lý Kỹ Thuật",
+    "Phòng Quản Lý KL-CP-NCR",
+    "Phòng Quản Trị Chất Lượng (QA/QC)",
+    "Phòng SHOP 1",
+    "Phòng SHOP 2",
+    "Phòng HSE Trung Tâm",
+    "Phòng Cung Ứng Vận Tải",
+    "Phòng Kỹ Thuật Sản Xuất",
+    "Phòng Thiết Bị Công Nghệ",
+    "Phòng Điều Phối Sản Xuất",
+    "Phòng Điều Hành Thi Công",
+    "Phòng HSE Thi Công",
+    "Phòng Thi Công Lắp Dựng",
+    "Phòng Thi Công Xây Dựng",
+    "Phòng Hành Chính Quản Trị",
+    "Phòng Pháp Chế",
+    "Phòng Công Nghệ Thông Tin",
+    "Phòng ISO, Quản Trị Hệ Thống",
+    "Phòng Quản Trị Nguồn Nhân Lực",
+    "Phòng Tài Chính",
+    "Phòng Nguồn Vốn",
+    "Phòng Kế Toán",
+    "Phòng Tài Chính Đầu Tư",
+    "Phòng Mua Hàng",
+    "Bộ Phận Xuất Nhập Khẩu",
+    "Tổng Kho",
+    "Ban Cải Tiến",
+    "Phòng Phát Triển Dự Án",
+    "Phòng Pháp Lý Dự Án",
+    "Phòng Đầu Tư Nội Bộ",
+    "Nhà Máy An Hạ",
+    "Nhà Máy Long An DDC2",
+    "Nhà Máy Long An DDC3",
+    "Nhà Máy Miền Trung",
+    "Nhà Máy Bình Chánh",
+    "Nhà Máy Nghi Sơn",
+    "Nhà Máy Vũng Tàu",
+    "Nhà Xưởng Ba Son"
+  ],
+  "standard_items": [
+    {
+      "code": "IT01-001",
+      "group": "IT01",
+      "name": "Máy tính để bàn Core i3",
+      "unit": "Bộ",
+      "kind": "hardware",
+      "price": 14000000,
+      "aliases": [
+        "Máy tính bộ i3"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT01-002",
+      "group": "IT01",
+      "name": "Máy tính để bàn Core i5",
+      "unit": "Bộ",
+      "kind": "hardware",
+      "price": 17000000,
+      "aliases": [
+        "Máy tính bộ i5"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT01-003",
+      "group": "IT01",
+      "name": "Máy tính để bàn Core i7",
+      "unit": "Bộ",
+      "kind": "hardware",
+      "price": 21000000,
+      "aliases": [
+        "Máy tính bộ i7"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT01-004",
+      "group": "IT01",
+      "name": "Máy tính xách tay Core i5",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 18000000,
+      "aliases": [
+        "Máy tính xách tay i5"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT01-005",
+      "group": "IT01",
+      "name": "Máy tính xách tay Core i7",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 25000000,
+      "aliases": [
+        "Máy tính xách tay i7"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT01-006",
+      "group": "IT01",
+      "name": "Máy tính xách tay có card đồ họa rời Core i5",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 25000000,
+      "aliases": [
+        "Máy tính xách tay + vga i5"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT01-007",
+      "group": "IT01",
+      "name": "Máy tính xách tay có card đồ họa rời Core i7",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 33000000,
+      "aliases": [
+        "Máy tính xách tay + vga i7"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT01-008",
+      "group": "IT01",
+      "name": "Máy trạm thiết kế (Workstation)",
+      "unit": "Bộ",
+      "kind": "hardware",
+      "price": 49000000,
+      "aliases": [
+        "Máy tính bộ thiết kế"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT01-009",
+      "group": "IT01",
+      "name": "Máy trạm thiết kế cao cấp (Workstation)",
+      "unit": "Bộ",
+      "kind": "hardware",
+      "price": 99000000,
+      "aliases": [
+        "Máy tính bộ thiết kế cao cấp"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT01-010",
+      "group": "IT01",
+      "name": "Màn hình 24 inch",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 4000000,
+      "aliases": [
+        "Màn hình 24\""
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT01-011",
+      "group": "IT01",
+      "name": "Màn hình 27 inch",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 7000000,
+      "aliases": [
+        "Màn hình 27\""
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT01-012",
+      "group": "IT01",
+      "name": "Máy tính bảng",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 12000000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT02-001",
+      "group": "IT02",
+      "name": "Máy in A4 trắng đen",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 3450000,
+      "aliases": [
+        "Máy in A4"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT02-002",
+      "group": "IT02",
+      "name": "Máy in màu A4",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 6900000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT02-003",
+      "group": "IT02",
+      "name": "Máy in A3 trắng đen",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 9200000,
+      "aliases": [
+        "Máy in A3"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT02-004",
+      "group": "IT02",
+      "name": "Máy in màu A3",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 13800000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT02-005",
+      "group": "IT02",
+      "name": "Máy scan tài liệu",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 5750000,
+      "aliases": [
+        "Máy Scaner"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT02-006",
+      "group": "IT02",
+      "name": "Máy photocopy",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 23000000,
+      "aliases": [
+        "Máy Photocopy"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT03-001",
+      "group": "IT03",
+      "name": "Máy chủ (Server)",
+      "unit": "Bộ",
+      "kind": "hardware",
+      "price": 300000000,
+      "aliases": [
+        "Thiết bị Server"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT03-002",
+      "group": "IT03",
+      "name": "Thiết bị lưu trữ NAS",
+      "unit": "Bộ",
+      "kind": "hardware",
+      "price": 400000000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT03-003",
+      "group": "IT03",
+      "name": "Thiết bị lưu trữ SAN",
+      "unit": "Bộ",
+      "kind": "hardware",
+      "price": 2000000000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT03-004",
+      "group": "IT03",
+      "name": "Ổ cứng chuyên dụng cho NAS",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 3450000,
+      "aliases": [
+        "HDD chuyên dụng cho Nas"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT03-005",
+      "group": "IT03",
+      "name": "Ổ cứng lưu trữ gắn ngoài",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 5750000,
+      "aliases": [
+        "Thiết bị lưu trữ gắn ngoài"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT04-001",
+      "group": "IT04",
+      "name": "Switch Core",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 120000000,
+      "aliases": [
+        "Thiết bị chuyển mạch Core"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT04-002",
+      "group": "IT04",
+      "name": "Switch tầng (Access)",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 50000000,
+      "aliases": [
+        "Thiết bị chuyển mạch Tầng"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT04-003",
+      "group": "IT04",
+      "name": "Bộ phát Wifi trong nhà (Access Point)",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 10000000,
+      "aliases": [
+        "Thiết bị Wifi"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT04-004",
+      "group": "IT04",
+      "name": "Bộ phát Wifi ngoài trời",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 24000000,
+      "aliases": [
+        "Thiết bị Wifi ngoài trời"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT04-005",
+      "group": "IT04",
+      "name": "Tủ rack 42U",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 8000000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT04-006",
+      "group": "IT04",
+      "name": "Tủ rack 12U",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 4000000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT04-007",
+      "group": "IT04",
+      "name": "Tủ rack 9U",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 2000000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT04-008",
+      "group": "IT04",
+      "name": "Tủ rack 6U",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 1800000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT04-009",
+      "group": "IT04",
+      "name": "Hộp phối quang (ODF)",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 4000000,
+      "aliases": [
+        "Hôp phân phối quang"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT04-010",
+      "group": "IT04",
+      "name": "Bộ chuyển đổi quang điện (Media converter)",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 3450000,
+      "aliases": [
+        "Thiết bị Chuyển đổi quang điện"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT04-011",
+      "group": "IT04",
+      "name": "Module quang SFP",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 1725000,
+      "aliases": [
+        "Module quang"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT04-012",
+      "group": "IT04",
+      "name": "Dây nhảy cáp quang",
+      "unit": "Sợi",
+      "kind": "component",
+      "price": 575000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT04-013",
+      "group": "IT04",
+      "name": "Dây nhảy cáp đồng (Patch cord)",
+      "unit": "Sợi",
+      "kind": "component",
+      "price": 345000,
+      "aliases": [
+        "Dây nhảy Cáp đồng"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT04-014",
+      "group": "IT04",
+      "name": "Bộ test mạng",
+      "unit": "Bộ",
+      "kind": "component",
+      "price": 6900000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT04-015",
+      "group": "IT04",
+      "name": "Router cân bằng tải Peplink B One (văn phòng nhỏ / công trường; thay Balance 20X đã ngừng SX)",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 9514000,
+      "aliases": [
+        "Router cân bằng tải Peplink Balance 20X (văn phòng nhỏ / công trường, 2 WAN + 4G)"
+      ],
+      "note": "Giá tham khảo: 359 USD (niêm yết đại lý Mỹ, 06/10/2026) × 26,500 VNĐ/USD; chưa gồm thuế NK, phí NPP, VAT - cần báo giá NPP Việt Nam.",
+      "ref_usd": 359,
+      "ref_source": "https://5gstore.com/product/13510_peplink_b_one.html"
+    },
+    {
+      "code": "IT04-016",
+      "group": "IT04",
+      "name": "Router cân bằng tải Peplink Balance 310X (văn phòng / nhà máy vừa, 3 WAN)",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 76824000,
+      "aliases": [],
+      "note": "Giá tham khảo: 2,899 USD (niêm yết đại lý Mỹ, 06/10/2026) × 26,500 VNĐ/USD; chưa gồm thuế NK, phí NPP, VAT - cần báo giá NPP Việt Nam.",
+      "ref_usd": 2899,
+      "ref_source": "https://5gstore.com/product/14378_balance_310x.html"
+    },
+    {
+      "code": "IT04-017",
+      "group": "IT04",
+      "name": "Router cân bằng tải Peplink Balance 380 (trụ sở / nhà máy, nhiều WAN)",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 79474000,
+      "aliases": [],
+      "note": "Giá tham khảo: 2,999 USD (niêm yết đại lý Mỹ, 06/10/2026) × 26,500 VNĐ/USD; chưa gồm thuế NK, phí NPP, VAT - cần báo giá NPP Việt Nam.",
+      "ref_usd": 2999,
+      "ref_source": "https://store.reliablepbx.com/products/PEP-BPL-380"
+    },
+    {
+      "code": "IT04-018",
+      "group": "IT04",
+      "name": "Router cân bằng tải Peplink Balance 710 (trung tâm, băng thông lớn)",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 132474000,
+      "aliases": [],
+      "note": "Giá tham khảo: 4,999 USD (niêm yết đại lý Mỹ, 06/10/2026) × 26,500 VNĐ/USD; chưa gồm thuế NK, phí NPP, VAT - cần báo giá NPP Việt Nam.",
+      "ref_usd": 4999,
+      "ref_source": "https://store.reliablepbx.com/products/PEP-BPL-710"
+    },
+    {
+      "code": "IT04-019",
+      "group": "IT04",
+      "name": "Router 4G/5G Peplink MAX BR1 Pro 5G (công trường, dự phòng di động)",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 26474000,
+      "aliases": [],
+      "note": "Giá tham khảo: 999 USD (niêm yết đại lý Mỹ, 06/10/2026) × 26,500 VNĐ/USD; chưa gồm thuế NK, phí NPP, VAT - cần báo giá NPP Việt Nam.",
+      "ref_usd": 999,
+      "ref_source": "https://5gstore.com/product/13457_peplink_max_br1_pro_5g_cat_20_lte-a_x62_chipset_wi-fi_6"
+    },
+    {
+      "code": "IT04-020",
+      "group": "IT04",
+      "name": "Gói bảo hành & cập nhật Peplink PrimeCare (gồm InControl2)",
+      "unit": "Thiết bị/năm",
+      "kind": "software_subscription",
+      "price": 6598000,
+      "aliases": [],
+      "note": "Giá tham khảo: 249 USD (niêm yết đại lý Mỹ, 06/10/2026) × 26,500 VNĐ/USD; chưa gồm thuế NK, phí NPP, VAT - cần báo giá NPP Việt Nam. Gói cho router nhỏ (PrimeCare C - BR1 Pro 5G) ~149 USD/năm.",
+      "ref_usd": 249,
+      "ref_source": "https://5gstore.com/product/23267_peplink_1-year_primecare_g_balance_310_5gk.html"
+    },
+    {
+      "code": "IT04-021",
+      "group": "IT04",
+      "name": "Gói Peplink SpeedFusion Connect Unlimited 1 năm (gộp băng thông, VPN liên site)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 21200000,
+      "aliases": [
+        "License Peplink SpeedFusion (gộp băng thông, VPN liên site)"
+      ],
+      "note": "Giá tham khảo: 800 USD (niêm yết đại lý Mỹ, 06/10/2026) × 26,500 VNĐ/USD; chưa gồm thuế NK, phí NPP, VAT - cần báo giá NPP Việt Nam.",
+      "ref_usd": 800,
+      "ref_source": "https://5gstore.com/product/13475_peplink_speedfusion_connect_protect_unlimited_plan1_year"
+    },
+    {
+      "code": "IT05-001",
+      "group": "IT05",
+      "name": "Thiết bị tường lửa Cisco Meraki",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 250000000,
+      "aliases": [
+        "Firewall Meraki"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT05-002",
+      "group": "IT05",
+      "name": "Thiết bị tường lửa Fortinet FortiGate",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 200000000,
+      "aliases": [
+        "Firewall Fortigate"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT05-003",
+      "group": "IT05",
+      "name": "License tường lửa Cisco Meraki (gia hạn năm)",
+      "unit": "Gói/năm",
+      "kind": "software_subscription",
+      "price": 150000000,
+      "aliases": [
+        "Phần mềm Firewall - Meraki"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT05-004",
+      "group": "IT05",
+      "name": "License tường lửa FortiGate (gia hạn năm)",
+      "unit": "Gói/năm",
+      "kind": "software_subscription",
+      "price": 110000000,
+      "aliases": [
+        "Phần mềm Firewall - Fortigate"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT05-005",
+      "group": "IT05",
+      "name": "License Switch Cisco Meraki (gia hạn năm)",
+      "unit": "Gói/năm",
+      "kind": "software_subscription",
+      "price": 23000000,
+      "aliases": [
+        "Phần mềm Switch Meraki"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT05-006",
+      "group": "IT05",
+      "name": "Phần mềm diệt virus Kaspersky",
+      "unit": "Máy/năm",
+      "kind": "software_subscription",
+      "price": 1150000,
+      "aliases": [
+        "Phần mềm Kaspersky"
+      ],
+      "note": "",
+      "scope": "per_user"
+    },
+    {
+      "code": "IT05-007",
+      "group": "IT05",
+      "name": "Chứng chỉ SSL Wildcard",
+      "unit": "Tên miền/năm",
+      "kind": "software_subscription",
+      "price": 5750000,
+      "aliases": [
+        "Premium SSL Wildcard"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT06-001",
+      "group": "IT06",
+      "name": "Camera quan sát IP",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 6000000,
+      "aliases": [
+        "Camera quan sát"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT06-002",
+      "group": "IT06",
+      "name": "Đầu ghi hình camera (NVR)",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 20000000,
+      "aliases": [
+        "Đầu ghi hình Camera"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT06-003",
+      "group": "IT06",
+      "name": "Hệ thống Camera AI (trọn gói)",
+      "unit": "Hệ thống",
+      "kind": "hardware",
+      "price": 3000000000,
+      "aliases": [
+        "Camera AI"
+      ],
+      "note": "Giá theo dòng ngân sách 2025 (danh mục cũ để 0) - cần báo giá"
+    },
+    {
+      "code": "IT06-004",
+      "group": "IT06",
+      "name": "Thiết bị kiểm soát ra vào",
+      "unit": "Bộ",
+      "kind": "hardware",
+      "price": 8000000,
+      "aliases": [
+        "Thiết bị kiểm soát ra vào cửa"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT06-005",
+      "group": "IT06",
+      "name": "Máy chấm công",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 6900000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT07-001",
+      "group": "IT07",
+      "name": "Thiết bị họp trực tuyến phòng lớn",
+      "unit": "Bộ",
+      "kind": "hardware",
+      "price": 130000000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT07-002",
+      "group": "IT07",
+      "name": "Thiết bị họp trực tuyến phòng nhỏ",
+      "unit": "Bộ",
+      "kind": "hardware",
+      "price": 30000000,
+      "aliases": [
+        "Thiết bị họp trực tuyến"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT07-003",
+      "group": "IT07",
+      "name": "Nâng cấp phòng họp (trọn gói)",
+      "unit": "Phòng",
+      "kind": "hardware",
+      "price": 40000000,
+      "aliases": [
+        "phòng họp lầu 2",
+        "phòng họp 4 lầu 7 ",
+        "phòng họp 4 lầu 7",
+        "Phòng họp 3 lầu 7",
+        "phòng họp lầu 8"
+      ],
+      "note": "Gộp các dòng phòng họp lầu 2/7/8 của 2025"
+    },
+    {
+      "code": "IT07-004",
+      "group": "IT07",
+      "name": "Máy chiếu",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 45000000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT07-005",
+      "group": "IT07",
+      "name": "Tivi 85 inch",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 46000000,
+      "aliases": [
+        "Ti Vi 85\""
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT07-006",
+      "group": "IT07",
+      "name": "Tivi 65 inch",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 28750000,
+      "aliases": [
+        "Ti Vi 65\""
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT07-007",
+      "group": "IT07",
+      "name": "Tivi 55 inch",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 17250000,
+      "aliases": [
+        "Ti Vi 55\""
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT07-008",
+      "group": "IT07",
+      "name": "Hệ thống âm thanh phòng họp",
+      "unit": "Bộ",
+      "kind": "hardware",
+      "price": 40000000,
+      "aliases": [
+        "Thiết bị âm thanh"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT08-001",
+      "group": "IT08",
+      "name": "Bộ lưu điện UPS cho máy chủ",
+      "unit": "Bộ",
+      "kind": "hardware",
+      "price": 55000000,
+      "aliases": [
+        "Thiết bị lưu trữ điện server"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT08-002",
+      "group": "IT08",
+      "name": "Bộ lưu điện UPS cho máy trạm",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 2500000,
+      "aliases": [
+        "Thiết bị lưu trữ điện"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT08-003",
+      "group": "IT08",
+      "name": "Sàn nâng kỹ thuật phòng máy chủ",
+      "unit": "Gói",
+      "kind": "hardware",
+      "price": 17250000,
+      "aliases": [
+        "Sàn nâng",
+        "sàn nâng lầu 2"
+      ],
+      "note": "Dòng 'sàn nâng lầu 2' năm 2025 dùng giá 40.000.000 - kiểm tra lại"
+    },
+    {
+      "code": "IT08-004",
+      "group": "IT08",
+      "name": "Máy hút ẩm phòng máy chủ",
+      "unit": "Cái",
+      "kind": "hardware",
+      "price": 3450000,
+      "aliases": [
+        "Máy hút ẩm"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT09-001",
+      "group": "IT09",
+      "name": "Windows Server (bản quyền vĩnh viễn)",
+      "unit": "License",
+      "kind": "software_perpetual",
+      "price": 17250000,
+      "aliases": [
+        "Ms Windows máy chủ"
+      ],
+      "note": "",
+      "scope": "shared"
+    },
+    {
+      "code": "IT09-002",
+      "group": "IT09",
+      "name": "Windows máy trạm (bản quyền vĩnh viễn)",
+      "unit": "License",
+      "kind": "software_perpetual",
+      "price": 9200000,
+      "aliases": [
+        "Ms Windows máy trạm"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT09-003",
+      "group": "IT09",
+      "name": "SQL Server Standard",
+      "unit": "License",
+      "kind": "software_perpetual",
+      "price": 28750000,
+      "aliases": [
+        "Ms SQL standard"
+      ],
+      "note": "",
+      "scope": "shared"
+    },
+    {
+      "code": "IT09-004",
+      "group": "IT09",
+      "name": "SQL Server Enterprise",
+      "unit": "License",
+      "kind": "software_perpetual",
+      "price": 57500000,
+      "aliases": [
+        "Ms SQL Enterprise"
+      ],
+      "note": "",
+      "scope": "shared"
+    },
+    {
+      "code": "IT09-005",
+      "group": "IT09",
+      "name": "VMware vSphere (license)",
+      "unit": "License",
+      "kind": "software_perpetual",
+      "price": 0,
+      "aliases": [
+        "Lic VMware",
+        "Lic VVMware"
+      ],
+      "note": "Chưa có giá - cần báo giá",
+      "scope": "shared"
+    },
+    {
+      "code": "IT09-006",
+      "group": "IT09",
+      "name": "Microsoft 365 Business Basic",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 1725000,
+      "aliases": [
+        "Office 365 basic"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT09-007",
+      "group": "IT09",
+      "name": "Microsoft 365 Business Standard",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 3490000,
+      "aliases": [
+        "Office 365 standard",
+        "Phần mềm Microsoft STD"
+      ],
+      "note": "Bỏ dòng trùng 'Phần mềm Microsoft STD' (11.500.000)"
+    },
+    {
+      "code": "IT09-008",
+      "group": "IT09",
+      "name": "Microsoft 365 E3",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 8625000,
+      "aliases": [
+        "Ofiice 365 E3",
+        "Phần mềm Microsoft E3"
+      ],
+      "note": "Bỏ dòng trùng 'Phần mềm Microsoft E3' (23.000.000)"
+    },
+    {
+      "code": "IT09-009",
+      "group": "IT09",
+      "name": "Microsoft 365 E5",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 15000000,
+      "aliases": [
+        "Ofiice 365 E5"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT09-010",
+      "group": "IT09",
+      "name": "Phần mềm điều khiển từ xa AnyDesk",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 3450000,
+      "aliases": [
+        "Anydesk"
+      ],
+      "note": "",
+      "scope": "shared"
+    },
+    {
+      "code": "IT09-011",
+      "group": "IT09",
+      "name": "Phần mềm đọc / chỉnh sửa PDF (Adobe Acrobat, Foxit)",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 0,
+      "aliases": [
+        "pdf"
+      ],
+      "note": "Chưa có giá - cần báo giá (file định biên 2027 ghi nhu cầu pdf)"
+    },
+    {
+      "code": "IT10-001",
+      "group": "IT10",
+      "name": "Autodesk AutoCAD",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 44000000,
+      "aliases": [
+        "AutoCAD",
+        "autocad",
+        "AutoCAD bản quyền"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT10-002",
+      "group": "IT10",
+      "name": "Autodesk Revit",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 50000000,
+      "aliases": [
+        "Revit",
+        "Phần mềm Revit",
+        "Revit bản quyền"
+      ],
+      "note": "Bỏ dòng trùng 'Phần mềm Revit' (34.500.000)"
+    },
+    {
+      "code": "IT10-003",
+      "group": "IT10",
+      "name": "Autodesk Navisworks",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 68000000,
+      "aliases": [
+        "Naviwork"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT10-004",
+      "group": "IT10",
+      "name": "Tekla Structures",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 230000000,
+      "aliases": [
+        "Tekla"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT10-005",
+      "group": "IT10",
+      "name": "Tekla Model Sharing",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 30000000,
+      "aliases": [
+        "Tekla model sharing",
+        "Tekla Model sharing"
+      ],
+      "note": "Giá theo dòng ngân sách 2025 (danh mục cũ để 0)"
+    },
+    {
+      "code": "IT10-006",
+      "group": "IT10",
+      "name": "Trimble Connect",
+      "unit": "Gói/năm",
+      "kind": "software_subscription",
+      "price": 10000000,
+      "aliases": [
+        "Trimble connect"
+      ],
+      "note": "Giá theo dòng ngân sách 2025 (danh mục cũ để 0)"
+    },
+    {
+      "code": "IT10-007",
+      "group": "IT10",
+      "name": "SAP2000",
+      "unit": "License",
+      "kind": "software_subscription",
+      "price": 500000000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT10-008",
+      "group": "IT10",
+      "name": "ETABS",
+      "unit": "License",
+      "kind": "software_subscription",
+      "price": 500000000,
+      "aliases": [
+        "Etabs"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT10-009",
+      "group": "IT10",
+      "name": "STAAD.Pro",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 13800000,
+      "aliases": [
+        "Phần mềm Staadpro"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT10-010",
+      "group": "IT10",
+      "name": "IDEA StatiCa",
+      "unit": "License",
+      "kind": "software_subscription",
+      "price": 223000000,
+      "aliases": [
+        "idea",
+        "Ideas"
+      ],
+      "note": "Dòng 'Ideas' năm 2025 dùng giá 101.000.000 - kiểm tra lại"
+    },
+    {
+      "code": "IT10-011",
+      "group": "IT10",
+      "name": "SketchUp Pro",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 20000000,
+      "aliases": [
+        "Skchetup"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT10-012",
+      "group": "IT10",
+      "name": "Phần mềm BIM (gói)",
+      "unit": "Gói",
+      "kind": "software_subscription",
+      "price": 46000000,
+      "aliases": [
+        "BIM"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT10-013",
+      "group": "IT10",
+      "name": "EnjiCAD",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 30000000,
+      "aliases": [
+        "enjicad"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT10-014",
+      "group": "IT10",
+      "name": "ZWCAD",
+      "unit": "License",
+      "kind": "software_perpetual",
+      "price": 27000000,
+      "aliases": [
+        "zwCAD",
+        "Zwcad"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT10-015",
+      "group": "IT10",
+      "name": "Oracle Primavera P6",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 4600000,
+      "aliases": [
+        "Phần mềm Priramera P6"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT11-001",
+      "group": "IT11",
+      "name": "Microsoft Power BI Pro",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 3250000,
+      "aliases": [
+        "Power BI Pro",
+        "Phần mềm Power BI Pro"
+      ],
+      "note": "Bỏ dòng trùng 'Phần mềm Power BI Pro' (5.750.000)"
+    },
+    {
+      "code": "IT11-002",
+      "group": "IT11",
+      "name": "Dịch vụ phần mềm / hỗ trợ ứng dụng",
+      "unit": "Gói/năm",
+      "kind": "service",
+      "price": 8050000,
+      "aliases": [
+        "Dịch vụ Phần mềm"
+      ],
+      "note": "",
+      "scope": "shared"
+    },
+    {
+      "code": "IT12-001",
+      "group": "IT12",
+      "name": "Dịch vụ Cloud Viettel (hạ tầng máy chủ)",
+      "unit": "Gói/năm",
+      "kind": "service",
+      "price": 2000000000,
+      "aliases": [
+        "Dịch vụ Cloud Vietell"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT12-002",
+      "group": "IT12",
+      "name": "Cloud Viettel - hạ tầng cho ERP",
+      "unit": "Gói/năm",
+      "kind": "service",
+      "price": 57500000,
+      "aliases": [
+        "Triển cho ERPs"
+      ],
+      "note": "Diễn giải từ tên cũ 'Triển cho ERPs' - kiểm tra lại"
+    },
+    {
+      "code": "IT12-003",
+      "group": "IT12",
+      "name": "Cloud Viettel - hạ tầng cho eOffice",
+      "unit": "Gói/năm",
+      "kind": "service",
+      "price": 34500000,
+      "aliases": [
+        "Triển cho Eoffice"
+      ],
+      "note": "Diễn giải từ tên cũ 'Triển cho Eoffice' - kiểm tra lại"
+    },
+    {
+      "code": "IT12-004",
+      "group": "IT12",
+      "name": "Dịch vụ lưu trữ sao lưu Cloud Wasabi",
+      "unit": "Gói/năm",
+      "kind": "service",
+      "price": 13800000,
+      "aliases": [
+        "Dịch vụ Cloud Wasabi"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT12-005",
+      "group": "IT12",
+      "name": "Dịch vụ đường truyền Internet / kênh thuê riêng",
+      "unit": "Tháng",
+      "kind": "service",
+      "price": 11500000,
+      "aliases": [
+        "Dịch vụ đường truyền"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT12-006",
+      "group": "IT12",
+      "name": "Dịch vụ bảo trì, bảo dưỡng thiết bị CNTT",
+      "unit": "Lần",
+      "kind": "service",
+      "price": 5750000,
+      "aliases": [
+        "Dịch vụ bảo trì bảo dưỡng"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT12-007",
+      "group": "IT12",
+      "name": "Dịch vụ thuê máy photocopy",
+      "unit": "Tháng",
+      "kind": "service",
+      "price": 9200000,
+      "aliases": [
+        "Dịch vụ máy photo"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-001",
+      "group": "IT13",
+      "name": "Ổ cứng HDD 500GB",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 1000000,
+      "aliases": [
+        "Ổ cứng HDD 500Gb"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-002",
+      "group": "IT13",
+      "name": "Ổ cứng HDD 1TB",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 1800000,
+      "aliases": [
+        "Ổ cứng HDD 1000Gb"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-003",
+      "group": "IT13",
+      "name": "Ổ cứng HDD 2TB",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 3000000,
+      "aliases": [
+        "Ổ cứng HDD 2000Gb"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-004",
+      "group": "IT13",
+      "name": "Ổ cứng SSD 500GB",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 2070000,
+      "aliases": [
+        "Ổ cứng SSD 500Gb"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-005",
+      "group": "IT13",
+      "name": "Ổ cứng SSD 1TB",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 2875000,
+      "aliases": [
+        "Ổ cứng SSD 1000Gb"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-006",
+      "group": "IT13",
+      "name": "Ổ cứng SSD 2TB",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 6000000,
+      "aliases": [
+        "Ổ cứng SSD 2000Gb"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-007",
+      "group": "IT13",
+      "name": "RAM 8GB",
+      "unit": "Thanh",
+      "kind": "component",
+      "price": 1725000,
+      "aliases": [
+        "Bộ nhớ Ram 8"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-008",
+      "group": "IT13",
+      "name": "RAM 16GB",
+      "unit": "Thanh",
+      "kind": "component",
+      "price": 2875000,
+      "aliases": [
+        "Bộ nhớ Ram 16"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-009",
+      "group": "IT13",
+      "name": "RAM 32GB",
+      "unit": "Thanh",
+      "kind": "component",
+      "price": 5175000,
+      "aliases": [
+        "Bộ nhớ Ram 32"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-010",
+      "group": "IT13",
+      "name": "RAM 64GB",
+      "unit": "Thanh",
+      "kind": "component",
+      "price": 9200000,
+      "aliases": [
+        "Bộ nhớ Ram 64"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-011",
+      "group": "IT13",
+      "name": "Card màn hình (VGA)",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 11500000,
+      "aliases": [
+        "Card màn hình"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-012",
+      "group": "IT13",
+      "name": "Bộ nguồn máy tính (PSU)",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 2875000,
+      "aliases": [
+        "Nguồn PC"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-013",
+      "group": "IT13",
+      "name": "Chuột máy tính",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 345000,
+      "aliases": [
+        "Chuột"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-014",
+      "group": "IT13",
+      "name": "Bộ bàn phím + chuột",
+      "unit": "Bộ",
+      "kind": "component",
+      "price": 920000,
+      "aliases": [
+        "Combo phím chuột"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-015",
+      "group": "IT13",
+      "name": "Webcam",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 1150000,
+      "aliases": [],
+      "note": ""
+    },
+    {
+      "code": "IT13-016",
+      "group": "IT13",
+      "name": "USB lưu trữ",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 575000,
+      "aliases": [
+        "USB"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT13-017",
+      "group": "IT13",
+      "name": "Adapter / bộ sạc",
+      "unit": "Cái",
+      "kind": "component",
+      "price": 575000,
+      "aliases": [
+        "Adapter OT"
+      ],
+      "note": ""
+    },
+    {
+      "code": "IT14-001",
+      "group": "IT14",
+      "name": "Tư vấn chiến lược / lộ trình chuyển đổi số, kiến trúc hệ thống",
+      "unit": "Gói",
+      "kind": "service",
+      "price": 0,
+      "aliases": [],
+      "note": "Chưa có giá - cần báo giá"
+    },
+    {
+      "code": "IT14-002",
+      "group": "IT14",
+      "name": "Tư vấn triển khai ERP / phần mềm quản trị",
+      "unit": "Gói",
+      "kind": "service",
+      "price": 0,
+      "aliases": [],
+      "note": "Chưa có giá - cần báo giá. Nếu gắn với dự án hình thành phần mềm (TSCĐ vô hình) có thể được vốn hóa - xác nhận với Kế toán"
+    },
+    {
+      "code": "IT14-003",
+      "group": "IT14",
+      "name": "Tư vấn & đánh giá an ninh mạng (kiểm thử xâm nhập, rà quét lỗ hổng)",
+      "unit": "Lần",
+      "kind": "service",
+      "price": 0,
+      "aliases": [],
+      "note": "Chưa có giá - cần báo giá"
+    },
+    {
+      "code": "IT14-004",
+      "group": "IT14",
+      "name": "Tư vấn thiết kế hạ tầng mạng / phòng máy chủ",
+      "unit": "Gói",
+      "kind": "service",
+      "price": 0,
+      "aliases": [],
+      "note": "Chưa có giá - cần báo giá"
+    },
+    {
+      "code": "IT14-005",
+      "group": "IT14",
+      "name": "Tư vấn tuân thủ, chứng nhận an toàn thông tin (ISO 27001, cấp độ ATTT)",
+      "unit": "Gói",
+      "kind": "service",
+      "price": 0,
+      "aliases": [],
+      "note": "Chưa có giá - cần báo giá"
+    },
+    {
+      "code": "IT14-006",
+      "group": "IT14",
+      "name": "Tư vấn dữ liệu & báo cáo quản trị (BI)",
+      "unit": "Gói",
+      "kind": "service",
+      "price": 0,
+      "aliases": [],
+      "note": "Chưa có giá - cần báo giá"
+    },
+    {
+      "code": "IT14-007",
+      "group": "IT14",
+      "name": "Đào tạo CNTT (phần mềm, an toàn thông tin cho người dùng)",
+      "unit": "Khóa",
+      "kind": "service",
+      "price": 0,
+      "aliases": [],
+      "note": "Chưa có giá - cần báo giá",
+      "cost_lv2": "07.03. Đào tạo"
+    },
+    {
+      "code": "IT15-001",
+      "group": "IT15",
+      "name": "Thuê máy tính xách tay",
+      "unit": "Cái/tháng",
+      "kind": "service",
+      "price": 0,
+      "aliases": [],
+      "note": "Chưa có giá - cần báo giá",
+      "scope": "per_user"
+    },
+    {
+      "code": "IT15-002",
+      "group": "IT15",
+      "name": "Thuê chỗ đặt máy chủ (colocation) tại trung tâm dữ liệu",
+      "unit": "Tháng",
+      "kind": "service",
+      "price": 0,
+      "aliases": [],
+      "note": "Chưa có giá - cần báo giá"
+    },
+    {
+      "code": "IT15-003",
+      "group": "IT15",
+      "name": "Thuê máy chủ ảo (VPS / Cloud server)",
+      "unit": "Tháng",
+      "kind": "service",
+      "price": 0,
+      "aliases": [],
+      "note": "Chưa có giá - cần báo giá"
+    },
+    {
+      "code": "IT15-004",
+      "group": "IT15",
+      "name": "Thuê thiết bị mạng, wifi cho công trường / sự kiện",
+      "unit": "Tháng",
+      "kind": "service",
+      "price": 0,
+      "aliases": [],
+      "note": "Chưa có giá - cần báo giá"
+    },
+    {
+      "code": "IT15-005",
+      "group": "IT15",
+      "name": "Thuê đường truyền 4G/5G cho công trường",
+      "unit": "Tháng",
+      "kind": "service",
+      "price": 0,
+      "aliases": [],
+      "note": "Chưa có giá - cần báo giá"
+    },
+    {
+      "code": "IT15-006",
+      "group": "IT15",
+      "name": "Thuê dịch vụ in ấn (máy in đa năng tính theo trang)",
+      "unit": "Tháng",
+      "kind": "service",
+      "price": 0,
+      "aliases": [],
+      "note": "Chưa có giá - cần báo giá"
+    },
+    {
+      "code": "IT15-007",
+      "group": "IT15",
+      "name": "Thuê nhân sự CNTT bên ngoài (hỗ trợ người dùng, phát triển phần mềm)",
+      "unit": "Tháng",
+      "kind": "service",
+      "price": 0,
+      "aliases": [],
+      "note": "Chưa có giá - cần báo giá"
+    }
+  ],
+  "it_groups": [
+    {
+      "code": "IT01",
+      "name": "Thiết bị người dùng cuối",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_months": 36,
+      "scope": "per_user"
+    },
+    {
+      "code": "IT02",
+      "name": "Máy in, scan & thiết bị văn phòng số",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "cost_lv2": "04.06. Thiết bị quản lý - Thiết bị văn phòng",
+      "useful_months": 36,
+      "scope": "per_user"
+    },
+    {
+      "code": "IT03",
+      "name": "Máy chủ & lưu trữ",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_months": 60,
+      "scope": "shared",
+      "owner": "PHÒNG CNTT"
+    },
+    {
+      "code": "IT04",
+      "name": "Hạ tầng mạng LAN/WAN/Wifi",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_months": 60,
+      "scope": "shared",
+      "owner": "PHÒNG CNTT"
+    },
+    {
+      "code": "IT05",
+      "name": "An ninh mạng & bảo mật",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_months": 60,
+      "scope": "shared",
+      "owner": "PHÒNG CNTT"
+    },
+    {
+      "code": "IT06",
+      "name": "Camera, kiểm soát ra vào & chấm công",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_months": 60,
+      "scope": "shared",
+      "owner": "PHÒNG CNTT"
+    },
+    {
+      "code": "IT07",
+      "name": "Phòng họp & thiết bị nghe nhìn",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_months": 36,
+      "scope": "shared",
+      "owner": "PHÒNG CNTT"
+    },
+    {
+      "code": "IT08",
+      "name": "Phòng máy chủ & nguồn điện dự phòng",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_months": 60,
+      "scope": "shared",
+      "owner": "PHÒNG CNTT"
+    },
+    {
+      "code": "IT09",
+      "name": "Phần mềm hệ thống & văn phòng",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_months": 12,
+      "scope": "per_user"
+    },
+    {
+      "code": "IT10",
+      "name": "Phần mềm kỹ thuật – thiết kế",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_months": 12,
+      "scope": "per_user"
+    },
+    {
+      "code": "IT11",
+      "name": "Phần mềm quản trị doanh nghiệp",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_months": 12,
+      "scope": "per_user"
+    },
+    {
+      "code": "IT12",
+      "name": "Dịch vụ CNTT, Cloud & đường truyền",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_months": 12,
+      "scope": "shared",
+      "owner": "PHÒNG CNTT"
+    },
+    {
+      "code": "IT13",
+      "name": "Linh kiện, vật tư & thiết bị ngoại vi",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_months": 12,
+      "scope": "per_user"
+    },
+    {
+      "code": "IT14",
+      "name": "Dịch vụ tư vấn & đào tạo CNTT",
+      "kind": "service",
+      "scope": "shared",
+      "owner": "PHÒNG CNTT",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "cost_lv2": "06.99. Chi phí tư vấn khác",
+      "useful_months": 12
+    },
+    {
+      "code": "IT15",
+      "name": "Dịch vụ thuê thiết bị, hạ tầng & nhân sự CNTT",
+      "kind": "service",
+      "scope": "shared",
+      "owner": "PHÒNG CNTT",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "cost_lv2": "07.06. Hạ tầng, trang thiết bị",
+      "useful_months": 12
+    }
+  ],
+  "it_kinds": {
+    "hardware": "Phần cứng",
+    "component": "Linh kiện / vật tư",
+    "software_perpetual": "Phần mềm bản quyền vĩnh viễn",
+    "software_subscription": "Phần mềm thuê bao (theo năm)",
+    "service": "Dịch vụ CNTT"
+  },
+  "tscd_threshold": 30000000,
+  "it_catalog": [
+    {
+      "code": "IT01-001",
+      "name": "Máy tính để bàn Core i3",
+      "group": "IT01. Thiết bị người dùng cuối",
+      "price": 14000000,
+      "unit": "Bộ",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT01-002",
+      "name": "Máy tính để bàn Core i5",
+      "group": "IT01. Thiết bị người dùng cuối",
+      "price": 17000000,
+      "unit": "Bộ",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT01-003",
+      "name": "Máy tính để bàn Core i7",
+      "group": "IT01. Thiết bị người dùng cuối",
+      "price": 21000000,
+      "unit": "Bộ",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT01-004",
+      "name": "Máy tính xách tay Core i5",
+      "group": "IT01. Thiết bị người dùng cuối",
+      "price": 18000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT01-005",
+      "name": "Máy tính xách tay Core i7",
+      "group": "IT01. Thiết bị người dùng cuối",
+      "price": 25000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT01-006",
+      "name": "Máy tính xách tay có card đồ họa rời Core i5",
+      "group": "IT01. Thiết bị người dùng cuối",
+      "price": 25000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT01-007",
+      "name": "Máy tính xách tay có card đồ họa rời Core i7",
+      "group": "IT01. Thiết bị người dùng cuối",
+      "price": 33000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT01-008",
+      "name": "Máy trạm thiết kế (Workstation)",
+      "group": "IT01. Thiết bị người dùng cuối",
+      "price": 49000000,
+      "unit": "Bộ",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT01-009",
+      "name": "Máy trạm thiết kế cao cấp (Workstation)",
+      "group": "IT01. Thiết bị người dùng cuối",
+      "price": 99000000,
+      "unit": "Bộ",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT01-010",
+      "name": "Màn hình 24 inch",
+      "group": "IT01. Thiết bị người dùng cuối",
+      "price": 4000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT01-011",
+      "name": "Màn hình 27 inch",
+      "group": "IT01. Thiết bị người dùng cuối",
+      "price": 7000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT01-012",
+      "name": "Máy tính bảng",
+      "group": "IT01. Thiết bị người dùng cuối",
+      "price": 12000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT02-001",
+      "name": "Máy in A4 trắng đen",
+      "group": "IT02. Máy in, scan & thiết bị văn phòng số",
+      "price": 3450000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.06. Thiết bị quản lý - Thiết bị văn phòng",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT02-002",
+      "name": "Máy in màu A4",
+      "group": "IT02. Máy in, scan & thiết bị văn phòng số",
+      "price": 6900000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.06. Thiết bị quản lý - Thiết bị văn phòng",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT02-003",
+      "name": "Máy in A3 trắng đen",
+      "group": "IT02. Máy in, scan & thiết bị văn phòng số",
+      "price": 9200000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.06. Thiết bị quản lý - Thiết bị văn phòng",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT02-004",
+      "name": "Máy in màu A3",
+      "group": "IT02. Máy in, scan & thiết bị văn phòng số",
+      "price": 13800000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.06. Thiết bị quản lý - Thiết bị văn phòng",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT02-005",
+      "name": "Máy scan tài liệu",
+      "group": "IT02. Máy in, scan & thiết bị văn phòng số",
+      "price": 5750000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.06. Thiết bị quản lý - Thiết bị văn phòng",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT02-006",
+      "name": "Máy photocopy",
+      "group": "IT02. Máy in, scan & thiết bị văn phòng số",
+      "price": 23000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.06. Thiết bị quản lý - Thiết bị văn phòng",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT03-001",
+      "name": "Máy chủ (Server)",
+      "group": "IT03. Máy chủ & lưu trữ",
+      "price": 300000000,
+      "unit": "Bộ",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT03-002",
+      "name": "Thiết bị lưu trữ NAS",
+      "group": "IT03. Máy chủ & lưu trữ",
+      "price": 400000000,
+      "unit": "Bộ",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT03-003",
+      "name": "Thiết bị lưu trữ SAN",
+      "group": "IT03. Máy chủ & lưu trữ",
+      "price": 2000000000,
+      "unit": "Bộ",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT03-004",
+      "name": "Ổ cứng chuyên dụng cho NAS",
+      "group": "IT03. Máy chủ & lưu trữ",
+      "price": 3450000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT03-005",
+      "name": "Ổ cứng lưu trữ gắn ngoài",
+      "group": "IT03. Máy chủ & lưu trữ",
+      "price": 5750000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-001",
+      "name": "Switch Core",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 120000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-002",
+      "name": "Switch tầng (Access)",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 50000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-003",
+      "name": "Bộ phát Wifi trong nhà (Access Point)",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 10000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-004",
+      "name": "Bộ phát Wifi ngoài trời",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 24000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-005",
+      "name": "Tủ rack 42U",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 8000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-006",
+      "name": "Tủ rack 12U",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 4000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-007",
+      "name": "Tủ rack 9U",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 2000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-008",
+      "name": "Tủ rack 6U",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 1800000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-009",
+      "name": "Hộp phối quang (ODF)",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 4000000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-010",
+      "name": "Bộ chuyển đổi quang điện (Media converter)",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 3450000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-011",
+      "name": "Module quang SFP",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 1725000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-012",
+      "name": "Dây nhảy cáp quang",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 575000,
+      "unit": "Sợi",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-013",
+      "name": "Dây nhảy cáp đồng (Patch cord)",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 345000,
+      "unit": "Sợi",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-014",
+      "name": "Bộ test mạng",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 6900000,
+      "unit": "Bộ",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-015",
+      "name": "Router cân bằng tải Peplink B One (văn phòng nhỏ / công trường; thay Balance 20X đã ngừng SX)",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 9514000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-016",
+      "name": "Router cân bằng tải Peplink Balance 310X (văn phòng / nhà máy vừa, 3 WAN)",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 76824000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-017",
+      "name": "Router cân bằng tải Peplink Balance 380 (trụ sở / nhà máy, nhiều WAN)",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 79474000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-018",
+      "name": "Router cân bằng tải Peplink Balance 710 (trung tâm, băng thông lớn)",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 132474000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-019",
+      "name": "Router 4G/5G Peplink MAX BR1 Pro 5G (công trường, dự phòng di động)",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 26474000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-020",
+      "name": "Gói bảo hành & cập nhật Peplink PrimeCare (gồm InControl2)",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 6598000,
+      "unit": "Thiết bị/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT04-021",
+      "name": "Gói Peplink SpeedFusion Connect Unlimited 1 năm (gộp băng thông, VPN liên site)",
+      "group": "IT04. Hạ tầng mạng LAN/WAN/Wifi",
+      "price": 21200000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT05-001",
+      "name": "Thiết bị tường lửa Cisco Meraki",
+      "group": "IT05. An ninh mạng & bảo mật",
+      "price": 250000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT05-002",
+      "name": "Thiết bị tường lửa Fortinet FortiGate",
+      "group": "IT05. An ninh mạng & bảo mật",
+      "price": 200000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT05-003",
+      "name": "License tường lửa Cisco Meraki (gia hạn năm)",
+      "group": "IT05. An ninh mạng & bảo mật",
+      "price": 150000000,
+      "unit": "Gói/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT05-004",
+      "name": "License tường lửa FortiGate (gia hạn năm)",
+      "group": "IT05. An ninh mạng & bảo mật",
+      "price": 110000000,
+      "unit": "Gói/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT05-005",
+      "name": "License Switch Cisco Meraki (gia hạn năm)",
+      "group": "IT05. An ninh mạng & bảo mật",
+      "price": 23000000,
+      "unit": "Gói/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT05-006",
+      "name": "Phần mềm diệt virus Kaspersky",
+      "group": "IT05. An ninh mạng & bảo mật",
+      "price": 1150000,
+      "unit": "Máy/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT05-007",
+      "name": "Chứng chỉ SSL Wildcard",
+      "group": "IT05. An ninh mạng & bảo mật",
+      "price": 5750000,
+      "unit": "Tên miền/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT06-001",
+      "name": "Camera quan sát IP",
+      "group": "IT06. Camera, kiểm soát ra vào & chấm công",
+      "price": 6000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT06-002",
+      "name": "Đầu ghi hình camera (NVR)",
+      "group": "IT06. Camera, kiểm soát ra vào & chấm công",
+      "price": 20000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT06-003",
+      "name": "Hệ thống Camera AI (trọn gói)",
+      "group": "IT06. Camera, kiểm soát ra vào & chấm công",
+      "price": 3000000000,
+      "unit": "Hệ thống",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT06-004",
+      "name": "Thiết bị kiểm soát ra vào",
+      "group": "IT06. Camera, kiểm soát ra vào & chấm công",
+      "price": 8000000,
+      "unit": "Bộ",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT06-005",
+      "name": "Máy chấm công",
+      "group": "IT06. Camera, kiểm soát ra vào & chấm công",
+      "price": 6900000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT07-001",
+      "name": "Thiết bị họp trực tuyến phòng lớn",
+      "group": "IT07. Phòng họp & thiết bị nghe nhìn",
+      "price": 130000000,
+      "unit": "Bộ",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT07-002",
+      "name": "Thiết bị họp trực tuyến phòng nhỏ",
+      "group": "IT07. Phòng họp & thiết bị nghe nhìn",
+      "price": 30000000,
+      "unit": "Bộ",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT07-003",
+      "name": "Nâng cấp phòng họp (trọn gói)",
+      "group": "IT07. Phòng họp & thiết bị nghe nhìn",
+      "price": 40000000,
+      "unit": "Phòng",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT07-004",
+      "name": "Máy chiếu",
+      "group": "IT07. Phòng họp & thiết bị nghe nhìn",
+      "price": 45000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT07-005",
+      "name": "Tivi 85 inch",
+      "group": "IT07. Phòng họp & thiết bị nghe nhìn",
+      "price": 46000000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT07-006",
+      "name": "Tivi 65 inch",
+      "group": "IT07. Phòng họp & thiết bị nghe nhìn",
+      "price": 28750000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT07-007",
+      "name": "Tivi 55 inch",
+      "group": "IT07. Phòng họp & thiết bị nghe nhìn",
+      "price": 17250000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT07-008",
+      "name": "Hệ thống âm thanh phòng họp",
+      "group": "IT07. Phòng họp & thiết bị nghe nhìn",
+      "price": 40000000,
+      "unit": "Bộ",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 3.0
+    },
+    {
+      "code": "IT08-001",
+      "name": "Bộ lưu điện UPS cho máy chủ",
+      "group": "IT08. Phòng máy chủ & nguồn điện dự phòng",
+      "price": 55000000,
+      "unit": "Bộ",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT08-002",
+      "name": "Bộ lưu điện UPS cho máy trạm",
+      "group": "IT08. Phòng máy chủ & nguồn điện dự phòng",
+      "price": 2500000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT08-003",
+      "name": "Sàn nâng kỹ thuật phòng máy chủ",
+      "group": "IT08. Phòng máy chủ & nguồn điện dự phòng",
+      "price": 17250000,
+      "unit": "Gói",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT08-004",
+      "name": "Máy hút ẩm phòng máy chủ",
+      "group": "IT08. Phòng máy chủ & nguồn điện dự phòng",
+      "price": 3450000,
+      "unit": "Cái",
+      "kind": "hardware",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 5.0
+    },
+    {
+      "code": "IT09-001",
+      "name": "Windows Server (bản quyền vĩnh viễn)",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 17250000,
+      "unit": "License",
+      "kind": "software_perpetual",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E1. BQPM: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-002",
+      "name": "Windows máy trạm (bản quyền vĩnh viễn)",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 9200000,
+      "unit": "License",
+      "kind": "software_perpetual",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E1. BQPM: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-003",
+      "name": "SQL Server Standard",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 28750000,
+      "unit": "License",
+      "kind": "software_perpetual",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E1. BQPM: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-004",
+      "name": "SQL Server Enterprise",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 57500000,
+      "unit": "License",
+      "kind": "software_perpetual",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E1. BQPM: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-005",
+      "name": "VMware vSphere (license)",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 0,
+      "unit": "License",
+      "kind": "software_perpetual",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E1. BQPM: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-006",
+      "name": "Microsoft 365 Business Basic",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 1725000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-007",
+      "name": "Microsoft 365 Business Standard",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 3490000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-008",
+      "name": "Microsoft 365 E3",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 8625000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-009",
+      "name": "Microsoft 365 E5",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 15000000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-010",
+      "name": "Phần mềm điều khiển từ xa AnyDesk",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 3450000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-011",
+      "name": "Phần mềm đọc / chỉnh sửa PDF (Adobe Acrobat, Foxit)",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 0,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-001",
+      "name": "Autodesk AutoCAD",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 44000000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-002",
+      "name": "Autodesk Revit",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 50000000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-003",
+      "name": "Autodesk Navisworks",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 68000000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-004",
+      "name": "Tekla Structures",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 230000000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-005",
+      "name": "Tekla Model Sharing",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 30000000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-006",
+      "name": "Trimble Connect",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 10000000,
+      "unit": "Gói/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-007",
+      "name": "SAP2000",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 500000000,
+      "unit": "License",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-008",
+      "name": "ETABS",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 500000000,
+      "unit": "License",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-009",
+      "name": "STAAD.Pro",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 13800000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-010",
+      "name": "IDEA StatiCa",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 223000000,
+      "unit": "License",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-011",
+      "name": "SketchUp Pro",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 20000000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-012",
+      "name": "Phần mềm BIM (gói)",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 46000000,
+      "unit": "Gói",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-013",
+      "name": "EnjiCAD",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 30000000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-014",
+      "name": "ZWCAD",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 27000000,
+      "unit": "License",
+      "kind": "software_perpetual",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E1. BQPM: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-015",
+      "name": "Oracle Primavera P6",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 4600000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT11-001",
+      "name": "Microsoft Power BI Pro",
+      "group": "IT11. Phần mềm quản trị doanh nghiệp",
+      "price": 3250000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT11-002",
+      "name": "Dịch vụ phần mềm / hỗ trợ ứng dụng",
+      "group": "IT11. Phần mềm quản trị doanh nghiệp",
+      "price": 8050000,
+      "unit": "Gói/năm",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT12-001",
+      "name": "Dịch vụ Cloud Viettel (hạ tầng máy chủ)",
+      "group": "IT12. Dịch vụ CNTT, Cloud & đường truyền",
+      "price": 2000000000,
+      "unit": "Gói/năm",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT12-002",
+      "name": "Cloud Viettel - hạ tầng cho ERP",
+      "group": "IT12. Dịch vụ CNTT, Cloud & đường truyền",
+      "price": 57500000,
+      "unit": "Gói/năm",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT12-003",
+      "name": "Cloud Viettel - hạ tầng cho eOffice",
+      "group": "IT12. Dịch vụ CNTT, Cloud & đường truyền",
+      "price": 34500000,
+      "unit": "Gói/năm",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT12-004",
+      "name": "Dịch vụ lưu trữ sao lưu Cloud Wasabi",
+      "group": "IT12. Dịch vụ CNTT, Cloud & đường truyền",
+      "price": 13800000,
+      "unit": "Gói/năm",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT12-005",
+      "name": "Dịch vụ đường truyền Internet / kênh thuê riêng",
+      "group": "IT12. Dịch vụ CNTT, Cloud & đường truyền",
+      "price": 11500000,
+      "unit": "Tháng",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT12-006",
+      "name": "Dịch vụ bảo trì, bảo dưỡng thiết bị CNTT",
+      "group": "IT12. Dịch vụ CNTT, Cloud & đường truyền",
+      "price": 5750000,
+      "unit": "Lần",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT12-007",
+      "name": "Dịch vụ thuê máy photocopy",
+      "group": "IT12. Dịch vụ CNTT, Cloud & đường truyền",
+      "price": 9200000,
+      "unit": "Tháng",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-001",
+      "name": "Ổ cứng HDD 500GB",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 1000000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-002",
+      "name": "Ổ cứng HDD 1TB",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 1800000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-003",
+      "name": "Ổ cứng HDD 2TB",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 3000000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-004",
+      "name": "Ổ cứng SSD 500GB",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 2070000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-005",
+      "name": "Ổ cứng SSD 1TB",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 2875000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-006",
+      "name": "Ổ cứng SSD 2TB",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 6000000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-007",
+      "name": "RAM 8GB",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 1725000,
+      "unit": "Thanh",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-008",
+      "name": "RAM 16GB",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 2875000,
+      "unit": "Thanh",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-009",
+      "name": "RAM 32GB",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 5175000,
+      "unit": "Thanh",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-010",
+      "name": "RAM 64GB",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 9200000,
+      "unit": "Thanh",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-011",
+      "name": "Card màn hình (VGA)",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 11500000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-012",
+      "name": "Bộ nguồn máy tính (PSU)",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 2875000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-013",
+      "name": "Chuột máy tính",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 345000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-014",
+      "name": "Bộ bàn phím + chuột",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 920000,
+      "unit": "Bộ",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-015",
+      "name": "Webcam",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 1150000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-016",
+      "name": "USB lưu trữ",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 575000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT13-017",
+      "name": "Adapter / bộ sạc",
+      "group": "IT13. Linh kiện, vật tư & thiết bị ngoại vi",
+      "price": 575000,
+      "unit": "Cái",
+      "kind": "component",
+      "asset_cat1": "D. Thiết bị, dụng cụ quản lý",
+      "asset_cat2": "D1. TBQL: Mua mới",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.03. Thiết bị quản lý - Thiết bị CNTT",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT14-001",
+      "name": "Tư vấn chiến lược / lộ trình chuyển đổi số, kiến trúc hệ thống",
+      "group": "IT14. Dịch vụ tư vấn & đào tạo CNTT",
+      "price": 0,
+      "unit": "Gói",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "06. Chi phí tư vấn",
+      "cost_lv2": "06.99. Chi phí tư vấn khác",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT14-002",
+      "name": "Tư vấn triển khai ERP / phần mềm quản trị",
+      "group": "IT14. Dịch vụ tư vấn & đào tạo CNTT",
+      "price": 0,
+      "unit": "Gói",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "06. Chi phí tư vấn",
+      "cost_lv2": "06.99. Chi phí tư vấn khác",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT14-003",
+      "name": "Tư vấn & đánh giá an ninh mạng (kiểm thử xâm nhập, rà quét lỗ hổng)",
+      "group": "IT14. Dịch vụ tư vấn & đào tạo CNTT",
+      "price": 0,
+      "unit": "Lần",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "06. Chi phí tư vấn",
+      "cost_lv2": "06.99. Chi phí tư vấn khác",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT14-004",
+      "name": "Tư vấn thiết kế hạ tầng mạng / phòng máy chủ",
+      "group": "IT14. Dịch vụ tư vấn & đào tạo CNTT",
+      "price": 0,
+      "unit": "Gói",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "06. Chi phí tư vấn",
+      "cost_lv2": "06.99. Chi phí tư vấn khác",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT14-005",
+      "name": "Tư vấn tuân thủ, chứng nhận an toàn thông tin (ISO 27001, cấp độ ATTT)",
+      "group": "IT14. Dịch vụ tư vấn & đào tạo CNTT",
+      "price": 0,
+      "unit": "Gói",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "06. Chi phí tư vấn",
+      "cost_lv2": "06.99. Chi phí tư vấn khác",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT14-006",
+      "name": "Tư vấn dữ liệu & báo cáo quản trị (BI)",
+      "group": "IT14. Dịch vụ tư vấn & đào tạo CNTT",
+      "price": 0,
+      "unit": "Gói",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "06. Chi phí tư vấn",
+      "cost_lv2": "06.99. Chi phí tư vấn khác",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT14-007",
+      "name": "Đào tạo CNTT (phần mềm, an toàn thông tin cho người dùng)",
+      "group": "IT14. Dịch vụ tư vấn & đào tạo CNTT",
+      "price": 0,
+      "unit": "Khóa",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "07. Chi phí QLDA",
+      "cost_lv2": "07.03. Đào tạo",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT15-001",
+      "name": "Thuê máy tính xách tay",
+      "group": "IT15. Dịch vụ thuê thiết bị, hạ tầng & nhân sự CNTT",
+      "price": 0,
+      "unit": "Cái/tháng",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "07. Chi phí QLDA",
+      "cost_lv2": "07.06. Hạ tầng, trang thiết bị",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT15-002",
+      "name": "Thuê chỗ đặt máy chủ (colocation) tại trung tâm dữ liệu",
+      "group": "IT15. Dịch vụ thuê thiết bị, hạ tầng & nhân sự CNTT",
+      "price": 0,
+      "unit": "Tháng",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "07. Chi phí QLDA",
+      "cost_lv2": "07.06. Hạ tầng, trang thiết bị",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT15-003",
+      "name": "Thuê máy chủ ảo (VPS / Cloud server)",
+      "group": "IT15. Dịch vụ thuê thiết bị, hạ tầng & nhân sự CNTT",
+      "price": 0,
+      "unit": "Tháng",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "07. Chi phí QLDA",
+      "cost_lv2": "07.06. Hạ tầng, trang thiết bị",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT15-004",
+      "name": "Thuê thiết bị mạng, wifi cho công trường / sự kiện",
+      "group": "IT15. Dịch vụ thuê thiết bị, hạ tầng & nhân sự CNTT",
+      "price": 0,
+      "unit": "Tháng",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "07. Chi phí QLDA",
+      "cost_lv2": "07.06. Hạ tầng, trang thiết bị",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT15-005",
+      "name": "Thuê đường truyền 4G/5G cho công trường",
+      "group": "IT15. Dịch vụ thuê thiết bị, hạ tầng & nhân sự CNTT",
+      "price": 0,
+      "unit": "Tháng",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "07. Chi phí QLDA",
+      "cost_lv2": "07.06. Hạ tầng, trang thiết bị",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT15-006",
+      "name": "Thuê dịch vụ in ấn (máy in đa năng tính theo trang)",
+      "group": "IT15. Dịch vụ thuê thiết bị, hạ tầng & nhân sự CNTT",
+      "price": 0,
+      "unit": "Tháng",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "07. Chi phí QLDA",
+      "cost_lv2": "07.06. Hạ tầng, trang thiết bị",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT15-007",
+      "name": "Thuê nhân sự CNTT bên ngoài (hỗ trợ người dùng, phát triển phần mềm)",
+      "group": "IT15. Dịch vụ thuê thiết bị, hạ tầng & nhân sự CNTT",
+      "price": 0,
+      "unit": "Tháng",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "07. Chi phí QLDA",
+      "cost_lv2": "07.06. Hạ tầng, trang thiết bị",
+      "useful_life": 1.0
+    }
+  ],
+  "hc_site_overrides": {},
+  "hc_kit_overrides": {
+    "nhân viên kế toán | nhân viên": "KIT05",
+    "thư ký phòng | chuyên viên": "KIT01"
+  },
+  "infra_owner": "PHÒNG CNTT",
+  "fx_usd_vnd": 26500
+}
