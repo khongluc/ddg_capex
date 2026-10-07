@@ -319,6 +319,8 @@ with st.sidebar:
         <div style="font-size:12px;margin-top:4px;"><span class="badge-code">{db.ROLE_LABELS.get(current_user.role, current_user.role)}</span></div>
     </div>
     """, unsafe_allow_html=True)
+    if current_user.is_admin:
+        st.caption("💾 CSDL: " + ("PostgreSQL (lưu bền)" if db.using_server_db() else "SQLite (file cục bộ)"))
     if st.button("🚪 Đăng xuất", use_container_width=True):
         auth.logout()
 
@@ -604,6 +606,18 @@ def render_admin_page():
         import json as _json
         import zipfile as _zip
         from master_data import MASTER_DATA_FILE
+        st.markdown("##### CSDL đang dùng")
+        try:
+            _si = db.storage_info()
+            if _si["durable"]:
+                st.success(f"✅ **{_si['backend']}** – lưu bền ({_si.get('server', '')}) · máy chủ `{_si['location']}`")
+            else:
+                st.warning(f"⚠️ **{_si['backend']}** – file `{_si['location']}`. Trên Streamlit Cloud dữ liệu có thể mất khi app "
+                           "khởi động lại; thêm mục [database] url vào Secrets để dùng PostgreSQL.")
+            st.dataframe(pd.DataFrame([{"Bảng": k, "Số dòng": v} for k, v in _si["rows"].items()]),
+                         hide_index=True, use_container_width=False)
+        except Exception as _exc:
+            st.error(f"❌ Không kết nối được CSDL: {_exc}")
         st.markdown("##### Sao lưu toàn bộ dữ liệu")
         st.caption("Gồm CSDL (người dùng, phân quyền, ngân sách các năm, định biên, nhật ký) và danh mục CNTT. "
                    "Khi chạy trên dịch vụ miễn phí không có ổ đĩa lưu bền (vd. Streamlit Community Cloud), "

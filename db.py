@@ -562,3 +562,20 @@ def restore_bytes(data: bytes):
                     conn.executemany(f"INSERT INTO {table}({', '.join(use)}) VALUES ({','.join('?' * len(use))})", rows)
     finally:
         os.remove(tmp)
+
+
+def storage_info() -> Dict[str, Any]:
+    """Thông tin CSDL đang dùng (không lộ mật khẩu) + số dòng từng bảng - để kiểm tra lưu trữ."""
+    init_db()
+    url = _database_url()
+    if url:
+        from urllib.parse import urlparse
+        u = urlparse(url)
+        info = {"backend": "PostgreSQL", "durable": True, "location": f"{u.hostname}/{(u.path or '/').lstrip('/')}"}
+    else:
+        info = {"backend": "SQLite", "durable": False, "location": DB_PATH}
+    with connect() as conn:
+        info["rows"] = {t: conn.execute(f"SELECT COUNT(*) AS n FROM {t}").fetchone()["n"] for t in TABLE_COLUMNS}
+        if url:
+            info["server"] = conn.execute("SELECT version() AS v").fetchone()["v"].split(" on ")[0]
+    return info
