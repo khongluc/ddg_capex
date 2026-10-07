@@ -112,12 +112,28 @@ def _render_blocked(user: Dict[str, Any], message: str):
     st.stop()
 
 
+def _is_local_request() -> bool:
+    """Truy cập từ chính máy chạy app (localhost). Không có header (chạy test) cũng coi là local."""
+    try:
+        host = str(st.context.headers.get("Host") or "")
+    except Exception:
+        return True
+    if not host:
+        return True
+    host = host.rsplit(":", 1)[0] if not host.startswith("[") else host.split("]")[0] + "]"
+    return host in ("localhost", "127.0.0.1", "[::1]")
+
+
 def require_login() -> CurrentUser:
     """Show the login page until the visitor is authenticated and authorized; return the current user."""
     db.init_db()
     cfg = _icost_cfg()
     providers = _configured_providers()
     dev_login = bool(cfg.get("dev_login", False))
+    if dev_login and not _is_local_request():
+        # Đăng nhập thử chỉ dùng trên máy phát triển: trên server, ai cũng gõ được email admin
+        dev_login = False
+        st.session_state.pop("dev_login_email", None)
     admin_emails = {e.strip().lower() for e in cfg.get("admin_emails", [])}
     allowed_domains = [d.strip().lower().lstrip("@") for d in cfg.get("allowed_domains", [])]
 

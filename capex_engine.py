@@ -468,6 +468,15 @@ def export_capex_to_excel(df: pd.DataFrame, metadata: Dict[str, Any], months: Li
 
         current_row += 1
 
+    # Chống chèn công thức (CSV/Excel injection): chữ người dùng nhập bắt đầu bằng = + - @ luôn lưu dạng chữ,
+    # chỉ các cột công thức do hệ thống tạo (O, AE..AR) giữ công thức
+    text_cols = set(range(3, 13)) | {16, 17, 18} | set(range(45, 56))
+    for r_idx in range(26, current_row):
+        for c_idx in text_cols:
+            cell = ws.cell(row=r_idx, column=c_idx)
+            if isinstance(cell.value, str) and cell.value[:1] in ("=", "+", "-", "@", chr(9), chr(13)):
+                cell.data_type = "s"
+
     # Total Summary Row at bottom
     if len(df) > 0:
         tot_r = current_row
