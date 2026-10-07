@@ -1,0 +1,6 @@
+[client]
+# Ẩn menu/nút dành cho lập trình viên (Deploy, Rerun, Settings...) với người dùng
+toolbarMode = "viewer"
+
+[browser]
+gatherUsageStats = false

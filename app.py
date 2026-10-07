@@ -52,7 +52,7 @@ from capex_engine import (
 
 # Page configuration
 st.set_page_config(
-    page_title="Hệ thống Quản lý & Tính toán CAPEX - Đại Dũng Corp",
+    page_title="Hệ thống ngân sách",
     page_icon="💼",
     layout="wide",
     initial_sidebar_state="expanded"

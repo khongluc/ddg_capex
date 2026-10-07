@@ -74,10 +74,11 @@ def logout():
 
 
 def _render_login_page(providers: List[str], dev_login: bool):
+    # Màn hình trước đăng nhập: không hiển thị tên công ty / thông tin cấu hình nội bộ
     st.markdown("""
-    <div style="max-width:460px;margin:60px auto 20px auto;text-align:center;">
-        <h2 style="color:#0F2C59;margin-bottom:4px;">💼 HỆ THỐNG NGÂN SÁCH CAPEX</h2>
-        <p style="color:#64748B;">Công ty CP Cơ khí Xây dựng Thương mại Đại Dũng<br>Vui lòng đăng nhập để lập ngân sách cho site được phân công</p>
+    <div style="max-width:420px;margin:72px auto 20px auto;text-align:center;">
+        <h2 style="color:#0F2C59;margin-bottom:4px;">🔒 Đăng nhập</h2>
+        <p style="color:#64748B;">Hệ thống nội bộ – chỉ dành cho người được cấp quyền.</p>
     </div>
     """, unsafe_allow_html=True)
     _, mid, _ = st.columns([1, 1.2, 1])
@@ -86,7 +87,10 @@ def _render_login_page(providers: List[str], dev_login: bool):
             st.button(PROVIDERS[p], key=f"login_{p}", use_container_width=True,
                       on_click=st.login, args=(p,))
         if not providers:
-            st.warning("Chưa cấu hình nhà cung cấp đăng nhập. Xem `.streamlit/secrets.toml.example` (mục [auth.ultraid], [auth.google]).")
+            if _is_local_request():
+                st.warning("Chưa cấu hình nhà cung cấp đăng nhập. Xem `.streamlit/secrets.toml.example` (mục [auth.ultraid], [auth.google]).")
+            else:
+                st.info("Hệ thống đang được cấu hình, chưa thể đăng nhập. Vui lòng liên hệ quản trị.")
         if dev_login:
             with st.form("dev_login"):
                 st.caption("⚠️ Chế độ đăng nhập thử (dev_login = true) - chỉ dùng khi phát triển")
