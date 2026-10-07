@@ -1811,17 +1811,25 @@ with tab_infra:
             g = df_inf.groupby("it_group")["total_budget"].sum().sort_values(ascending=False)
             st.caption("Tổng hạ tầng của site: **" + format_vnd(df_inf["total_budget"].sum()) + "** · "
                        + " · ".join(f"{k}: {format_vnd_short(v)}" for k, v in g.items()))
+        if can_edit:
+            st.caption("Nhập xong ô cuối cùng, nhấn **Enter** (hoặc bấm ra ngoài bảng) rồi mới bấm Lưu, để ô vừa gõ được ghi nhận.")
         if can_edit and st.button("💾 Lưu hạ tầng CNTT của site", type="primary", key="infra_save"):
             new_rows, errs = [], []
             entity = (df_site["entity"].mode().iloc[0] if "entity" in df_site.columns and not df_site["entity"].dropna().empty else "DDC")
             for i, r in ed_inf.iterrows():
                 code = sh_by_label.get(r.get("item"))
+                filled = any(str(r.get(k) or "").strip() for k in ("item", "quantity", "unit_price", "need_reason"))
                 if not code:
+                    if filled:  # dòng có nhập nhưng chưa chọn hạng mục -> báo, không bỏ qua lặng lẽ
+                        errs.append(f"Dòng {i + 1}: chưa chọn 'Hạng mục hạ tầng'")
                     continue
                 item = sh_by_code[code]
                 reason = str(r.get("need_reason") or "").strip()
                 if not reason:
                     errs.append(f"Dòng {i + 1} ({item['name']}): thiếu căn cứ / lý do")
+                    continue
+                if r.get("month") not in months:
+                    errs.append(f"Dòng {i + 1} ({item['name']}): chưa chọn 'Tháng triển khai'")
                     continue
                 price = r.get("unit_price")
                 row = {"entity": entity, "location": SITE_NAME.get(selected_site, selected_site),
@@ -1837,7 +1845,15 @@ with tab_infra:
                 st.error("Chưa lưu – " + "; ".join(errs))
             else:
                 save_site(pd.concat([df_site[~infra_mask], pd.DataFrame(new_rows)], ignore_index=True), selected_site)
-                st.session_state["flash"] = f"Đã lưu {len(new_rows)} hạng mục hạ tầng CNTT dùng chung của {site_label(selected_site)}."
+                # đọc lại từ CSDL để xác nhận đã ghi thật
+                saved = [l for l in db.load_lines(budget_year, [selected_site]) if l.get("need_type") == qt.NEED_INFRA]
+                where = "PostgreSQL" if db.using_server_db() else "SQLite"
+                if len(saved) == len(new_rows):
+                    st.session_state["flash"] = (f"✅ Đã lưu {len(new_rows)} hạng mục hạ tầng CNTT dùng chung của {site_label(selected_site)} "
+                                                 f"vào CSDL {where} (tổng {format_vnd(sum(l.get('total_budget', 0) for l in saved))}).")
+                else:
+                    st.session_state["flash"] = (f"⚠️ Đã gửi {len(new_rows)} dòng nhưng CSDL {where} đang có {len(saved)} dòng hạ tầng – "
+                                                 "vui lòng kiểm tra lại.")
                 st.rerun()
 
 
