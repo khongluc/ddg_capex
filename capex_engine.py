@@ -470,6 +470,9 @@ def export_capex_to_excel(df: pd.DataFrame, metadata: Dict[str, Any], months: Li
 
     # Chống chèn công thức (CSV/Excel injection): chữ người dùng nhập bắt đầu bằng = + - @ luôn lưu dạng chữ,
     # chỉ các cột công thức do hệ thống tạo (O, AE..AR) giữ công thức
+    for ref in ("C15", "C17", "C18", "C19", "C20"):  # ô tiêu đề lấy từ dữ liệu người dùng (vd. tên phòng ban)
+        if isinstance(ws[ref].value, str) and ws[ref].value[:1] in ("=", "+", "-", "@", chr(9), chr(13)):
+            ws[ref].data_type = "s"
     text_cols = set(range(3, 13)) | {16, 17, 18} | set(range(45, 56))
     for r_idx in range(26, current_row):
         for c_idx in text_cols:

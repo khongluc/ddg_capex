@@ -8,5 +8,5 @@ echo.
 echo Dang khoi dong WebApp CAPEX...
 echo Trinh duyet se tu dong mo tai: http://localhost:8501
 echo.
-python -m streamlit run app.py --server.port 8501
+python -m streamlit run app.py --server.port 8501 --server.address localhost
 pause

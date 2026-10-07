@@ -128,6 +128,19 @@ def _render_blocked(user: Dict[str, Any], message: str):
     st.stop()
 
 
+def _dev_login_allowed(providers: List[str]) -> bool:
+    """Đăng nhập thử chỉ khi máy chủ Streamlit chỉ lắng nghe trên localhost (người ngoài không kết nối được)
+    và chưa cấu hình nhà cung cấp đăng nhập / CSDL máy chủ. Không dựa vào header Host (client tự đặt được)."""
+    try:
+        from streamlit import config as _st_config
+        address = str(_st_config.get_option("server.address") or "")
+    except Exception:
+        return False
+    if address not in ("localhost", "127.0.0.1", "::1"):
+        return False
+    return not providers and not db.using_server_db()
+
+
 def _is_local_request() -> bool:
     """Truy cập từ chính máy chạy app (localhost). Không có header (chạy test) cũng coi là local."""
     try:
@@ -146,7 +159,7 @@ def require_login() -> CurrentUser:
     cfg = _icost_cfg()
     providers = _configured_providers()
     dev_login = bool(cfg.get("dev_login", False))
-    if dev_login and not _is_local_request():
+    if dev_login and not (_dev_login_allowed(providers) and _is_local_request()):
         # Đăng nhập thử chỉ dùng trên máy phát triển: trên server, ai cũng gõ được email admin
         dev_login = False
         st.session_state.pop("dev_login_email", None)
