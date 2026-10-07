@@ -210,6 +210,35 @@ def save_site(df: pd.DataFrame, site_code: str):
 
 
 ALL_DEPTS = "(Tất cả phòng ban)"
+XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+@st.cache_data(max_entries=8, show_spinner="Đang tạo file Excel...")
+def _cached_export(df: pd.DataFrame, meta_items: tuple, months_t: tuple) -> bytes:
+    return export_capex_to_excel(df, dict(meta_items), months=list(months_t))
+
+
+def lazy_excel_download(df: pd.DataFrame, meta: dict, label: str, file_name: str, key: str, help_text: str = None):
+    """Chỉ tạo file Excel khi người dùng bấm 'Chuẩn bị' (tạo file mất vài giây, không làm ở mỗi lần chạy lại)."""
+    flag = f"xl_ready_{key}"
+    if not st.session_state.get(flag):
+        if st.button("📦 Chuẩn bị file Excel", key=f"xl_prep_{key}", use_container_width=True, help=help_text):
+            st.session_state[flag] = True
+            st.rerun()
+        return None
+    data = _cached_export(df.drop(columns=["_order"], errors="ignore").reset_index(drop=True),
+                          tuple(sorted((k, str(v)) for k, v in meta.items())), tuple(months))
+    if st.download_button(label, data=data, file_name=file_name, mime=XLSX_MIME, use_container_width=True,
+                          key=f"xl_dl_{key}", help=help_text):
+        st.session_state[flag] = False
+    return data
+
+
+@st.cache_data(max_entries=4, show_spinner="Đang đọc file định biên...")
+def _cached_roster(content: bytes, kit_codes: tuple, site_ov_json: str, kit_ov_json: str):
+    import io as _io
+    import json as _json
+    return hi.read_roster(_io.BytesIO(content), set(kit_codes), _json.loads(site_ov_json), _json.loads(kit_ov_json))
 
 
 def dept_key(name) -> str:
@@ -1117,15 +1146,10 @@ with tab_input:
             if not dept_rows_now.empty:
                 dept_meta = dict(st.session_state["metadata"])
                 dept_meta["proposing_dept"] = active_dept
-                excel_dept_bytes = export_capex_to_excel(dept_rows_now, dept_meta, months=months)
-                st.download_button(
-                    label=f"📥 Tải Excel ({active_dept[:15]}...)",
-                    data=excel_dept_bytes,
-                    file_name=f"CAPEX_{budget_year}_{active_dept.replace(' ', '_')}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True,
-                    help=f"Tải riêng file Excel phiếu ngân sách của phòng ban {active_dept}"
-                )
+                lazy_excel_download(dept_rows_now, dept_meta, f"📥 Tải Excel ({active_dept[:15]}...)",
+                                    f"CAPEX_{budget_year}_{active_dept.replace(' ', '_')}.xlsx",
+                                    key=f"dept_{budget_year}_{selected_site}_{active_dept}",
+                                    help_text=f"Tải riêng file Excel phiếu ngân sách của phòng ban {active_dept}")
         with col_m4:
             if can_edit:
                 st.caption("💡 Chọn dòng và bấm Delete để xóa dòng.")
@@ -1241,7 +1265,14 @@ with tab_quota:
                 site_ov = master.get("hc_site_overrides", {})
                 kit_ov = master.get("hc_kit_overrides", {})
                 try:
-                    roster = hi.read_roster(source, kit_codes, site_ov, kit_ov)
+                    import json as _json
+                    if isinstance(source, str):
+                        with open(source, "rb") as _f:
+                            _content = _f.read()
+                    else:
+                        _content = source.getvalue()
+                    roster = _cached_roster(_content, tuple(sorted(kit_codes)), _json.dumps(site_ov, sort_keys=True),
+                                            _json.dumps(kit_ov, sort_keys=True))
                 except Exception as exc:  # file sai mẫu
                     roster = None
                     st.error(f"Không đọc được file định biên: {exc}")
@@ -1635,18 +1666,13 @@ with tab_excel:
         if df_curr.empty:
             st.warning("⚠️ Bảng dữ liệu đang trống, không thể xuất file.")
         else:
-            excel_bytes = export_capex_to_excel(df_curr, st.session_state["metadata"], months=months)
             scope_tag = "TONGHOP" if selected_site == ALL_SITES else selected_site
             file_name = f"CAPEX_{budget_year}_{scope_tag}_{dept_prop.replace(' ', '_')}_{datetime.date.today().strftime('%Y%m%d')}.xlsx"
-
-            st.download_button(
-                label=f"📥 TẢI XUỐNG FILE EXCEL ({len(df_curr)} HẠNG MỤC)",
-                data=excel_bytes,
-                file_name=file_name,
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True
-            )
-            st.caption(f"File: {file_name} (~{len(excel_bytes)//1024} KB)")
+            excel_bytes = lazy_excel_download(df_curr, st.session_state["metadata"],
+                                              f"📥 TẢI XUỐNG FILE EXCEL ({len(df_curr)} HẠNG MỤC)", file_name,
+                                              key=f"all_{budget_year}_{selected_site}_{selected_dept}")
+            if excel_bytes:
+                st.caption(f"File: {file_name} (~{len(excel_bytes)//1024} KB)")
 
     with ex_c2:
         st.markdown("""
