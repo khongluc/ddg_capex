@@ -62,6 +62,11 @@ st.set_page_config(
 # Custom CSS for executive corporate look
 st.markdown("""
 <style>
+    /* Ẩn thanh công cụ của Streamlit / Streamlit Cloud (Fork, GitHub, menu ⋮, Deploy) - không gợi ý mã nguồn */
+    [data-testid="stToolbar"], [data-testid="stToolbarActions"], [data-testid="stMainMenu"],
+    [data-testid="stAppDeployButton"], .stDeployButton, #MainMenu,
+    [data-testid="stDecoration"] { display: none !important; visibility: hidden !important; }
+    a[href*="github.com"] { display: none !important; }
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
     html, body, [class*="css"] {

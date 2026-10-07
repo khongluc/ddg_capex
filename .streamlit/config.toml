@@ -1,6 +1,7 @@
 [client]
-# Ẩn menu/nút dành cho lập trình viên (Deploy, Rerun, Settings...) với người dùng
-toolbarMode = "viewer"
+# Chỉ hiện tối thiểu trên thanh công cụ; nút Fork / GitHub / menu được ẩn thêm bằng CSS trong app.py
+toolbarMode = "minimal"
+showErrorDetails = false
 
 [browser]
 gatherUsageStats = false
