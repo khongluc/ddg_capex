@@ -5,4 +5,5 @@ pandas
 numpy
 openpyxl
 defusedxml
+psycopg[binary]==3.3.6
 plotly

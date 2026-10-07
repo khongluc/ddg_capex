@@ -256,8 +256,23 @@ def build_it_catalog_view(master: Dict[str, Any]) -> List[Dict[str, Any]]:
         })
     return out
 
+_DB_CACHE: Dict[str, Any] = {"value": None, "at": 0.0}
+_DB_CACHE_TTL = 15  # giây - tránh đọc CSDL nhiều lần trong 1 lần chạy lại
+
+
 def load_master_data() -> Dict[str, Any]:
-    """Load master data from JSON or fall back to defaults"""
+    """Danh mục: lấy từ CSDL khi chạy PostgreSQL (đã lưu), không có thì lấy file master_data.json, cuối cùng là mặc định."""
+    import time as _time
+    import copy as _copy
+    import db as _db
+    if _db.using_server_db():
+        if _DB_CACHE["value"] is not None and _time.time() - _DB_CACHE["at"] < _DB_CACHE_TTL:
+            return _copy.deepcopy(_DB_CACHE["value"])
+        raw = _db.get_setting("master_data")
+        if raw:
+            data = json.loads(raw)
+            _DB_CACHE.update(value=data, at=_time.time())
+            return _copy.deepcopy(data)
     if os.path.exists(MASTER_DATA_FILE):
         try:
             with open(MASTER_DATA_FILE, "r", encoding="utf-8") as f:
@@ -279,9 +294,14 @@ def load_master_data() -> Dict[str, Any]:
     }
 
 def save_master_data(data: Dict[str, Any]):
-    """Save master data to JSON file"""
+    """Lưu danh mục: vào CSDL khi chạy PostgreSQL (không mất khi cập nhật code), ngược lại vào file JSON."""
+    import db as _db
     if it_groups(data):
         data["it_catalog"] = build_it_catalog_view(data)
+    if _db.using_server_db():
+        _db.set_setting("master_data", json.dumps(data, ensure_ascii=False))
+        _DB_CACHE.update(value=None, at=0.0)
+        return
     with open(MASTER_DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 

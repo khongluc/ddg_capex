@@ -1,10 +1,18 @@
 """
-SQLite storage: users & permissions, budget lines per (year, site), site submission status
+Lưu trữ: người dùng & phân quyền, dòng ngân sách theo (năm, site), trạng thái nộp/duyệt, định biên, nhật ký.
+
+Hai loại CSDL, chọn tự động:
+- PostgreSQL: khi có chuỗi kết nối ở biến môi trường ICOST_DATABASE_URL / DATABASE_URL
+  hoặc trong secrets.toml mục [database] url = "postgresql://..."  (dùng khi chạy trên cloud - lưu bền)
+- SQLite: file data/icost.db (mặc định khi chạy trên máy)
+Toàn bộ câu SQL viết theo cú pháp chung, dấu ? được đổi sang %s khi chạy PostgreSQL.
 """
 import os
 import json
+import time
 import sqlite3
 import datetime
+import threading
 from contextlib import contextmanager
 from typing import Dict, List, Any, Optional
 
@@ -113,36 +121,177 @@ CREATE TABLE IF NOT EXISTS audit_log (
     action  TEXT NOT NULL,
     detail  TEXT
 );
+CREATE TABLE IF NOT EXISTS app_settings (
+    key         TEXT PRIMARY KEY,
+    value       TEXT,
+    updated_at  TEXT
+);
 """
+
+# Cột của từng bảng (thứ tự xóa khi khôi phục: bảng con trước) - dùng cho sao lưu / khôi phục
+TABLE_COLUMNS = {
+    "user_sites": ["email", "site_code"],
+    "user_depts": ["email", "site_code", "dept"],
+    "users": ["email", "name", "role", "provider", "created_at", "last_login"],
+    "budget_lines": ["id", "year", "site_code", "seq", "data", "updated_by", "updated_at"],
+    "site_status": ["year", "site_code", "status", "note", "updated_by", "updated_at"],
+    "dept_headcount": ["year", "site_code", "dept", "kit_code", "hc_current", "hc_plan", "hc_months", "updated_by", "updated_at"],
+    "dept_inventory": ["year", "site_code", "dept", "catalog_code", "current_qty", "replace_qty", "quota_override", "note",
+                       "updated_by", "updated_at"],
+    "audit_log": ["id", "ts", "email", "action", "detail"],
+    "app_settings": ["key", "value", "updated_at"],
+}
+SERIAL_TABLES = {"budget_lines", "audit_log"}  # cột id tự tăng
 
 
 def _now() -> str:
     return datetime.datetime.now().isoformat(timespec="seconds")
 
 
+def _database_url() -> Optional[str]:
+    url = os.environ.get("ICOST_DATABASE_URL") or os.environ.get("DATABASE_URL")
+    if url:
+        return url
+    try:
+        import streamlit as st
+        return (st.secrets.get("database") or {}).get("url")
+    except Exception:
+        return None
+
+
+def using_server_db() -> bool:
+    """True khi dữ liệu nằm trên PostgreSQL (lưu bền, không phụ thuộc ổ đĩa của app)."""
+    return bool(_database_url())
+
+
+def _pg_sql(sql: str) -> str:
+    return sql.replace("?", "%s")
+
+
+class _Conn:
+    """Bọc kết nối để dùng chung cú pháp cho SQLite và PostgreSQL."""
+
+    def __init__(self, raw, pg: bool):
+        self.raw, self.pg = raw, pg
+
+    def execute(self, sql: str, params=()):
+        if self.pg:
+            cur = self.raw.cursor()
+            cur.execute(_pg_sql(sql), tuple(params))
+            return cur
+        return self.raw.execute(sql, tuple(params))
+
+    def executemany(self, sql: str, seq):
+        seq = [tuple(x) for x in seq]
+        if not seq:
+            return None
+        if self.pg:
+            cur = self.raw.cursor()
+            cur.executemany(_pg_sql(sql), seq)
+            return cur
+        return self.raw.executemany(sql, seq)
+
+
+_pg_lock = threading.RLock()
+_pg_state: Dict[str, Any] = {"conn": None, "url": None, "last": 0.0, "ready": set()}
+
+
+def _pg_connection(url: str):
+    import psycopg
+    from psycopg.rows import dict_row
+    conn = _pg_state["conn"]
+    if conn is not None and (conn.closed or conn.broken or _pg_state["url"] != url):
+        try:
+            conn.close()
+        except Exception:
+            pass
+        conn = None
+    if conn is not None and time.time() - _pg_state["last"] > 60:
+        try:  # kết nối để lâu có thể bị máy chủ đóng (vd. Neon tạm nghỉ khi không dùng)
+            conn.execute("SELECT 1")
+            conn.commit()
+        except Exception:
+            try:
+                conn.close()
+            except Exception:
+                pass
+            conn = None
+    if conn is None:
+        conn = psycopg.connect(url, row_factory=dict_row, autocommit=False, connect_timeout=15)
+        _pg_state.update(conn=conn, url=url)
+    return conn
+
+
 @contextmanager
 def connect():
+    url = _database_url()
+    if url:
+        with _pg_lock:
+            raw = _pg_connection(url)
+            try:
+                yield _Conn(raw, True)
+                raw.commit()
+            except Exception:
+                try:
+                    raw.rollback()
+                except Exception:
+                    pass
+                raise
+            finally:
+                _pg_state["last"] = time.time()
+        return
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH, timeout=30)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
+    raw = sqlite3.connect(DB_PATH, timeout=30)
+    raw.row_factory = sqlite3.Row
+    raw.execute("PRAGMA foreign_keys = ON")
     try:
-        yield conn
-        conn.commit()
+        yield _Conn(raw, False)
+        raw.commit()
     except Exception:
-        conn.rollback()
+        raw.rollback()
         raise
     finally:
-        conn.close()
+        raw.close()
+
+
+def _pg_schema() -> List[str]:
+    sql = (SCHEMA.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "BIGSERIAL PRIMARY KEY")
+           .replace(" REAL", " DOUBLE PRECISION"))
+    return [x.strip() for x in sql.split(";") if x.strip()]
 
 
 def init_db():
+    url = _database_url()
+    if url:
+        if url in _pg_state["ready"]:
+            return
+        with connect() as conn:
+            for stmt in _pg_schema():
+                conn.execute(stmt)
+            conn.execute("ALTER TABLE dept_headcount ADD COLUMN IF NOT EXISTS hc_months TEXT")
+        _pg_state["ready"].add(url)
+        return
     with connect() as conn:
-        conn.execute("PRAGMA journal_mode = WAL")
-        conn.executescript(SCHEMA)
-        cols = {r[1] for r in conn.execute("PRAGMA table_info(dept_headcount)")}
+        conn.raw.execute("PRAGMA journal_mode = WAL")
+        conn.raw.executescript(SCHEMA)
+        cols = {r[1] for r in conn.raw.execute("PRAGMA table_info(dept_headcount)")}
         if "hc_months" not in cols:  # nâng cấp CSDL tạo trước khi có nhân sự theo tháng
-            conn.execute("ALTER TABLE dept_headcount ADD COLUMN hc_months TEXT")
+            conn.raw.execute("ALTER TABLE dept_headcount ADD COLUMN hc_months TEXT")
+
+
+def get_setting(key: str) -> Optional[str]:
+    init_db()
+    with connect() as conn:
+        row = conn.execute("SELECT value FROM app_settings WHERE key = ?", (key,)).fetchone()
+    return row["value"] if row else None
+
+
+def set_setting(key: str, value: str):
+    init_db()
+    with connect() as conn:
+        conn.execute("INSERT INTO app_settings(key, value, updated_at) VALUES (?,?,?) "
+                     "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+                     (key, value, _now()))
 
 
 def log(email: Optional[str], action: str, detail: str = ""):
@@ -224,7 +373,7 @@ def delete_user(email: str, actor: str):
 
 def count_admins() -> int:
     with connect() as conn:
-        return conn.execute("SELECT COUNT(*) FROM users WHERE role = ?", (ROLE_ADMIN,)).fetchone()[0]
+        return conn.execute("SELECT COUNT(*) AS n FROM users WHERE role = ?", (ROLE_ADMIN,)).fetchone()["n"]
 
 
 # ---------------------------------------------------------------------
@@ -355,17 +504,21 @@ def _jsonable(row: Dict[str, Any]) -> Dict[str, Any]:
 # Sao lưu / khôi phục (dùng khi chạy trên dịch vụ không có ổ đĩa lưu bền)
 # ---------------------------------------------------------------------
 def backup_bytes() -> bytes:
-    """Bản sao nhất quán của CSDL (sqlite backup API) dưới dạng bytes."""
+    """Sao lưu toàn bộ dữ liệu thành 1 file SQLite (dùng chung cho cả SQLite và PostgreSQL)."""
     import tempfile
     init_db()
     fd, tmp = tempfile.mkstemp(suffix=".db")
     os.close(fd)
     try:
-        src = sqlite3.connect(DB_PATH)
         dst = sqlite3.connect(tmp)
-        src.backup(dst)
+        dst.executescript(SCHEMA)
+        with connect() as conn:
+            for table, cols in TABLE_COLUMNS.items():
+                rows = conn.execute(f"SELECT {', '.join(cols)} FROM {table}").fetchall()
+                dst.executemany(f"INSERT INTO {table}({', '.join(cols)}) VALUES ({','.join('?' * len(cols))})",
+                                [tuple(r[c] for c in cols) for r in rows])
+        dst.commit()
         dst.close()
-        src.close()
         with open(tmp, "rb") as f:
             return f.read()
     finally:
@@ -373,7 +526,7 @@ def backup_bytes() -> bytes:
 
 
 def restore_bytes(data: bytes):
-    """Thay CSDL hiện tại bằng bản sao lưu (kiểm tra đúng là CSDL của hệ thống trước khi ghi)."""
+    """Thay toàn bộ dữ liệu hiện tại bằng bản sao lưu (file SQLite), ghi vào CSDL đang dùng (SQLite hoặc PostgreSQL)."""
     import tempfile
     fd, tmp = tempfile.mkstemp(suffix=".db")
     os.close(fd)
@@ -381,6 +534,7 @@ def restore_bytes(data: bytes):
         with open(tmp, "wb") as f:
             f.write(data)
         chk = sqlite3.connect(tmp)
+        chk.row_factory = sqlite3.Row
         try:
             try:
                 tables = {r[0] for r in chk.execute("SELECT name FROM sqlite_master WHERE type='table'")}
@@ -388,12 +542,23 @@ def restore_bytes(data: bytes):
                 tables = set()
             if not {"users", "budget_lines", "site_status"} <= tables:
                 raise ValueError("File không phải bản sao lưu CSDL của hệ thống CAPEX")
-            os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-            dst = sqlite3.connect(DB_PATH)
-            chk.backup(dst)
-            dst.close()
+            payload = {}
+            for table, cols in TABLE_COLUMNS.items():
+                if table not in tables:
+                    continue
+                have = [r[1] for r in chk.execute(f"PRAGMA table_info({table})")]
+                use = [c for c in cols if c in have and not (c == "id" and table in SERIAL_TABLES)]
+                order = " ORDER BY id" if table in SERIAL_TABLES else ""
+                payload[table] = (use, [tuple(r[c] for c in use) for r in chk.execute(f"SELECT * FROM {table}{order}")])
         finally:
             chk.close()
+        init_db()
+        with connect() as conn:
+            for table in TABLE_COLUMNS:  # bảng con trước
+                conn.execute(f"DELETE FROM {table}")
+            for table in ["users"] + [t for t in TABLE_COLUMNS if t != "users"]:  # bảng cha trước khi chèn
+                if table in payload:
+                    use, rows = payload[table]
+                    conn.executemany(f"INSERT INTO {table}({', '.join(use)}) VALUES ({','.join('?' * len(use))})", rows)
     finally:
         os.remove(tmp)
-    init_db()

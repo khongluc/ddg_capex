@@ -3,8 +3,8 @@
 Mục đích: cho IT các site vào nhập ngân sách thử (UAT) nhanh, miễn phí. Khi chạy thật nên chuyển sang máy chủ Linux + Cloudflare Tunnel.
 
 ## Lưu ý quan trọng
-- **Ổ đĩa không lưu bền**: dữ liệu (`data/icost.db`, danh mục) có thể mất khi app khởi động lại / ngủ / cập nhật code.
-  → Admin vào **👥 Phân quyền & Tiến độ → 💾 Sao lưu / Khôi phục**, tải bản sao lưu cuối mỗi ngày; sau khi app khởi động lại thì khôi phục.
+- **Nên dùng PostgreSQL (Bước 3b)**: khi đó dữ liệu và danh mục lưu bền trên Neon, không mất khi app khởi động lại / cập nhật code.
+  Nếu chưa cấu hình PostgreSQL, app dùng SQLite trên ổ đĩa tạm → admin phải tải bản sao lưu mỗi ngày (Màn hình → Phân quyền & Tiến độ → 💾 Sao lưu / Khôi phục).
 - File Excel (form CAPEX, file định biên) **không** được đưa lên GitHub vì có họ tên / mã nhân viên. Admin tải file lên qua giao diện app khi cần.
 - **Không bật `dev_login`** trên cloud (ai cũng gõ được email admin). Phải cấu hình đăng nhập Google (hoặc UltraID) trước.
 
@@ -40,6 +40,20 @@ server_metadata_url = "https://accounts.google.com/.well-known/openid-configurat
 client_kwargs = { scope = "openid email profile", prompt = "select_account" }
 ```
 Trong Google Cloud Console → Credentials → OAuth client: thêm **Authorized redirect URI** `https://ddc-capex.streamlit.app/oauth2callback` (trùng tuyệt đối với `redirect_uri`).
+
+## Bước 3b – CSDL PostgreSQL miễn phí (Neon) để KHÔNG mất dữ liệu
+Không có bước này, app dùng SQLite trên ổ đĩa tạm của Streamlit Cloud: dữ liệu mất khi app khởi động lại / cập nhật code.
+1. Vào https://neon.tech → **Sign up** (đăng nhập bằng GitHub `khongluc` cho nhanh).
+2. **Create project**: Name `ddc-capex`, Postgres version mặc định, **Region: AWS US East (N. Virginia)** (gần máy chủ Streamlit Cloud → nhanh hơn) → Create.
+3. Trên Dashboard bấm **Connect** → chọn database `neondb`, bật **Connection pooling** → sao chép chuỗi kết nối dạng
+   `postgresql://neondb_owner:...@ep-xxx-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require`.
+4. Streamlit Cloud → app → **Settings → Secrets**: thêm vào cuối
+   ```toml
+   [database]
+   url = "<dán chuỗi kết nối Neon>"
+   ```
+   → **Save changes**. App tự tạo bảng ở lần chạy đầu. Danh mục CNTT cũng được lưu trong CSDL.
+5. Chuỗi kết nối chứa mật khẩu CSDL: chỉ dán vào ô Secrets, không gửi qua chat / email.
 
 ## Bước 4 – Nạp dữ liệu ban đầu
 1. Mở `https://ddc-capex.streamlit.app` → đăng nhập Google bằng tài khoản admin.
