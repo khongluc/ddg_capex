@@ -36,6 +36,8 @@ from master_data import (
     default_invest_type,
     INVEST_TYPES,
     KIND_HARDWARE,
+    KIND_SW_PERPETUAL,
+    KIND_SW_SUBSCRIPTION,
     DEFAULT_MONTHS
 )
 import quota as qt
@@ -520,6 +522,7 @@ tab_names = [
     "📝 Lập & Nhập liệu CapEx",
     "👥 Định biên & Nhu cầu",
     "🏗️ Hạ tầng CNTT dùng chung",
+    "💿 Đầu tư Phần mềm",
     "📁 Nhập / Xuất Excel",
     "📈 Khấu hao & Thẩm định",
     "⚙️ Quản lý Danh mục",
@@ -700,7 +703,7 @@ if current_user.is_admin and admin_view == "👥 Phân quyền & Tiến độ":
     render_admin_page()
     st.stop()
 
-tab_dash, tab_input, tab_quota, tab_infra, tab_excel, tab_depreciation, tab_master = st.tabs(tab_names)
+tab_dash, tab_input, tab_quota, tab_infra, tab_software, tab_excel, tab_depreciation, tab_master = st.tabs(tab_names)
 
 # =====================================================================
 # TAB 1: DASHBOARD
@@ -1963,6 +1966,181 @@ with tab_infra:
 
 
 # =====================================================================
+# TAB: ĐẦU TƯ PHẦN MỀM (danh mục phần mềm & tổng hợp ngân sách phần mềm)
+# =====================================================================
+SW_KINDS = (KIND_SW_PERPETUAL, KIND_SW_SUBSCRIPTION)
+
+with tab_software:
+    st.markdown("### 💿 Đầu tư Phần mềm & Bản quyền")
+    st.caption("Danh mục phần mềm chuẩn của Tập đoàn và tổng hợp ngân sách phần mềm trong phạm vi đang chọn. "
+               "Bản quyền vĩnh viễn: TSCĐ vô hình nếu ≥ 30 triệu/đơn vị, thấp hơn là CCDC; "
+               "thuê bao theo năm: chi phí trả trước phân bổ theo thời hạn.")
+    sw_catalog = [it for it in master.get("standard_items", []) if it.get("kind") in SW_KINDS]
+    sw_by_code = {it["code"]: it for it in sw_catalog}
+    sw_sum_tab, sw_cat_tab = st.tabs(["📊 Ngân sách phần mềm", "📚 Danh mục phần mềm & giá"])
+
+    with sw_sum_tab:
+        kinds_s = df_curr["item_kind"] if "item_kind" in df_curr.columns else pd.Series(index=df_curr.index, dtype=object)
+        code_s = df_curr["catalog_code"] if "catalog_code" in df_curr.columns else pd.Series(index=df_curr.index, dtype=object)
+        sw_mask = kinds_s.isin(SW_KINDS) | code_s.isin(sw_by_code.keys())
+        df_sw = df_curr[sw_mask].copy()
+        if df_sw.empty:
+            st.info("Chưa có hạng mục phần mềm trong phạm vi đang chọn. Phần mềm được đưa vào ngân sách khi lập theo định biên "
+                    "(tab 'Định biên & Nhu cầu'), thêm ở tab 'Lập & Nhập liệu CapEx' hoặc tab 'Hạ tầng CNTT dùng chung'.")
+        else:
+            df_sw["sw_kind"] = df_sw.get("item_kind", pd.Series(index=df_sw.index, dtype=object)).where(
+                df_sw.get("item_kind", pd.Series(index=df_sw.index, dtype=object)).isin(SW_KINDS),
+                df_sw.get("catalog_code", pd.Series(index=df_sw.index, dtype=object)).map(lambda c: sw_by_code.get(c, {}).get("kind")))
+            tot = df_sw["total_budget"].sum()
+            perp = df_sw.loc[df_sw["sw_kind"] == KIND_SW_PERPETUAL, "total_budget"].sum()
+            subs = df_sw.loc[df_sw["sw_kind"] == KIND_SW_SUBSCRIPTION, "total_budget"].sum()
+            inv_s = df_sw["invest_type"] if "invest_type" in df_sw.columns else pd.Series("", index=df_sw.index)
+            renew = df_sw.loc[inv_s == "Gia hạn, bảo trì", "total_budget"].sum()
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Tổng ngân sách phần mềm", format_vnd_short(tot) + " VNĐ",
+                      f"{fmt_num(tot / df_curr['total_budget'].sum() * 100 if df_curr['total_budget'].sum() else 0, 1)}% tổng ngân sách",
+                      delta_color="off")
+            m2.metric("Bản quyền vĩnh viễn", format_vnd_short(perp) + " VNĐ")
+            m3.metric("Thuê bao theo năm", format_vnd_short(subs) + " VNĐ")
+            m4.metric("Trong đó gia hạn", format_vnd_short(renew) + " VNĐ")
+
+            df_sw["Hình thức cấp phép"] = df_sw["sw_kind"].map(it_kinds(master)).fillna("Chưa phân loại")
+            df_sw["Hãng"] = df_sw.get("catalog_code", pd.Series(index=df_sw.index, dtype=object)).map(
+                lambda c: sw_by_code.get(c, {}).get("vendor", "")).fillna("")
+            by_item = df_sw.groupby(["item_name", "Hãng", "Hình thức cấp phép"], dropna=False).agg(
+                **{"Số lượng": ("quantity", "sum"), "Đơn giá TB": ("unit_price", "mean"),
+                   "Thành tiền (VNĐ)": ("total_budget", "sum"),
+                   "Số site": ("location", "nunique"),
+                   "Số phòng ban": ("dept_proposing", "nunique")}).reset_index().rename(columns={"item_name": "Phần mềm"})
+            by_item = by_item.sort_values("Thành tiền (VNĐ)", ascending=False)
+            money_c = st.column_config.NumberColumn(format=MONEY_FMT)
+            st.markdown("##### Theo phần mềm")
+            st.dataframe(by_item, use_container_width=True, hide_index=True,
+                         column_config={"Số lượng": money_c, "Đơn giá TB": money_c, "Thành tiền (VNĐ)": money_c})
+
+            c_l, c_r = st.columns([1.3, 1])
+            with c_l:
+                st.markdown("##### Theo phòng ban")
+                by_dept = df_sw.assign(dept=df_sw["dept_proposing"].replace("", None).fillna("(Chưa ghi phòng ban)")).pivot_table(
+                    index="dept", columns="Hình thức cấp phép", values="total_budget", aggfunc="sum", fill_value=0)
+                by_dept["Tổng (VNĐ)"] = by_dept.sum(axis=1)
+                by_dept = by_dept.sort_values("Tổng (VNĐ)", ascending=False)
+                st.dataframe(by_dept, use_container_width=True, column_config={c: money_c for c in by_dept.columns})
+            with c_r:
+                st.markdown("##### Cơ cấu theo hình thức đầu tư")
+                df_inv = df_sw.assign(inv=inv_s.replace("", None).fillna("Chưa phân loại")).groupby("inv")["total_budget"].sum().reset_index()
+                fig_sw = px.pie(df_inv, names="inv", values="total_budget", hole=0.45,
+                                color_discrete_sequence=["#0F2C59", "#3B82F6", "#F59E0B", "#CBD5E1"])
+                fig_sw.update_traces(textinfo="percent+label", hovertemplate="<b>%{label}</b><br>%{value:,.0f} VNĐ<br>%{percent}")
+                fig_sw.update_layout(margin=dict(t=10, b=10, l=10, r=10), height=300, showlegend=False)
+                plot_chart(fig_sw, use_container_width=True)
+            st.caption("Phạm vi theo năm / site / phòng ban đang chọn ở thanh bên trái. Muốn sửa số lượng, vào tab nơi hạng mục được lập.")
+
+    with sw_cat_tab:
+        groups_cfg = it_groups(master)
+        group_codes = [g["code"] for g in groups_cfg]
+        sw_group_codes = [g["code"] for g in groups_cfg if g.get("kind") in SW_KINDS] or group_codes
+        group_label = {g["code"]: f"{g['code']}. {g['name']}" for g in groups_cfg}
+        kind_lbl = {k: it_kinds(master).get(k, k) for k in SW_KINDS}
+        st.caption(f"{len(sw_catalog)} phần mềm / bản quyền "
+                   f"({sum(1 for it in sw_catalog if it['kind'] == KIND_SW_PERPETUAL)} vĩnh viễn, "
+                   f"{sum(1 for it in sw_catalog if it['kind'] == KIND_SW_SUBSCRIPTION)} thuê bao). "
+                   "Thêm dòng mới ở cuối bảng; mã tự sinh theo nhóm khi lưu. Đơn giá chưa VAT, theo 1 đơn vị cấp phép.")
+        sf1, sf2 = st.columns([2, 1])
+        sw_grp_filter = sf1.selectbox("Lọc theo nhóm", ["(Tất cả)"] + sorted({it["group"] for it in sw_catalog} | set(sw_group_codes)),
+                                      format_func=lambda c: c if c == "(Tất cả)" else group_label.get(c, c), key="sw_grp_filter")
+        sw_kind_filter = sf2.selectbox("Hình thức cấp phép", ["(Tất cả)", *SW_KINDS],
+                                       format_func=lambda k: kind_lbl.get(k, k), key="sw_kind_filter")
+
+        def _sw_in_view(it):
+            return ((sw_grp_filter == "(Tất cả)" or it.get("group") == sw_grp_filter)
+                    and (sw_kind_filter == "(Tất cả)" or it.get("kind") == sw_kind_filter))
+
+        sw_view = [it for it in sw_catalog if _sw_in_view(it)]
+        df_swc = pd.DataFrame([{
+            "code": it.get("code", ""), "group": it.get("group", ""), "name": it.get("name", ""),
+            "vendor": it.get("vendor", ""), "kind": kind_lbl.get(it.get("kind"), it.get("kind")),
+            "unit": it.get("unit", ""), "price": it.get("price", 0),
+            "useful_months": it.get("useful_months") or (12 if it.get("kind") == KIND_SW_SUBSCRIPTION else None),
+            "note": it.get("note", ""),
+        } for it in sw_view], columns=["code", "group", "name", "vendor", "kind", "unit", "price", "useful_months", "note"])
+        ed_swc = st.data_editor(
+            df_swc, key=f"sw_catalog_{sw_grp_filter}_{sw_kind_filter}_{st.session_state.get('sw_cat_version', 0)}",
+            disabled=not current_user.is_admin, num_rows="dynamic" if current_user.is_admin else "fixed",
+            use_container_width=True, hide_index=True, height=520,
+            column_config={
+                "code": st.column_config.TextColumn("Mã", disabled=True, help="Tự sinh khi lưu"),
+                "group": st.column_config.SelectboxColumn("Nhóm", options=group_codes, required=True,
+                                                          default=sw_grp_filter if sw_grp_filter in group_codes else sw_group_codes[0]),
+                "name": st.column_config.TextColumn("Tên phần mềm / bản quyền", required=True, width="large"),
+                "vendor": st.column_config.TextColumn("Hãng"),
+                "kind": st.column_config.SelectboxColumn("Hình thức cấp phép", options=list(kind_lbl.values()), required=True,
+                                                         default=kind_lbl[KIND_SW_SUBSCRIPTION]),
+                "unit": st.column_config.TextColumn("Đơn vị cấp phép", help="VD: User/năm, Máy/năm, License, Gói/năm"),
+                "price": st.column_config.NumberColumn("Đơn giá (VNĐ)", min_value=0, format=MONEY_FMT, required=True),
+                "useful_months": st.column_config.NumberColumn("Thời hạn / phân bổ (tháng)", min_value=1, step=1, format=MONEY_FMT,
+                                                               help="Thuê bao: chu kỳ gia hạn (thường 12). Vĩnh viễn: thời gian khấu hao/phân bổ."),
+                "note": st.column_config.TextColumn("Ghi chú"),
+            })
+        zero_price = [it["name"] for it in sw_view if not it.get("price")]
+        if zero_price:
+            st.caption(f"⚠️ {len(zero_price)} phần mềm chưa có đơn giá: {', '.join(zero_price[:5])}{'…' if len(zero_price) > 5 else ''}")
+        if current_user.is_admin and st.button("💾 Lưu danh mục phần mềm", type="primary", key="sw_cat_save"):
+            kind_by_lbl = {v: k for k, v in kind_lbl.items()}
+            all_items = master.get("standard_items", [])
+            view_codes = {it["code"] for it in sw_view}
+            kept = [it for it in all_items if it.get("code") not in view_codes]
+            used = {it.get("code") for it in kept}
+            saved, errs = [], []
+            for _, r in ed_swc.iterrows():
+                name = str(r.get("name") or "").strip()
+                if not name:
+                    continue
+                group = r.get("group") if r.get("group") in group_codes else None
+                kind = kind_by_lbl.get(r.get("kind")) or (r.get("kind") if r.get("kind") in SW_KINDS else None)
+                if not group or not kind:
+                    errs.append(name)
+                    continue
+                code = str(r.get("code") or "").strip()
+                orig = next((it for it in all_items if code and it.get("code") == code), {})
+                item = {**orig, "code": code, "group": group, "name": name, "kind": kind,
+                        "unit": str(r.get("unit") or "").strip(), "price": int(clean_number(r.get("price"), 0)),
+                        "note": str(r.get("note") or "").strip()}
+                vendor = str(r.get("vendor") or "").strip()
+                if vendor:
+                    item["vendor"] = vendor
+                else:
+                    item.pop("vendor", None)
+                months_v = clean_number(r.get("useful_months"), 0)
+                if months_v and int(months_v) > 0:
+                    item["useful_months"] = int(months_v)
+                else:
+                    item.pop("useful_months", None)
+                item.setdefault("aliases", [])
+                saved.append(item)
+            if errs:
+                st.error(f"Chưa chọn Nhóm / Hình thức cấp phép cho: {', '.join(errs)}")
+            else:
+                for it in saved:
+                    if not it["code"].startswith(it["group"] + "-") or it["code"] in used:
+                        n = 1
+                        while f"{it['group']}-{n:03d}" in used:
+                            n += 1
+                        it["code"] = f"{it['group']}-{n:03d}"
+                    used.add(it["code"])
+                order = {c: i for i, c in enumerate(group_codes)}
+                master["standard_items"] = sorted(kept + saved, key=lambda it: (order.get(it["group"], 99), it["code"]))
+                save_master_data(master)
+                db.log(current_user.email, "software_catalog_save", f"{len(saved)} phần mềm")
+                st.session_state["sw_cat_version"] = st.session_state.get("sw_cat_version", 0) + 1
+                st.session_state["flash"] = (f"Đã lưu danh mục phần mềm ({len(saved)} hạng mục trong bộ lọc; "
+                                             f"toàn danh mục {len(master['standard_items'])} hạng mục).")
+                st.rerun()
+        elif not current_user.is_admin:
+            st.caption("Chỉ Quản trị được sửa danh mục. Cần thêm phần mềm, vui lòng liên hệ Phòng CNTT.")
+
+
+# =====================================================================
 # TAB 3: NHẬP / XUẤT EXCEL
 # =====================================================================
 with tab_excel:
@@ -2246,7 +2424,7 @@ with tab_master:
                     "note": str(r.get("note") or "").strip(),
                 })
                 orig = next((it for it in catalog_all if it.get("code") == saved[-1]["code"] and saved[-1]["code"]), None)
-                for extra_key in ("scope", "owner", "cost_lv2", "useful_months"):  # thuộc tính riêng không hiện trên bảng
+                for extra_key in ("scope", "owner", "cost_lv2", "useful_months", "vendor"):  # thuộc tính riêng không hiện trên bảng
                     if orig and orig.get(extra_key) not in (None, ""):
                         saved[-1][extra_key] = orig[extra_key]
             if errors:
