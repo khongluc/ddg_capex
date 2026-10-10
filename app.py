@@ -48,6 +48,7 @@ import workflow as wf
 import execution as ex
 import versions as vs
 import headcount_import as hi
+import smart_advisor as advisor
 import unicodedata
 from capex_engine import (
     load_capex_from_excel,
@@ -611,8 +612,14 @@ def contingency_pct() -> float:
 SITES = master.get("sites", [])
 SITE_NAME = {s["code"]: s["name"] for s in SITES}
 SITE_BY_NAME = {s["name"]: s["code"] for s in SITES}
-ALL_SITES = "__ALL__"
-SAMPLE_EXCEL_PATH = os.path.join(os.path.dirname(__file__), "2. Form file nhập liệu CAPEX 2026.xlsx")
+def resolve_template_path(filename: str) -> str:
+    for sub in ("templates", "data/templates", ""):
+        p = os.path.join(os.path.dirname(__file__), sub, filename) if sub else os.path.join(os.path.dirname(__file__), filename)
+        if os.path.exists(p):
+            return p
+    return os.path.join(os.path.dirname(__file__), "templates", filename)
+
+SAMPLE_EXCEL_PATH = resolve_template_path("2. Form file nhập liệu CAPEX 2026.xlsx")
 
 
 def site_label(code: str) -> str:
@@ -1258,6 +1265,7 @@ tab_names = [
     "🏗️ Hạ tầng CNTT dùng chung",
     "💿 Đầu tư Phần mềm",
     "📁 Nhập / Xuất Excel",
+    "🎯 Kịch bản & Mua sắm",
     "💳 Thực hiện ngân sách",
     "🗂️ Phiên bản",
     "📈 Khấu hao & Thẩm định",
@@ -1439,7 +1447,7 @@ if current_user.is_admin and admin_view == "👥 Phân quyền & Tiến độ":
     render_admin_page()
     st.stop()
 
-tab_dash, tab_input, tab_quota, tab_infra, tab_software, tab_excel, tab_exec, tab_versions, tab_depreciation, tab_master = st.tabs(tab_names)
+tab_dash, tab_input, tab_quota, tab_infra, tab_software, tab_excel, tab_scenario, tab_exec, tab_versions, tab_depreciation, tab_master = st.tabs(tab_names)
 
 # =====================================================================
 # TAB 1: DASHBOARD
@@ -1753,6 +1761,56 @@ with tab_dash:
 
         st.dataframe(top_items, use_container_width=True, hide_index=True)
 
+        # -------------------------------------------------------------
+        # PHÂN TÍCH CHIẾN LƯỢC SỐ HÓA & BÁO CÁO ĐIỀU HÀNH 1 TRANG
+        # -------------------------------------------------------------
+        st.markdown("---")
+        exp_p1, exp_p2 = st.columns(2)
+
+        with exp_p1:
+            st.markdown("##### 🚀 4 Trụ cột Chiến lược Số hóa DDC")
+            strat_res = advisor.digital_strategy_breakdown(df_filtered)
+            if not strat_res["pie_data"].empty:
+                fig_strat = px.pie(
+                    strat_res["pie_data"],
+                    names="Trụ cột",
+                    values="Ngân sách (VNĐ)",
+                    hole=0.45,
+                    color_discrete_sequence=["#0284C7", "#D97706", "#DC2626", "#16A34A"]
+                )
+                fig_strat.update_traces(textinfo="percent+label", hovertemplate="<b>%{label}</b><br>%{value:,.0f} VNĐ<br>%{percent}")
+                fig_strat.update_layout(margin=dict(t=10, b=10, l=10, r=10), height=300, showlegend=False)
+                plot_chart(fig_strat, use_container_width=True)
+            for p in strat_res["summary"]:
+                st.caption(f"{p['icon']} **{p['name']}**: {format_vnd_short(p['budget'])} ({p['pct']:.1f}%) — {p['desc']}")
+
+        with exp_p2:
+            st.markdown("##### 📑 Báo cáo Điều hành Tóm tắt 1 Trang (Executive Briefing)")
+            st.caption("Báo cáo cô đọng chuẩn Ban Tổng Giám đốc & Hội đồng Quản trị: tóm tắt dự toán, 4 quý, Top 5 khoản đầu tư và kết luận của CIO.")
+            with st.popover("👁️ Xem trước & In Báo cáo Điều hành (A4)", use_container_width=True):
+                meta_report = {
+                    "budget_year": budget_year,
+                    "selected_site": site_label(selected_site),
+                    "date": datetime.date.today().strftime("%d/%m/%Y"),
+                    "creator_name": current_user.name
+                }
+                cio_custom_note = st.text_area(
+                    "Ghi chú / Khuyến nghị của Giám đốc CNTT (CIO Notes):",
+                    value=st.session_state.get("cio_custom_note", ""),
+                    placeholder="Nhập khuyến nghị chiến lược trình Ban Tổng Giám Đốc...",
+                    key="cio_note_input"
+                )
+                st.session_state["cio_custom_note"] = cio_custom_note
+                briefing_html = advisor.render_executive_briefing_html(df_filtered, master, meta_report, months, cio_notes=cio_custom_note)
+                st.components.v1.html(briefing_html, height=650, scrolling=True)
+                st.download_button(
+                    "⬇️ Tải file Báo cáo Điều hành (.html)",
+                    data=briefing_html,
+                    file_name=f"DDC_CapEx_{budget_year}_Executive_Briefing.html",
+                    mime="text/html",
+                    use_container_width=True
+                )
+
 
 # =====================================================================
 # TAB 2: LẬP & NHẬP LIỆU CAPEX
@@ -1823,6 +1881,32 @@ with tab_input:
             render_dept_overview()
         else:
             render_dept_workflow(selected_dept, dept_rows_now)
+
+    # KIỂM ĐỊNH CHẤT LƯỢNG HỒ SƠ & ĐIỂM SỨC KHỎE NGÂN SÁCH (SMART AUDIT)
+    audit_target_df = dept_rows_now if selected_dept != ALL_DEPTS else df_site
+    if not audit_target_df.empty:
+        audit_res = advisor.audit_budget(audit_target_df, master, months)
+        with st.expander(f"🛡️ Kiểm định Chất lượng Hồ sơ & Điểm Sức khỏe: {audit_res['score']}/100 điểm ({audit_res['status_label']})", expanded=(audit_res["score"] < 80)):
+            ak1, ak2, ak3, ak4 = st.columns(4)
+            ak1.metric("Điểm sức khỏe", f"{audit_res['score']} / 100", audit_res["status_label"], delta_color="normal")
+            ak2.metric("Lỗi nghiêm trọng (Critical)", f"{audit_res['metrics']['critical']} cờ", delta_color="inverse" if audit_res['metrics']['critical'] > 0 else "normal")
+            ak3.metric("Cảnh báo lưu ý (Warning)", f"{audit_res['metrics']['warning']} cờ", delta_color="off")
+            ak4.metric("Tổng hạng mục rà soát", f"{audit_res['metrics']['total_items']} mục")
+
+            if audit_res["issues"]:
+                st.markdown("###### Chi tiết các vấn đề cần lưu ý:")
+                for iss in audit_res["issues"]:
+                    icon = "🚨" if iss["severity"] == advisor.SEV_CRITICAL else ("⚠️" if iss["severity"] == advisor.SEV_WARNING else "ℹ️")
+                    color = "#EF4444" if iss["severity"] == advisor.SEV_CRITICAL else ("#F59E0B" if iss["severity"] == advisor.SEV_WARNING else "#3B82F6")
+                    st.markdown(f"""
+                    <div style="background:#FFFFFF;border-left:4px solid {color};border-radius:6px;padding:8px 12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+                        <div style="font-weight:700;color:#0F2C59;font-size:13px;">{icon} {iss['title']}</div>
+                        <div style="font-size:12px;color:#475569;margin-top:2px;">{iss['desc']}</div>
+                        <div style="font-size:11.5px;color:#1D4ED8;font-weight:600;margin-top:3px;">👉 Hướng xử lý: {iss['action']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.success("✅ Tuyệt vời! Toàn bộ hạng mục đã đáp ứng chuẩn mực phân kỳ, phân loại kế toán và căn cứ thẩm định.")
 
     # Bảng chi tiết của phòng ban đang chọn (đặt ngay dưới ô chọn phòng ban)
     grid_title = f"📋 Bảng Ngân sách Hiện hành – {active_dept}" if selected_dept != ALL_DEPTS else f"📋 Bảng Ngân sách Hiện hành – {site_label(selected_site)} (Tất cả phòng ban)"
@@ -2320,14 +2404,18 @@ with tab_quota:
                        "cột Thiết bị CNTT / Phần mềm (nếu có), Nhân sự thực tế, Định biên và nhân sự 12 tháng. "
                        "**Họ tên và mã nhân viên không được lưu.**")
             app_dir = os.path.dirname(os.path.abspath(__file__))
-            local_files = sorted((f for f in os.listdir(app_dir)
-                                  if f.lower().endswith(".xlsx") and "định biên" in unicodedata.normalize("NFC", f).lower()
-                                  and not unicodedata.normalize("NFC", f).lower().startswith("phân tích")),
-                                 key=lambda f: (not unicodedata.normalize("NFC", f).lower().startswith("tổng hợp định biên"), f))
+            tpl_dir = os.path.join(app_dir, "templates")
+            all_scan = set()
+            for d in (tpl_dir, app_dir):
+                if os.path.exists(d):
+                    for f in os.listdir(d):
+                        if f.lower().endswith(".xlsx") and "định biên" in unicodedata.normalize("NFC", f).lower() and not unicodedata.normalize("NFC", f).lower().startswith("phân tích"):
+                            all_scan.add(f)
+            local_files = sorted(all_scan, key=lambda f: (not unicodedata.normalize("NFC", f).lower().startswith("tổng hợp định biên"), f))
             UPLOAD = "(Tải lên file khác)"
             src_choice = st.selectbox("Nguồn file định biên", local_files + [UPLOAD])
             source = st.file_uploader("File định biên (.xlsx)", type=["xlsx"], key="hc_upload") if src_choice == UPLOAD \
-                else os.path.join(app_dir, src_choice)
+                else resolve_template_path(src_choice)
             if source is not None:
                 kit_codes = {k["code"] for k in kits_cfg}
                 site_ov = master.get("hc_site_overrides", {})
@@ -3186,7 +3274,135 @@ with tab_excel:
 
 
 # =====================================================================
-# TAB 4: KHẤU HAO & THẨM ĐỊNH HIỆU QUẢ ĐẦU TƯ
+# TAB 7: KỊCH BẢN & MUA SẮM TẬP TRUNG (SCENARIOS & PROCUREMENT)
+# =====================================================================
+with tab_scenario:
+    st.markdown("### 🎯 Mô phỏng Kịch bản Cắt giảm & Đóng gói Gói thầu Mua sắm")
+    st.caption("Công cụ phân tích cho Ban Lãnh đạo & Hội đồng Thẩm định: Thử nghiệm kịch bản cắt giảm/hoãn tiến độ What-If "
+               "và tự động gom nhóm nhu cầu thành các Gói thầu Mua sắm Tập trung để đàm phán chiết khấu số lượng lớn (Volume Discount).")
+
+    if df_curr.empty:
+        st.info("💡 Chưa có dữ liệu CapEx để phân tích kịch bản. Vui lòng nạp hoặc nhập dữ liệu ở tab 'Lập & Nhập liệu CapEx'.")
+    else:
+        sc_tab1, sc_tab2 = st.tabs([
+            "📉 Mô phỏng Kịch bản Cắt giảm & Tối ưu (What-If)",
+            "📦 Đóng gói Gói thầu Mua sắm Tập trung (Procurement)"
+        ])
+
+        with sc_tab1:
+            st.markdown("##### 📉 Mô phỏng Cắt giảm & Điều tiết Tiến độ Ngân sách")
+            st.caption("Thử nghiệm tác động khi cắt giảm ngân sách theo các mục tiêu và chiến lược khác nhau.")
+
+            w_col1, w_col2 = st.columns([1.2, 2.8])
+            with w_col1:
+                cut_pct = st.slider("Mục tiêu cắt giảm (%):", min_value=5, max_value=35, value=10, step=5, key="sc_cut_slider")
+                strategy = st.radio(
+                    "Chiến lược điều chỉnh:",
+                    [
+                        ("Bảo vệ cốt lõi (Bảo mật, Tekla/BIM, Server)", "protect_core"),
+                        ("Cắt giảm đồng đều theo tỷ lệ", "proportional"),
+                        ("Kéo giãn dòng tiền (Dời 40% sang 6 tháng cuối)", "defer_cashflow")
+                    ],
+                    format_func=lambda x: x[0],
+                    key="sc_strat_radio"
+                )[1]
+
+            sim_res = advisor.simulate_budget_scenario(df_curr, cut_pct, strategy, months)
+
+            with w_col2:
+                sm1, sm2, sm3 = st.columns(3)
+                sm1.metric("Ngân sách hiện tại", format_vnd_short(sim_res["original_total"]))
+                sm2.metric("Ngân sách kịch bản", format_vnd_short(sim_res["new_total"]))
+                sm3.metric("Số tiền tiết giảm", format_vnd_short(sim_res["savings"]),
+                           f"-{sim_res['savings_pct']:.1f}%" if sim_res["savings"] > 0 else "0%", delta_color="normal")
+
+            st.markdown("---")
+            # Charts & Comparison Table
+            sc_c1, sc_c2 = st.columns([1.3, 1.7])
+            with sc_c1:
+                st.markdown("###### 📅 So sánh Dòng tiền 12 Tháng")
+                cf_df = sim_res["cashflow_df"]
+                fig_cf = go.Figure()
+                fig_cf.add_trace(go.Bar(
+                    x=cf_df["Tháng"],
+                    y=cf_df["Hiện tại (VNĐ)"] / 1e9,
+                    name="Hiện tại (Tỷ VNĐ)",
+                    marker_color="#0F2C59"
+                ))
+                fig_cf.add_trace(go.Bar(
+                    x=cf_df["Tháng"],
+                    y=cf_df["Kịch bản (VNĐ)"] / 1e9,
+                    name="Kịch bản mới (Tỷ VNĐ)",
+                    marker_color="#2563EB"
+                ))
+                fig_cf.update_layout(
+                    barmode="group",
+                    margin=dict(t=20, b=10, l=10, r=10),
+                    height=320,
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                )
+                plot_chart(fig_cf, use_container_width=True)
+
+            with sc_c2:
+                st.markdown("###### 🏛️ Chi tiết Tác động theo Khối / Đơn vị")
+                comp_show = sim_res["comparison_df"]
+                st.dataframe(
+                    comp_show,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=320,
+                    column_config={
+                        "Hiện tại (VNĐ)": st.column_config.NumberColumn(format=MONEY_FMT),
+                        "Kịch bản mới (VNĐ)": st.column_config.NumberColumn(format=MONEY_FMT),
+                        "Tiết giảm (VNĐ)": st.column_config.NumberColumn(format=MONEY_FMT),
+                        "Tỷ lệ giảm (%)": st.column_config.NumberColumn(format="%.1f%%")
+                    }
+                )
+
+        with sc_tab2:
+            st.markdown("##### 📦 Đóng gói Gói thầu Mua sắm Tập trung (Procurement Sourcing Plan)")
+            st.caption("Tự động gom nhu cầu của toàn bộ các nhà máy và phòng ban thành các gói thầu lớn để đàm phán chiết khấu số lượng (Volume Discount).")
+
+            pkgs = advisor.generate_procurement_packages(df_curr)
+            if not pkgs:
+                st.info("Chưa có hạng mục nào phù hợp để đóng gói thầu.")
+            else:
+                total_pkg_val = sum(p["total_budget"] for p in pkgs)
+                total_est_save = sum(p["est_savings"] for p in pkgs)
+
+                pk_k1, pk_k2, pk_k3 = st.columns(3)
+                pk_k1.metric("Tổng giá trị các gói thầu", format_vnd_short(total_pkg_val))
+                pk_k2.metric("Số gói thầu mua sắm", f"{len(pkgs)} gói")
+                pk_k3.metric("Ước tính chiết khấu kỳ vọng", format_vnd_short(total_est_save), "Tiết kiệm 5% - 8%", delta_color="normal")
+
+                st.markdown("---")
+                for pkg in pkgs:
+                    with st.expander(f"{pkg['icon']} **{pkg['name']}** — {format_vnd_short(pkg['total_budget'])} ({pkg['total_qty']} thiết bị/bản quyền)", expanded=False):
+                        pc1, pc2, pc3 = st.columns([1.5, 1, 1])
+                        with pc1:
+                            st.write(f"**Mô tả:** {pkg['desc']}")
+                            st.write(f"**Thiết bị tiêu biểu:** {', '.join(pkg['top_items'])}")
+                        with pc2:
+                            st.write(f"**Thời gian đặt hàng (Lead time):** ~{pkg['lead_time_days']} ngày")
+                            st.write(f"**Chiết khấu mục tiêu:** {pkg['target_rebate']}")
+                        with pc3:
+                            st.metric("Tiết kiệm dự kiến", format_vnd_short(pkg["est_savings"]))
+
+                        sub_df = pkg["rows"][["item_name", "location", "quantity", "unit_price", "total_budget", "capex_type"]].copy()
+                        sub_df.columns = ["Tên thiết bị / Hạng mục", "Vị trí", "SL", "Đơn giá", "Thành tiền", "Loại"]
+                        st.dataframe(
+                            sub_df,
+                            use_container_width=True,
+                            hide_index=True,
+                            column_config={
+                                "Đơn giá": st.column_config.NumberColumn(format=MONEY_FMT),
+                                "Thành tiền": st.column_config.NumberColumn(format=MONEY_FMT)
+                            }
+                        )
+
+
+# =====================================================================
+# TAB: THỰC HIỆN NGÂN SÁCH
 # =====================================================================
 with tab_exec:
     st.markdown("### 💳 Thực hiện ngân sách")
