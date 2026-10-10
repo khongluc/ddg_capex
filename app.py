@@ -800,7 +800,7 @@ with st.sidebar:
 
     st.markdown("### ⚙️ Thiết lập Ngân sách")
 
-    budget_year = st.selectbox("Năm ngân sách", ["2026", "2025", "2027"], index=0)
+    budget_year = st.selectbox("Năm ngân sách", ["2027", "2026", "2025"], index=0)
     year_code = f"A{budget_year[-2:]}"
     months = fiscal_months(budget_year)
 
