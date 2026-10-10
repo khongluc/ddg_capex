@@ -61,19 +61,19 @@ d:\DATA\dev\I_Cost/
 
 ## 🏢 Các Phân hệ Chức năng Chính (11 Tabs)
 
-1. **📊 Bảng Điều Khiển Tổng Quan (Dashboard)**: KPI tổng hợp, cơ cấu CAPEX / CCDC / OPEX, phân kỳ theo tháng/quý và phân bổ theo Khối.
-2. **📝 Lập & Nhập liệu CapEx**:
+1. **📊 Tổng quan**: KPI tổng hợp, cơ cấu CAPEX / CCDC / OPEX, phân kỳ theo tháng/quý và phân bổ theo Khối.
+2. **📝 Lập CapEx**:
    - **Multi-Item Batch Picker**: Chọn nhanh nhiều thiết bị trong nhóm CNTT, nhập số lượng và đẩy vào phòng ban chỉ trong 10 giây.
    - **Single Item Detailed Form**: Nhập chi tiết thiết bị đặc thù, nhà cung cấp, cấu hình và phân kỳ tùy chỉnh.
-3. **👥 Phân tích Định biên Nhân sự**: Tải lên bảng định biên nhân sự mới, tự động phát hiện số lượng kỹ sư, chuyên viên để đề xuất máy tính, bản quyền phần mềm tương ứng.
-4. **📚 Quản lý Danh mục CNTT**: 13 nhóm CNTT với 112 hạng mục chuẩn hóa, mã ngân sách, đơn giá tham chiếu và tuổi thọ khấu hao.
-5. **🗂️ Quản lý Phiên bản Ngân sách**: Lưu snapshot các kỳ ngân sách (V1, V2, Approved) và so sánh chênh lệch (Variance Analysis).
-6. **🤖 Thẩm định & Tối ưu AI (Smart Advisor)**: Tự động rà soát bất thường, cảnh báo vượt trần, đề xuất gộp đơn hàng chiết khấu số lượng lớn.
-7. **📑 Báo cáo & Xuất Excel**: Xuất file Excel chuẩn hóa theo biểu mẫu tài chính DDC, hỗ trợ báo cáo theo Khối, Công ty thành viên, Loại tài sản.
-8. **📈 Theo dõi Thực hiện Ngân sách**: Đối soát kế hoạch ngân sách với PO thực tế ký kết, nghiệm thu và hóa đơn tài chính.
-9. **✅ Luồng Phê duyệt (Approval Workflow)**: Quy trình phê duyệt 4 cấp (Khởi tạo ➔ Trưởng phòng duyệt ➔ Khối CNTT thẩm định ➔ Ban Giám đốc phê duyệt) kèm lịch sử ký duyệt.
-10. **🏷️ Lịch sử Giá & Báo giá NCC**: Lưu trữ và cập nhật lịch sử biến động giá từ các đối tác cung cấp thiết bị.
-11. **⚙️ Quản trị Hệ thống**: Quản lý tài khoản, phân quyền, cấu hình hệ số lạm phát, sao lưu và khôi phục CSDL.
+3. **👥 Định biên**: Phân tích bảng định biên nhân sự, tự động phát hiện số lượng vị trí để đề xuất bộ trang bị chuẩn (PC/Laptop, bản quyền).
+4. **🏗️ Hạ tầng**: Lập dự toán hạ tầng CNTT dùng chung toàn site (Phòng Server, Core Switch, Firewall, Camera, UPS...).
+5. **💿 Phần mềm**: Quản lý danh mục & phân bổ đầu tư bản quyền phần mềm (Office 365, Tekla, AutoCAD, ERP, E-Office...).
+6. **📁 Nhập / Xuất**: Xuất file Excel chuẩn biểu mẫu tài chính DDC, nhập liệu từ sheet biểu mẫu và tải template mẫu.
+7. **🎯 Kịch bản**: Mô phỏng kịch bản cắt giảm ngân sách (What-If) và gom gói thầu mua sắm tập trung tiết kiệm chi phí.
+8. **💳 Giải ngân**: Đối soát kế hoạch ngân sách với PO thực tế ký kết, nghiệm thu và hóa đơn tài chính.
+9. **🗂️ Phiên bản**: Lưu snapshot các kỳ ngân sách (V1, V2, Approved) và phân tích biến động chênh lệch.
+10. **📈 Thẩm định**: Dự phóng khấu hao TSCĐ (theo TT 45/2013/TT-BTC) và thẩm định hiệu quả đầu tư dự án (NPV / IRR / ROI).
+11. **⚙️ Danh mục**: Quản lý 13 nhóm CNTT với 112 hạng mục chuẩn, đơn giá trần/sàn, đơn vị tính và nhà máy/site.
 
 ---
 

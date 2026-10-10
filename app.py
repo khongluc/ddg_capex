@@ -396,9 +396,9 @@ st.markdown("""
     /* Segmented Capsule Pill Tabs */
     .stTabs [data-baseweb="tab-list"] {
         background: #EEF2F6 !important;
-        padding: 5px !important;
+        padding: 4px !important;
         border-radius: 12px !important;
-        gap: 6px !important;
+        gap: 4px !important;
         border-bottom: none !important;
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
         margin-bottom: 16px !important;
@@ -407,31 +407,43 @@ st.markdown("""
     .stTabs [data-baseweb="tab-highlight"] { display: none !important; }
 
     .stTabs [data-baseweb="tab"] {
-        height: 38px !important;
-        padding: 0 14px !important;
-        font-size: 13.5px !important;
+        height: 36px !important;
+        padding: 0 10px !important;
+        font-size: 13px !important;
         font-weight: 600 !important;
         color: #475569 !important;
         border-radius: 8px !important;
         border: none !important;
         background: transparent !important;
+        white-space: nowrap !important;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
     .stTabs [data-baseweb="tab"]:hover {
         color: #0F2C59 !important;
-        background: rgba(255, 255, 255, 0.7) !important;
+        background: rgba(255, 255, 255, 0.75) !important;
     }
 
     .stTabs [aria-selected="true"] {
         background: #FFFFFF !important;
         color: #1E40AF !important;
-        box-shadow: 0 2px 8px rgba(15, 44, 89, 0.12), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+        box-shadow: 0 2px 6px rgba(15, 44, 89, 0.12), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
         font-weight: 700 !important;
     }
 
     .stTabs [data-baseweb="tab-border"] {
         display: none !important;
+    }
+
+    /* Toast Notification Styling */
+    [data-testid="stToast"] {
+        background: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        border-left: 4px solid #1E40AF !important;
+        border-radius: 10px !important;
+        box-shadow: 0 10px 25px -5px rgba(15, 44, 89, 0.15), 0 8px 10px -6px rgba(15, 44, 89, 0.08) !important;
+        font-weight: 500 !important;
+        color: #0F172A !important;
     }
 
     /* Modern Primary & Secondary Buttons */
@@ -1179,9 +1191,9 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 if "flash" in st.session_state:
-    st.success(st.session_state.pop("flash"))
+    st.toast(st.session_state.pop("flash"), icon="✅")
 if "flash_warn" in st.session_state:
-    st.warning(st.session_state.pop("flash_warn"))
+    st.toast(st.session_state.pop("flash_warn"), icon="⚠️")
 
 # THANH TRẠNG THÁI NỘP / DUYỆT NGÂN SÁCH SITE
 if selected_site != ALL_SITES:
@@ -1259,17 +1271,17 @@ if selected_site != ALL_SITES:
 
 # TABS NAVIGATION
 tab_names = [
-    "📊 Dashboard Phân tích",
-    "📝 Lập & Nhập liệu CapEx",
-    "👥 Định biên & Nhu cầu",
-    "🏗️ Hạ tầng CNTT dùng chung",
-    "💿 Đầu tư Phần mềm",
-    "📁 Nhập / Xuất Excel",
-    "🎯 Kịch bản & Mua sắm",
-    "💳 Thực hiện ngân sách",
+    "📊 Tổng quan",
+    "📝 Lập CapEx",
+    "👥 Định biên",
+    "🏗️ Hạ tầng",
+    "💿 Phần mềm",
+    "📁 Nhập / Xuất",
+    "🎯 Kịch bản",
+    "💳 Giải ngân",
     "🗂️ Phiên bản",
-    "📈 Khấu hao & Thẩm định",
-    "⚙️ Quản lý Danh mục",
+    "📈 Thẩm định",
+    "⚙️ Danh mục",
 ]
 # =====================================================================
 # TRANG QUẢN TRỊ: PHÂN QUYỀN & TIẾN ĐỘ (mở từ thanh bên, chỉ Admin)
