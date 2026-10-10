@@ -249,7 +249,7 @@ def build_quota_lines(needs: pd.DataFrame, dept: str, old_lines: List[Dict[str, 
             if prev:
                 for k, v in prev.items():
                     if k.startswith("pct_") or k in ("contract_date", "completion_date", "handover_date", "supplier", "entity",
-                                                         "item_seq", "item_code_base"):
+                                                         "item_seq", "item_code_base", "handover_auto"):
                         row[k] = v
             else:
                 weights = n.get("add_weights") if invest_type == "Mua mới" else None

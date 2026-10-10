@@ -1603,7 +1603,7 @@ with tab_input:
 
         if not can_edit:
             st.dataframe(df_grid, use_container_width=True, height=450, hide_index=True,
-                         column_order=[c for c in column_order if c not in ("_order", "item_seq", "item_code_base")],
+                         column_order=[c for c in column_order if c not in ("_order", "item_seq", "item_code_base", "handover_auto")],
                          column_config={**{c: st.column_config.NumberColumn(format=MONEY_FMT) for c in df_curr.columns
                                            if c in ("quantity", "unit_price", "total_budget", "total_val") or c.startswith("val_")},
                                         "total_pct": st.column_config.ProgressColumn(min_value=0.0, max_value=1.0, format="%.0f%%")})
@@ -1646,6 +1646,8 @@ with tab_input:
                     "auto_quota": None,
                     "item_seq": None,
                     "item_code_base": None,
+                    "handover_auto": None,
+                    "handover_date": st.column_config.TextColumn("Ngày bàn giao", help="YYYY-MM-DD. Để trống = cuối tháng giải ngân cuối"),
                     **{c: st.column_config.NumberColumn(format=MONEY_FMT, disabled=True) for c in df_curr.columns if c.startswith("val_") or c == "total_val"},
                 }
             )
@@ -1796,7 +1798,7 @@ with tab_input:
                                     "unit_price": p,
                                     "contract_date": d_now,
                                     "completion_date": d_now,
-                                    "handover_date": d_now,
+                                    "handover_date": "",  # trống -> tự lấy cuối tháng giải ngân cuối
                                     "need_type": b_need_type,
                                     "need_reason": b_reason if b_need_type == qt.NEED_NEW else "",
                                 }

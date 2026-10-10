@@ -3,6 +3,7 @@ Core calculation engine, data model, import/export for CAPEX Web App
 """
 import os
 import io
+import calendar
 import datetime
 import math
 import numpy as np
@@ -42,6 +43,17 @@ def clean_number(val, default=0.0):
         return float(val_str)
     except Exception:
         return default
+
+def default_handover_date(row: Dict[str, Any], months: List[str]) -> str:
+    """Ngày cuối của tháng giải ngân cuối cùng (nhãn tháng dạng 'T10 2026'), '' nếu chưa phân kỳ."""
+    last = next((m for m in reversed(months) if clean_number(row.get(f"pct_{m}", 0.0), 0.0) > 0), None)
+    try:
+        mo, yr = last[1:].split()
+        mo, yr = int(mo), int(yr)
+    except (TypeError, ValueError, AttributeError):
+        return ""
+    return datetime.date(yr, mo, calendar.monthrange(yr, mo)[1]).strftime("%Y-%m-%d")
+
 
 def _int_or_none(v) -> Optional[int]:
     try:
@@ -135,6 +147,14 @@ def calculate_row(row: Dict[str, Any], months: List[str] = DEFAULT_MONTHS, year_
             row[f"pct_{m}"] = pcts[i]
             row[f"val_{m}"] = pcts[i] * total_budget
         total_pct += row[f"pct_{m}"]
+
+    # Ngày bàn giao: trống -> ngày cuối tháng giải ngân cuối (tự cập nhật theo phân kỳ); người lập nhập tay thì giữ nguyên
+    hd = str(row.get("handover_date") or "").strip()
+    if hd in ("", "nan", "None") or hd == str(row.get("handover_auto") or ""):
+        auto = default_handover_date(row, months)
+        row["handover_date"], row["handover_auto"] = auto, auto
+    else:
+        row["handover_auto"] = ""
 
     row["total_pct"] = round(total_pct, 4)
     row["total_val"] = sum(row.get(f"val_{m}", 0.0) for m in months)
