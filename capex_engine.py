@@ -15,6 +15,7 @@ from typing import Dict, List, Tuple, Any, Optional
 
 from master_data import (
     load_master_data,
+    division_of,
     generate_project_code,
     generate_item_code,
     generate_budget_code,
@@ -159,6 +160,10 @@ def calculate_row(row: Dict[str, Any], months: List[str] = DEFAULT_MONTHS, year_
     row["total_pct"] = round(total_pct, 4)
     row["total_val"] = sum(row.get(f"val_{m}", 0.0) for m in months)
     row["pct_valid"] = abs(row["total_pct"] - 1.0) < 0.005 or (total_budget == 0 and row["total_pct"] == 0)
+
+    # Khối: trống -> theo phòng ban đề xuất (bảng phòng ban -> khối của file định biên)
+    if str(row.get("division") or "").strip() in ("", "nan", "None"):
+        row["division"] = division_of(row.get("dept_proposing"), master)
 
     # Codes
     stt = int(clean_number(row.get("stt", 1), 1))

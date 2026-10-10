@@ -18,6 +18,7 @@ import db
 from master_data import (
     load_master_data,
     save_master_data,
+    division_of,
     generate_project_code,
     generate_item_code,
     generate_budget_code,
@@ -1773,7 +1774,7 @@ with tab_input:
                         else:
                             ent_names = [e["name"] for e in master.get("entities", [])]
                             target_ent = ent_names[0] if ent_names else "DDC"
-                            target_div = master.get("divisions", ["Khối CNTT"])[0]
+                            target_div = division_of(active_dept, master)
                             target_loc = SITE_NAME.get(selected_site, selected_site)
                             d_now = datetime.date.today().strftime("%Y-%m-%d")
 
@@ -1853,8 +1854,10 @@ with tab_input:
                     st.markdown("##### 1. Đơn vị & Địa điểm")
                     ent_names = [e["name"] for e in master.get("entities", [])]
                     f_entity = st.selectbox("(*) Pháp nhân sở hữu", ent_names, index=0)
-                    div_options = master.get("divisions", ["Khối Sản Xuất", "Khối CNTT"])
-                    f_division = st.selectbox("Khối", div_options)
+                    _mapped_div = division_of(active_dept, master)
+                    div_options = [""] + list(dict.fromkeys(([_mapped_div] if _mapped_div else []) + master.get("divisions", [])))
+                    f_division = st.selectbox("Khối", div_options, index=div_options.index(_mapped_div),
+                                              format_func=lambda v: v or "(Trống – tự lấy theo phòng ban)")
                     f_dept_prop_val = st.text_input("(*) Phòng ban đề xuất", value=active_dept, disabled=True)
                     dept_options = master.get("departments", ["Phòng CNTT", "Phòng Cơ điện"])
                     f_dept_using = st.selectbox("(*) Phòng ban sử dụng TS", dept_options,
@@ -2153,6 +2156,15 @@ with tab_quota:
                     use_est = o1.checkbox("Ghi hiện có ước tính (hạng mục chưa khai báo)", value=True, key="hc_use_est")
                     gen_lines = o2.checkbox("Tạo luôn dòng ngân sách 'Định biên' cho các phòng ban", value=True, key="hc_gen_lines")
                     if st.button(f"⚡ Áp định biên vào năm ngân sách {budget_year}", type="primary", disabled=not year_ok, key="hc_apply"):
+                        # Cập nhật bảng phòng ban -> khối theo file (chỉ tên khối/phòng)
+                        if "division" in P.columns:
+                            _divs = dict(master.get("dept_divisions") or {})
+                            for _dp, _dv in P[["dept", "division"]].dropna().drop_duplicates("dept").itertuples(index=False):
+                                if str(_dv).strip():
+                                    _divs[str(_dp).strip()] = str(_dv).strip()
+                            if _divs != (master.get("dept_divisions") or {}):
+                                master["dept_divisions"] = dict(sorted(_divs.items()))
+                                save_master_data(master)
                         statuses = db.all_statuses(budget_year)
                         locked = {sc for sc, stt in statuses.items() if stt.get("status") not in db.EDITABLE_STATUSES}
                         done_depts, skipped, n_lines = 0, set(), 0

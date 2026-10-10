@@ -346,6 +346,16 @@ def save_master_data(data: Dict[str, Any]):
     with open(MASTER_DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
+def division_of(dept: Any, master: Dict[str, Any]) -> str:
+    """Khối của phòng ban theo bảng 'dept_divisions' (lấy từ file định biên); không có -> ''."""
+    key = " ".join(str(dept or "").lower().split())
+    if not key:
+        return ""
+    for name, div in (master.get("dept_divisions") or {}).items():
+        if " ".join(str(name).lower().split()) == key:
+            return div or ""
+    return ""
+
 def get_it_catalog() -> List[Dict[str, Any]]:
     """Get full list of structured IT items"""
     m = load_master_data()
