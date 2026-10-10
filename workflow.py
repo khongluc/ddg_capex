@@ -11,7 +11,8 @@ import db
 import quota as qt
 
 COMPARE_FIELDS = ("item_name", "catalog_code", "quantity", "unit_price", "invest_type", "need_type", "need_reason",
-                  "dept_proposing", "dept_using", "detail_work", "handover_date", "division")
+                  "dept_proposing", "dept_using", "detail_work", "handover_date", "division", "review_note", "entity",
+                  "asset_cat1", "asset_cat2", "cost_lv1", "cost_lv2", "supplier", "contract_date", "completion_date", "unit")
 
 
 def dept_key(name) -> str:
@@ -70,6 +71,72 @@ def keep_locked_rows(new_rows: List[Dict[str, Any]], stored: List[Dict[str, Any]
             used.add(r.get("item_code"))
             ignored.add(r.get("dept_proposing"))
     return out, {d for d in ignored if d}
+
+
+def _code(r: Dict[str, Any]):
+    """Mã hạng mục cố định của dòng; None nếu dòng chưa được cấp số (dòng mới / đổi nhóm mã)."""
+    seq = r.get("item_seq")
+    if seq is None or (isinstance(seq, float) and math.isnan(seq)) or not r.get("item_code"):
+        return None
+    return r["item_code"]
+
+
+def merge_site_rows(base: List[Dict[str, Any]], new: List[Dict[str, Any]], current: List[Dict[str, Any]]
+                    ) -> Tuple[List[Dict[str, Any]], List[str]]:
+    """Gộp thay đổi của 1 người vào bản đang có trong CSDL, theo Mã hạng mục (không ghi đè cả site).
+    base = các dòng người đó đã xem (lúc tải trang), new = các dòng muốn lưu, current = các dòng hiện có trong CSDL.
+    - Dòng người đó không đổi (new == base): giữ bản hiện có (kể cả khi người khác vừa sửa / xóa).
+    - Dòng người đó sửa: ghi nếu người khác chưa sửa (current == base); người khác đã sửa / xóa -> giữ của họ, báo xung đột.
+    - Dòng người đó xóa: xóa nếu người khác chưa sửa; đã sửa -> giữ, báo xung đột.
+    - Dòng mới (chưa có mã): thêm cuối. Dòng người khác vừa thêm / dòng ngoài phạm vi người đó xem: giữ nguyên.
+    Thứ tự dòng theo bản hiện có. Trả về (dòng để lưu, mô tả xung đột)."""
+    b = {c: r for r in base if (c := _code(r))}
+    cur = {c: r for r in current if (c := _code(r))}
+    chosen, deleted, added, used, conflicts = {}, set(), [], set(), []
+
+    def label(r):
+        return f"{r.get('item_code')} ({r.get('item_name')}, {r.get('dept_proposing')})"
+
+    for r in new:
+        c = _code(r)
+        if c is None:  # dòng mới
+            added.append(r)
+            continue
+        if c in used:  # nhân bản trong cùng lần lưu -> cấp số mới
+            added.append({**r, "item_seq": None})
+            continue
+        used.add(c)
+        old, now = b.get(c), cur.get(c)
+        if old is None:  # có mã nhưng ngoài bản đã xem
+            if now is None:
+                added.append(r)
+            elif not _same(r, now):
+                conflicts.append(f"{label(now)}: người khác vừa thêm / sửa")
+            continue
+        if _same(r, old):  # không đổi -> theo bản hiện có
+            continue
+        if now is None:
+            conflicts.append(f"{label(r)}: người khác vừa xóa - không lưu thay đổi")
+        elif _same(now, old):
+            chosen[c] = r
+        else:
+            conflicts.append(f"{label(now)}: người khác vừa sửa - giữ bản của họ")
+    for c, old in b.items():  # dòng đã xem mà lần lưu này không còn -> người này xóa
+        if c in used or c not in cur:
+            continue
+        if _same(cur[c], old):
+            deleted.add(c)
+        else:
+            conflicts.append(f"{label(cur[c])}: người khác vừa sửa - không xóa")
+    out = []
+    for r in current:
+        c = _code(r)
+        if c is None:
+            if not any(_code(x) is None for x in base):  # dòng cũ chưa có mã: chỉ giữ nếu người này không xem chúng
+                out.append(r)
+        elif c not in deleted:
+            out.append(chosen.get(c, r))
+    return out + added, conflicts
 
 
 def dept_problems(rows: pd.DataFrame) -> List[str]:

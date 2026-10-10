@@ -463,6 +463,40 @@ def set_item_seq_counters(year: str, site_code: str, counters: Dict[str, int]):
     set_setting(f"item_seq|{year}|{site_code}", json.dumps(counters, ensure_ascii=False, sort_keys=True))
 
 
+def merge_site_lines(year: str, site_code: str, merge, actor: str) -> List[Dict[str, Any]]:
+    """Ghi dòng ngân sách 1 site trong 1 giao dịch có khóa: đọc bản hiện có + bộ đếm Mã hạng mục, gọi
+    merge(current_rows, counters) -> (rows, counters), ghi lại. Người khác lưu cùng site phải chờ, nên không ai
+    ghi đè lên bản cũ (SQLite: BEGIN IMMEDIATE; PostgreSQL: khóa advisory theo năm + site)."""
+    init_db()
+    key = f"item_seq|{year}|{site_code}"
+    now = _now()
+    with connect() as conn:
+        if conn.pg:
+            conn.execute("SELECT pg_advisory_xact_lock(hashtext(?))", (f"budget_lines|{year}|{site_code}",))
+        else:
+            conn.raw.execute("BEGIN IMMEDIATE")
+        current = [json.loads(r["data"]) for r in conn.execute(
+            "SELECT data FROM budget_lines WHERE year = ? AND site_code = ? ORDER BY seq, id", (year, site_code)).fetchall()]
+        raw = conn.execute("SELECT value FROM app_settings WHERE key = ?", (key,)).fetchone()
+        try:
+            counters = {k: int(v) for k, v in json.loads(raw["value"]).items()} if raw and raw["value"] else {}
+        except (ValueError, TypeError, AttributeError):
+            counters = {}
+        rows, counters = merge(current, counters)
+        conn.execute("DELETE FROM budget_lines WHERE year = ? AND site_code = ?", (year, site_code))
+        conn.executemany(
+            "INSERT INTO budget_lines(year, site_code, seq, data, updated_by, updated_at) VALUES (?,?,?,?,?,?)",
+            [(year, site_code, i, json.dumps(_jsonable(r), ensure_ascii=False), actor, now) for i, r in enumerate(rows)])
+        conn.execute("INSERT INTO app_settings(key, value, updated_at) VALUES (?,?,?) "
+                     "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+                     (key, json.dumps(counters, ensure_ascii=False, sort_keys=True), now))
+        conn.execute(
+            "INSERT INTO site_status(year, site_code, status, updated_by, updated_at) VALUES (?,?,?,?,?) "
+            "ON CONFLICT(year, site_code) DO NOTHING", (year, site_code, STATUS_DRAFT, actor, now))
+    log(actor, "save_lines", f"{year}/{site_code}: {len(rows)} dòng")
+    return rows
+
+
 def replace_lines(year: str, site_code: str, rows: List[Dict[str, Any]], actor: str):
     """Overwrite all budget lines of one site for one year."""
     now = _now()

@@ -650,31 +650,52 @@ def rows_for_site(df: pd.DataFrame, site_code: str, months, year_code: str):
         d["stt"] = i + 1
         d["location"] = SITE_NAME.get(site_code, site_code)
         rows.append(calculate_row(d, months=months, year_code=year_code, master=master))
-    counters = assign_item_seqs(rows, db.get_item_seq_counters(budget_year, site_code))
-    db.set_item_seq_counters(budget_year, site_code, counters)
     return rows
 
 
-def save_site(df: pd.DataFrame, site_code: str, allow_locked: bool = False):
-    if current_user.is_dept_user:
+def save_site(df: pd.DataFrame, site_code: str, allow_locked: bool = False, base=None, overwrite: bool = False):
+    """Lưu dòng ngân sách 1 site. Mặc định GỘP theo Mã hạng mục so với bản người dùng đã xem (base, mặc định là bản tải
+    lúc mở trang): chỉ áp dòng họ thêm / sửa / xóa, giữ thay đổi người khác vừa lưu, báo xung đột. Cả bước đọc - gộp - ghi
+    nằm trong 1 giao dịch khóa site. overwrite=True: thay toàn bộ site (nạp dữ liệu mẫu / nhập Excel cho nhiều site)."""
+    if current_user.is_dept_user:  # phòng ban chỉ lưu được dòng của phòng mình
         allowed = {dept_key(d) for d in current_user.allowed_depts(site_code)}
-        mine = df[df["dept_proposing"].map(dept_key).isin(allowed)] if "dept_proposing" in df.columns else df.iloc[0:0]
-        stored = pd.DataFrame(db.load_lines(budget_year, [site_code]))
-        if not stored.empty:
-            stored = stored.drop(columns=["site_code"], errors="ignore")
-            stored = stored[~stored["dept_proposing"].map(dept_key).isin(allowed)] if "dept_proposing" in stored.columns else stored
-        df = pd.concat([stored, mine], ignore_index=True)
-    rows = rows_for_site(df, site_code, months, year_code)
-    if not allow_locked:
-        locked = {k for k, v in db.dept_statuses(budget_year, site_code).items() if v["status"] in db.DEPT_LOCKED_STATUSES}
-        if locked:
-            stored_rows = [{k: v for k, v in l.items() if k != "site_code"} for l in db.load_lines(budget_year, [site_code])]
-            rows, ignored = wf.keep_locked_rows(rows, stored_rows, locked)
-            if ignored:
-                st.session_state["flash_warn"] = ("Giữ nguyên dòng của phòng ban đã nộp/duyệt (IT site trả lại hoặc mở lại mới sửa được): "
-                                                  + ", ".join(sorted(ignored)))
-    db.replace_lines(budget_year, site_code, rows, actor=current_user.email)
+        df = df[df["dept_proposing"].map(dept_key).isin(allowed)] if "dept_proposing" in df.columns else df.iloc[0:0]
+        overwrite = False
+    new_rows = rows_for_site(df, site_code, months, year_code)
+    if base is None and not overwrite:
+        base = SITE_BASE.get(site_code)
+    if base is None and not overwrite:  # không có bản đã xem -> coi như đọc ngay trước khi lưu
+        base = [{k: v for k, v in l.items() if k != "site_code"} for l in db.load_lines(budget_year, [site_code])]
+    if current_user.is_dept_user and base is not None:  # bản đã xem của phòng ban = chỉ dòng phòng mình
+        base = [r for r in base if dept_key(r.get("dept_proposing")) in allowed]
+    locked = set() if allow_locked else {k for k, v in db.dept_statuses(budget_year, site_code).items()
+                                         if v["status"] in db.DEPT_LOCKED_STATUSES}
+    notes = {}
+
+    def _merge(current, counters):
+        if overwrite:
+            rows, conflicts = list(new_rows), []
+        else:
+            rows, conflicts = wf.merge_site_rows(base, new_rows, current)
+        rows, ignored = wf.keep_locked_rows(rows, current, locked)
+        counters = assign_item_seqs(rows, counters)
+        notes.update(conflicts=conflicts, ignored=ignored)
+        return rows, counters
+
+    rows = db.merge_site_lines(budget_year, site_code, _merge, actor=current_user.email)
+    warn = []
+    if notes.get("conflicts"):
+        c = notes["conflicts"]
+        warn.append(f"{len(c)} dòng vừa được người khác cập nhật nên không lưu thay đổi của bạn (bảng đã tải lại bản mới): "
+                    + "; ".join(c[:5]) + (f"; … và {len(c) - 5} dòng khác" if len(c) > 5 else ""))
+    if notes.get("ignored"):
+        warn.append("Giữ nguyên dòng của phòng ban đã nộp/duyệt (IT site trả lại hoặc mở lại mới sửa được): "
+                    + ", ".join(sorted(notes["ignored"])))
+    if warn:
+        st.session_state["flash_warn"] = " | ".join(warn)
     st.session_state["editor_version"] = st.session_state.get("editor_version", 0) + 1
+    if site_code in SITE_BASE:  # lần lưu tiếp theo trong cùng lượt chạy dựa trên bản vừa ghi
+        SITE_BASE[site_code] = [dict(r) for r in rows]
     return rows
 
 
@@ -946,7 +967,7 @@ def render_price_update():
             n_lines = 0
             if not imp.empty:
                 for sc, grp in imp[imp["action"] == "Đổi"].groupby("site"):
-                    save_site(pd.DataFrame(pricing.reprice_lines(lines_by_site[sc], grp)), sc)
+                    save_site(pd.DataFrame(pricing.reprice_lines(lines_by_site[sc], grp)), sc, base=lines_by_site[sc])
                     n_lines += len(grp)
             db.log(current_user.email, "price_update", f"{budget_year}: {n_items} hạng mục, {n_lines} dòng ngân sách ({up.name})")
             st.session_state["flash"] = f"Đã cập nhật giá {n_items} hạng mục và tính lại {n_lines} dòng ngân sách năm {budget_year}."
@@ -1046,13 +1067,17 @@ with st.sidebar:
 
     # Dữ liệu của site (toàn bộ phòng ban); "_order" giữ thứ tự dòng khi lưu bảng đã lọc
     scope_sites = visible_sites if selected_site == ALL_SITES else [selected_site]
-    df_site = pd.DataFrame(db.load_lines(budget_year, scope_sites))
+    _site_raw = db.load_lines(budget_year, scope_sites)
+    df_site = pd.DataFrame(_site_raw)
     if selected_site != ALL_SITES and "site_code" in df_site.columns:
         df_site = df_site.drop(columns=["site_code"])
     if current_user.is_dept_user and selected_site != ALL_SITES and "dept_proposing" in df_site.columns:
         _allowed = {dept_key(d) for d in current_user.allowed_depts(selected_site)}
         df_site = df_site[df_site["dept_proposing"].map(dept_key).isin(_allowed)].reset_index(drop=True)
+        _site_raw = [r for r in _site_raw if dept_key(r.get("dept_proposing")) in _allowed]
     df_site["_order"] = range(len(df_site))
+    # Bản người dùng đang xem (đúng phạm vi họ thấy): khi lưu chỉ áp thay đổi so với bản này, không ghi đè cả site
+    SITE_BASE = {selected_site: [{k: v for k, v in r.items() if k != "site_code"} for r in _site_raw]} if selected_site != ALL_SITES else {}
 
     # Phòng ban: danh mục chuẩn + tên phòng ban đang có trong dữ liệu (không trùng hoa/thường)
     hc_depts = sorted({r["dept"] for r in db.load_dept_rows("dept_headcount", budget_year, scope_sites)})
@@ -1124,7 +1149,7 @@ with st.sidebar:
             _, seed_df = load_capex_from_excel(SAMPLE_EXCEL_PATH, seed_sheet, months=months, year_code=year_code)
             groups, unmatched = distribute_by_location(seed_df)
             for code, part in groups.items():
-                save_site(part, code)
+                save_site(part, code, overwrite=True)
             st.session_state["flash"] = (f"Đã nạp {sum(len(p) for p in groups.values())} dòng vào {len(groups)} site."
                                          + (f" Bỏ qua vị trí không khớp danh mục: {unmatched}" if unmatched else ""))
             st.rerun()
@@ -2580,7 +2605,9 @@ with tab_quota:
                                                 "handover_date": "", "contract_date": "", "completion_date": ""}
                                     new_lines += qt.build_quota_lines(n, dp, old, months, master, defaults)
                             if gen_lines:
-                                save_site(pd.concat([site_lines[~drop_mask], pd.DataFrame(new_lines)], ignore_index=True), sc)
+                                save_site(pd.concat([site_lines[~drop_mask], pd.DataFrame(new_lines)], ignore_index=True), sc,
+                                          base=[{k: v for k, v in r.items() if k != "site_code" and not (isinstance(v, float) and v != v)}
+                                                for r in site_lines.to_dict("records")])
                                 n_lines += len(new_lines)
                         db.log(current_user.email, "import_headcount", f"{budget_year}: {done_depts} phòng ban, {n_lines} dòng ngân sách")
                         st.session_state["quota_version"] = st.session_state.get("quota_version", 0) + 1
@@ -3274,7 +3301,7 @@ with tab_excel:
                     elif import_to_all:
                         groups, unmatched = distribute_by_location(up_df)
                         for code, part in groups.items():
-                            save_site(part, code)
+                            save_site(part, code, overwrite=True)
                         st.session_state["flash"] = (f"🎉 Đã nhập {sum(len(p) for p in groups.values())} hạng mục vào {len(groups)} site."
                                                      + (f" Bỏ qua vị trí không khớp danh mục: {unmatched}" if unmatched else ""))
                         st.rerun()
