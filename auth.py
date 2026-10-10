@@ -153,8 +153,60 @@ def _is_local_request() -> bool:
     return host in ("localhost", "127.0.0.1", "[::1]")
 
 
+_FORCE_LIGHT_JS = """
+<script>
+(function () {
+  try {
+    var w = window.parent, ls = w.localStorage, key = "stActiveTheme-" + w.location.pathname;
+    var raw = ls.getItem(key + "-v1"), name = "";
+    try { name = (JSON.parse(raw || "{}") || {}).name || ""; } catch (e) {}
+    var storedDark = !!raw && name !== "Light" && name !== "Custom Theme";
+    if (storedDark) { ls.removeItem(key + "-v1"); ls.removeItem(key); ls.removeItem("stActiveTheme"); }
+    function looksDark() {
+      var el = w.document.querySelector('[data-testid="stWidgetLabel"] p, [data-testid="stWidgetLabel"]');
+      if (!el) return false;
+      var c = (w.getComputedStyle(el).color.match(/\\d+/g) || [0, 0, 0]).map(Number);
+      return c[0] + c[1] + c[2] > 600;
+    }
+    // Khung nhúng không được điều hướng trang chính -> chạy lệnh trong trang chính (cùng nguồn)
+    function runInParent(code) {
+      var s = w.document.createElement("script");
+      s.textContent = code;
+      w.document.head.appendChild(s);
+    }
+    setTimeout(function () {
+      var ss = w.sessionStorage;
+      if (storedDark && !ss.getItem("icostThemeReload")) {   // đã xóa lựa chọn tối: tải lại 1 lần
+        ss.setItem("icostThemeReload", "1");
+        runInParent("location.reload()");
+        return;
+      }
+      var u = new URL(w.location.href);
+      if (looksDark() && (u.searchParams.get("embed_options") || "").indexOf("light_theme") < 0) {
+        u.searchParams.set("embed_options", "light_theme");   // máy chủ chưa nạp [theme]: ép nền sáng qua tham số Streamlit
+        runInParent("location.replace(" + JSON.stringify(u.toString()) + ")");
+      }
+    }, 700);
+  } catch (e) {}
+})();
+</script>
+"""
+
+
+def force_light_theme():
+    """Giao diện thiết kế cho nền sáng. Trình duyệt đã lưu lựa chọn 'Dark' (hoặc máy chế độ tối khi máy chủ chưa nạp
+    [theme] trong config.toml) sẽ ưu tiên hơn cấu hình -> chữ trắng trên nền sáng. Xóa lựa chọn đã lưu và tải lại
+    với ?embed_options=light_theme (tham số chính thức của Streamlit)."""
+    import streamlit.components.v1 as components
+    st.markdown("<style>.element-container:has(> iframe[height='0']), "
+                "[data-testid='stElementContainer']:has(iframe[height='0']) { display: none; }</style>",
+                unsafe_allow_html=True)
+    components.html(_FORCE_LIGHT_JS, height=0)
+
+
 def require_login() -> CurrentUser:
     """Show the login page until the visitor is authenticated and authorized; return the current user."""
+    force_light_theme()
     db.init_db()
     cfg = _icost_cfg()
     providers = _configured_providers()
