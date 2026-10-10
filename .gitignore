@@ -4,6 +4,7 @@ data/
 *.db
 *.db-wal
 *.db-shm
+*.zip
 
 # File Excel nghiệp vụ (có họ tên, mã nhân viên, số liệu tài chính) - tải lên qua giao diện app
 *.xlsx

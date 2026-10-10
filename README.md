@@ -1,92 +1,107 @@
 # HỆ THỐNG QUẢN LÝ & TÍNH TOÁN NGÂN SÁCH ĐẦU TƯ CAPEX KHỐI CNTT
+**TẬP ĐOÀN ĐẠI DŨNG (DDC) — I-COST PLATFORM**
 
 ---
 
-## 🌟 Giới thiệu
+## 🌟 Giới thiệu Tổng quan
 
-Web App được xây dựng chuyên biệt để giải quyết bài toán **Lập kế hoạch, Phân loại, Tính toán chi phí, Phân kỳ giải ngân và Thẩm định Ngân sách Đầu tư CAPEX cho Khối / Phòng Công nghệ Thông tin (CNTT)** theo từng phòng ban và toàn công ty. 
+**I-Cost** là nền tảng quản trị và lập ngân sách đầu tư Công nghệ Thông tin (IT CapEx & OpEx) toàn diện được thiết kế chuyên biệt cho Tập đoàn Đại Dũng. Hệ thống số hóa quy trình thu thập nhu cầu đầu tư, thẩm định danh mục CNTT, tự động hóa phân kỳ dòng tiền, tính toán khấu hao và đối soát thực hiện ngân sách.
 
-Toàn bộ hệ thống được đồng bộ 100% với file biểu mẫu kế toán **`2. Form file nhập liệu CAPEX 2026.xlsx`**.
+Hệ thống đồng bộ 100% với biểu mẫu tài chính kế toán **`2. Form file nhập liệu CAPEX 2026.xlsx`** của Tập đoàn.
 
 ---
 
-## 🚀 Khởi chạy Web App
+## 🚀 Khởi chạy Nhanh (Quick Start)
 
-### Cách 1: Khởi chạy 1-Click (Khuyên dùng)
+### Cách 1: Khởi chạy 1-Click (Khuyên dùng trên Windows)
 - Nhấp đúp chuột vào file **`run_app.bat`** tại thư mục dự án `d:\DATA\dev\I_Cost`.
 - Trình duyệt sẽ tự động mở tại địa chỉ: **`http://localhost:8501`**.
 
-### Cách 2: Khởi chạy bằng PowerShell / Terminal
+### Cách 2: Khởi chạy qua PowerShell / Command Prompt
 ```powershell
 python -m streamlit run app.py
 ```
 
 ---
 
-## 🏢 FORM LẬP NGÂN SÁCH THEO PHÒNG BAN TIỆN LỢI
+## 📁 Cấu trúc Thư mục Chuẩn Hóa (Standard Project Structure)
 
-Hệ thống đã nâng cấp toàn diện Tab **"📝 Lập & Nhập liệu CapEx"** thành trung tâm lập ngân sách theo phòng ban với 2 hình thức nhập liệu cực kỳ thuận tiện:
+Hệ thống được tổ chức theo tiêu chuẩn kiến trúc phần mềm doanh nghiệp:
 
-### 1. 🏢 Thẻ Thiết lập & Thống kê Phòng ban Mục tiêu
-- **Bộ chọn phòng ban trực quan**: Chọn nhanh phòng ban cần lập (trong 64 phòng ban hoặc phòng ban mới).
-- **Thẻ KPI phòng ban tức thì**:
-  - Tên phòng ban & Vị trí / Site.
-  - Số lượng hạng mục đã lập.
-  - Tổng ngân sách đề xuất của riêng phòng ban.
-  - Bóc tách theo chuẩn kế toán: **TSCĐ (CAPEX)** vs **CCDC dài hạn** vs **Chi phí (OPEX)**.
-- **Nút xuất Excel riêng**: Tải riêng file Excel phiếu đề xuất của phòng ban đó để trình ký.
+```
+d:\DATA\dev\I_Cost/
+├── .streamlit/               # Cấu hình theme Corporate Navy & server Streamlit
+├── data/                     # Cơ sở dữ liệu SQLite & dữ liệu hoạt động
+│   ├── icost.db              # Database chính
+│   ├── backups/              # Các bản sao lưu database (.db, .zip)
+│   └── archive/              # Dữ liệu dump và scratch lưu trữ
+├── docs/                     # Tài liệu kỹ thuật dự án
+│   ├── ARCHITECTURE.md       # Chi tiết kiến trúc phân tầng & modules
+│   └── DEPLOY_STREAMLIT_CLOUD.md # Hướng dẫn triển khai Streamlit Cloud
+├── templates/                # Biểu mẫu Excel kế toán & định biên nhân sự mẫu
+├── tests/                    # Bộ 29+ test cases tự động (Python unittest)
+├── app.py                    # Presentation Layer: 11 Tabs giao diện Streamlit
+├── auth.py                   # Xác thực & phân quyền 4 vai trò (RBAC)
+├── capex_engine.py           # Core Engine: Khấu hao, phân kỳ, hạch toán TSCĐ/CCDC
+├── master_data.py            # Master Catalog: 13 nhóm CNTT & 112 hạng mục chuẩn
+├── smart_advisor.py          # AI Rule Engine & Cố vấn tối ưu ngân sách
+├── quota.py                  # Module phân tích định biên nhân sự & tự động dự toán
+├── pricing.py                # Quản lý đơn giá & lịch sử báo giá nhà cung cấp
+├── workflow.py               # Luồng phê duyệt 4 cấp & cơ chế khóa phòng ban
+├── execution.py              # Theo dõi thực hiện ngân sách & đối soát PO/Hóa đơn
+├── versions.py               # Quản lý phiên bản ngân sách & so sánh chênh lệch
+├── reports.py                # Xuất báo cáo tài chính & biểu mẫu Excel DDC
+├── requirements.txt          # Thư viện phụ thuộc
+└── run_app.bat               # File thực thi 1-click
+```
 
-### 2. 🛒 Chế độ 1: Chọn Nhanh theo Danh mục CNTT (Multi-Item Batch Picker - Tiện lợi nhất)
-- **Thao tác trong 10 giây**:
-  1. Chọn **Nhóm CNTT** (vd: `IT01. Thiết bị người dùng cuối` - PC/Laptop, `IT09. Phần mềm M365`, `IT02. Máy in/Scan`...).
-  2. Bảng các thiết bị của nhóm hiện ra với: Mã, Tên thiết bị chuẩn, Đơn giá tham chiếu, Đơn vị tính, Phân loại kế toán.
-  3. Người dùng chỉ cần gõ số lượng cần mua vào cột **"Số lượng cần mua"** (những món không mua để 0). Có thể nhập thêm ghi chú / đối tượng sử dụng.
-  4. Chọn **Tháng đưa vào sử dụng** (vd: `T1 2026`).
-  5. Chọn **Loại nhu cầu** (Định biên / Phát sinh mới).
-  6. Bấm nút: **`➕ Thêm [X] mục vào [Tên Phòng Ban]`**.
-- **Tự động hóa hoàn toàn**:
-  - Tự động tính thành tiền: `Số lượng × Đơn giá`.
-  - Tự động phân kỳ giải ngân 100% vào tháng sử dụng đã chọn.
-  - Tự động sinh `Mã công trình`, `Mã hạng mục`, `Mã ngân sách`.
-  - Tự động hạch toán TSCĐ (nguyên giá ≥ 30tr) hoặc CCDC/OPEX.
-  - Tiết kiệm 95% thời gian so với việc nhập từng form đơn lẻ!
-
-### 3. ✍️ Chế độ 2: Thêm Chi tiết 1 Hạng mục (Single Item Form)
-- Dành cho các thiết bị cần cấu hình kỹ thuật riêng, nhà cung cấp riêng, hoặc phân kỳ giải ngân phức tạp.
-- Tự động điền sẵn Phòng ban đề xuất, Pháp nhân, Site.
-- Chọn thiết bị từ danh mục ➔ Tự động nhảy đơn giá chuẩn, loại tài sản, mã ngân sách.
-- Nút phân kỳ giải ngân 1-click (100% vào tháng sử dụng hoặc chia đều 12 tháng).
-- Bấm **`💾 Thêm hạng mục vào phòng ban`**.
+> 📖 **Xem chi tiết tài liệu kiến trúc hệ thống tại:** [docs/ARCHITECTURE.md](file:///d:/DATA/dev/I_Cost/docs/ARCHITECTURE.md)
 
 ---
 
-## 💻 BỘ DANH MỤC CAPEX CNTT CHUẨN HOÁ (13 NHÓM - 112 HẠNG MỤC)
+## 🏢 Các Phân hệ Chức năng Chính (11 Tabs)
 
-1. **IT01. Thiết bị người dùng cuối**: PC văn phòng i3/i5/i7, PC thiết kế CAD/BIM, Laptop i5/i7, Laptop VGA rời, Màn hình 24"/27", Tablet...
-2. **IT02. Máy in, scan & thiết bị VP số**: Máy in A4/A3, Máy in màu laser, Máy Scaner số hóa tài liệu, Máy Photocopy đa năng...
-3. **IT03. Máy chủ & lưu trữ**: Server Dell/HP, Hệ thống lưu trữ NAS, SAN, Ổ cứng Enterprise HDD chuyên dụng NAS...
-4. **IT04. Hạ tầng mạng LAN/WAN/Wifi**: Core Switch, Access Switch, Wifi doanh nghiệp Indoor/Outdoor, ODF quang, Module quang, Cáp quang/đồng...
-5. **IT05. An ninh mạng & bảo mật**: Firewall Meraki, Firewall Fortigate, License quản trị bảo mật Switch Meraki...
-6. **IT06. Camera, kiểm soát & chấm công**: Camera an ninh, Đầu ghi hình, Camera AI nhận diện thông minh, Máy chấm công khuôn mặt, Access Control...
-7. **IT07. Phòng họp & thiết bị nghe nhìn**: Phòng họp thông minh (Lầu 2, Lầu 7, Lầu 8), Thiết bị họp trực tuyến lớn/vừa, Smart TV 85"/65"/55", Máy chiếu, Âm thanh...
-8. **IT08. Phòng server & nguồn điện dự phòng**: UPS chuyên dụng Server/Mạng, Tủ Rack 42U/12U/9U/6U, Sàn nâng kỹ thuật, Máy hút ẩm...
-9. **IT09. Phần mềm hệ thống & văn phòng**: Windows Server, SQL Enterprise/Std, Microsoft 365 (Basic, Std, E3, E5), Power BI Pro, Kaspersky, Anydesk, SSL...
-10. **IT10. Phần mềm kỹ thuật – thiết kế**: Tekla Structures, Tekla Model Sharing, Trimble Connect, AutoCAD, Revit, Navisworks, SketchUp, SAP2000, ETABS, IDEA StatiCa, BIM, EnjiCAD, ZWCAD, Primavera P6...
-11. **IT11. Phần mềm quản trị doanh nghiệp**: Dự án ERP, Hệ thống Văn phòng số E-Office / BPM...
-12. **IT12. Dịch vụ CNTT, Cloud & đường truyền**: Dịch vụ Cloud Viettel (ERP/E-Office), Cloud Wasabi (Backup), License VMware, Leased-line...
-13. **IT13. Linh kiện, vật tư & ngoại vi**: Nâng cấp RAM, SSD/HDD, Card VGA rời, Nguồn PC, Webcam, Chuột phím, USB...
+1. **📊 Bảng Điều Khiển Tổng Quan (Dashboard)**: KPI tổng hợp, cơ cấu CAPEX / CCDC / OPEX, phân kỳ theo tháng/quý và phân bổ theo Khối.
+2. **📝 Lập & Nhập liệu CapEx**:
+   - **Multi-Item Batch Picker**: Chọn nhanh nhiều thiết bị trong nhóm CNTT, nhập số lượng và đẩy vào phòng ban chỉ trong 10 giây.
+   - **Single Item Detailed Form**: Nhập chi tiết thiết bị đặc thù, nhà cung cấp, cấu hình và phân kỳ tùy chỉnh.
+3. **👥 Phân tích Định biên Nhân sự**: Tải lên bảng định biên nhân sự mới, tự động phát hiện số lượng kỹ sư, chuyên viên để đề xuất máy tính, bản quyền phần mềm tương ứng.
+4. **📚 Quản lý Danh mục CNTT**: 13 nhóm CNTT với 112 hạng mục chuẩn hóa, mã ngân sách, đơn giá tham chiếu và tuổi thọ khấu hao.
+5. **🗂️ Quản lý Phiên bản Ngân sách**: Lưu snapshot các kỳ ngân sách (V1, V2, Approved) và so sánh chênh lệch (Variance Analysis).
+6. **🤖 Thẩm định & Tối ưu AI (Smart Advisor)**: Tự động rà soát bất thường, cảnh báo vượt trần, đề xuất gộp đơn hàng chiết khấu số lượng lớn.
+7. **📑 Báo cáo & Xuất Excel**: Xuất file Excel chuẩn hóa theo biểu mẫu tài chính DDC, hỗ trợ báo cáo theo Khối, Công ty thành viên, Loại tài sản.
+8. **📈 Theo dõi Thực hiện Ngân sách**: Đối soát kế hoạch ngân sách với PO thực tế ký kết, nghiệm thu và hóa đơn tài chính.
+9. **✅ Luồng Phê duyệt (Approval Workflow)**: Quy trình phê duyệt 4 cấp (Khởi tạo ➔ Trưởng phòng duyệt ➔ Khối CNTT thẩm định ➔ Ban Giám đốc phê duyệt) kèm lịch sử ký duyệt.
+10. **🏷️ Lịch sử Giá & Báo giá NCC**: Lưu trữ và cập nhật lịch sử biến động giá từ các đối tác cung cấp thiết bị.
+11. **⚙️ Quản trị Hệ thống**: Quản lý tài khoản, phân quyền, cấu hình hệ số lạm phát, sao lưu và khôi phục CSDL.
 
-## 🧪 Kiểm thử tự động
+---
 
-Chạy từ thư mục dự án (không cần cài thêm gói - dùng `unittest` có sẵn của Python):
+## 💻 Danh mục Thiết bị & Bản quyền CNTT Chuẩn Hóa (13 Nhóm)
+
+- **IT01. Thiết bị người dùng cuối**: PC văn phòng, PC thiết kế CAD/BIM, Laptop Core i5/i7, Màn hình 24"/27"...
+- **IT02. Máy in, scan & thiết bị VP số**: Máy in laser A4/A3, Máy scan 2 mặt số hóa, Photocopy đa năng...
+- **IT03. Máy chủ & lưu trữ**: Server Dell PowerEdge/HP ProLiant, Hệ thống lưu trữ NAS Synology, SAN, Enterprise HDD...
+- **IT04. Hạ tầng mạng LAN/WAN/Wifi**: Core Switch Layer 3, Access Switch PoE, Access Point Wifi 6 doanh nghiệp...
+- **IT05. An ninh mạng & bảo mật**: Firewall Cisco Meraki, Fortigate, Bản quyền quản trị bảo mật...
+- **IT06. Camera, kiểm soát & chấm công**: Camera AI thông minh, Máy chấm công khuôn mặt, Hệ thống Access Control...
+- **IT07. Phòng họp & thiết bị nghe nhìn**: Thiết bị họp trực tuyến All-in-one, Smart TV 65"/85", Âm thanh hội nghị...
+- **IT08. Phòng server & nguồn điện dự phòng**: Bộ lưu điện Online UPS 3KVA-10KVA, Tủ Rack 42U/12U, Sàn nâng kỹ thuật...
+- **IT09. Phần mềm hệ thống & văn phòng**: Windows Server, SQL Server Enterprise, Microsoft 365 (Business/Enterprise), Power BI...
+- **IT10. Phần mềm kỹ thuật – thiết kế**: Tekla Structures, Trimble Connect, AutoCAD, Revit, SAP2000, ETABS, IDEA StatiCa...
+- **IT11. Phần mềm quản trị doanh nghiệp**: Hệ thống ERP, Phần mềm Văn phòng số E-Office / BPM...
+- **IT12. Dịch vụ CNTT, Cloud & đường truyền**: Dịch vụ Cloud Viettel, Backup Cloud Wasabi, License VMware, Internet Leased-line...
+- **IT13. Linh kiện, vật tư & ngoại vi**: Nâng cấp RAM/SSD, VGA rời, Bộ phím chuột công thái học, USB Token...
+
+---
+
+## 🧪 Kiểm thử Tự động (Automated Test Suite)
+
+Chạy bộ kiểm thử tự động trực tiếp bằng công cụ `unittest` có sẵn trong Python:
 
 ```bash
 python -m unittest
 ```
 
-- 29 kiểm thử trong `tests/` (khoảng 3 giây): phân kỳ theo số lượng nguyên, ngày bàn giao, Khối, Mã hạng mục cố định,
-  sinh dòng định biên, khóa phòng ban đã nộp/duyệt, cập nhật giá từ báo giá, báo cáo theo Khối, thực hiện ngân sách,
-  phiên bản & so sánh, CSDL (trạng thái phòng ban, chứng từ, phiên bản, sao lưu/khôi phục), lọc & lưu bảng đang lọc.
-- Dùng CSDL SQLite tạm (`tests/__init__.py` đặt `ICOST_DB_PATH`), **không đụng `data/icost.db`**.
-- Dữ liệu ngân sách tạo trong `tests/fixtures.py` từ `master_data.json` - không dùng file định biên / dữ liệu thật.
-- Chạy lại sau mỗi lần sửa code; thêm kiểm thử khi thêm tính năng.
+- Toàn bộ **29+ test cases** được thực thi độc lập trong môi trường SQLite in-memory, đảm bảo tính toàn vẹn 100% của dữ liệu sản xuất.
+- Bao gồm kiểm tra: Thuật toán phân kỳ, quy tắc khấu hao theo Thông tư 45, khóa phê duyệt phòng ban, so sánh phiên bản, và đối soát thực hiện PO.
