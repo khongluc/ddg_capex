@@ -631,6 +631,7 @@ def resolve_template_path(filename: str) -> str:
             return p
     return os.path.join(os.path.dirname(__file__), "templates", filename)
 
+ALL_SITES = "__ALL__"
 SAMPLE_EXCEL_PATH = resolve_template_path("2. Form file nhập liệu CAPEX 2026.xlsx")
 
 
@@ -1193,7 +1194,8 @@ st.markdown(f"""
 if "flash" in st.session_state:
     st.toast(st.session_state.pop("flash"), icon="✅")
 if "flash_warn" in st.session_state:
-    st.toast(st.session_state.pop("flash_warn"), icon="⚠️")
+    # Cảnh báo (vd. thay đổi bị bỏ qua vì phòng đã khóa, phòng chưa duyệt được) giữ cố định - toast tự tắt dễ bị bỏ lỡ
+    st.warning(st.session_state.pop("flash_warn"), icon="⚠️")
 
 # THANH TRẠNG THÁI NỘP / DUYỆT NGÂN SÁCH SITE
 if selected_site != ALL_SITES:

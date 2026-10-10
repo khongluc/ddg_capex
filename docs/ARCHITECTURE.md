@@ -37,14 +37,14 @@ d:\DATA\dev\I_Cost\
 ├── auth.py                         # Authentication, SSO/Email, Role-based Access (RBAC)
 ├── capex_engine.py                 # Core Business Logic (Tính toán khấu hao, phân kỳ, thẩm định)
 ├── db.py                           # Data Access Layer (SQLite ORM-light, schema, audit)
-├── master_data.py                  # Quản lý danh mục CNTT 13 nhóm, đơn vị, phòng ban
-├── master_data.json                # Master database JSON (Danh mục chuẩn 112 hạng mục)
+├── master_data.py                  # Quản lý danh mục CNTT 15 nhóm, đơn vị, phòng ban → khối
+├── master_data.json                # Master database JSON (Danh mục chuẩn 222 hạng mục)
 ├── pricing.py                      # Quản lý đơn giá tham chiếu, lịch sử báo giá nhà cung cấp
 ├── quota.py                        # Phân tích định biên nhân sự CNTT & tự động sinh dự toán
 ├── reports.py                      # Tổng hợp báo cáo, xuất Excel đa dạng theo mẫu DDC
 ├── execution.py                    # Theo dõi giải ngân, đối soát PO/hóa đơn thực tế
-├── versions.py                     # Quản lý phiên bản ngân sách (V1, V2, Approved,...)
-├── workflow.py                     # Luồng phê duyệt 4 cấp, khóa ngân sách, trạng thái
+├── versions.py                     # So sánh phiên bản ngân sách (Bản duyệt, Điều chỉnh lần N)
+├── workflow.py                     # Nộp & duyệt phòng ban, khóa phòng đã nộp/duyệt, tiến độ
 ├── smart_advisor.py                # AI Rule Engine & Cố vấn tối ưu chi phí thông minh
 ├── requirements.txt                # Danh sách thư viện phụ thuộc
 ├── run_app.bat                     # Script khởi chạy 1-click cho người dùng Windows
@@ -69,7 +69,7 @@ flowchart TD
         SA["smart_advisor.py (AI Rule Engine & Cố vấn)"]
         Quota["quota.py (Định biên nhân sự)"]
         Pricing["pricing.py (Lịch sử báo giá & NCC)"]
-        WF["workflow.py (Phê duyệt 4 cấp)"]
+        WF["workflow.py (Nộp & duyệt phòng ban)"]
         Exec["execution.py (Theo dõi PO & Giải ngân)"]
         Ver["versions.py (Phiên bản & Delta diff)"]
         Rep["reports.py (Xuất Excel & Báo cáo)"]
@@ -77,7 +77,7 @@ flowchart TD
 
     subgraph CoreEngine ["3. Core Calculation & Master Engine"]
         Engine["capex_engine.py (Phân kỳ, Khấu hao, TSCĐ/CCDC)"]
-        MD["master_data.py & master_data.json (Danh mục CNTT 13 nhóm)"]
+        MD["master_data.py & master_data.json (Danh mục CNTT 15 nhóm)"]
     end
 
     subgraph DataAccess ["4. Data Access & Security Layer"]
@@ -127,11 +127,11 @@ flowchart TD
 | **`auth.py`** | Xác thực người dùng, phân quyền 4 vai trò (`admin`, `approver`, `dept_user`, `viewer`), quản lý session, hash mật khẩu. | `db.py` |
 | **`db.py`** | Kết nối CSDL SQLite, migrations bảng biểu, audit logging, sao lưu/khôi phục tự động, quản trị chứng từ. | `sqlite3` |
 | **`capex_engine.py`** | Thuật toán phân kỳ giải ngân (tháng, quý, đều), hạch toán kế toán (TSCĐ ≥ 30 triệu vs CCDC vs Chi phí), tính khấu hao theo Thông tư 45/2013/TT-BTC. | `master_data.py` |
-| **`master_data.py`** | Quản lý 13 nhóm CNTT với 112 hạng mục tiêu chuẩn, đơn giá trần/sàn, đơn vị tính, danh sách 64 phòng ban DDC. | `master_data.json` |
+| **`master_data.py`** | Quản lý 15 nhóm CNTT với 222 hạng mục tiêu chuẩn, đơn giá tham chiếu, đơn vị tính, bảng 62 phòng ban → khối (từ file định biên). | `master_data.json` |
 | **`smart_advisor.py`** | Bộ quy tắc phân tích tối ưu: cảnh báo vượt ngân sách, đề xuất gộp đơn hàng số lượng lớn, đối chiếu khấu hao, gợi ý linh kiện thay thế. | `capex_engine.py` |
 | **`quota.py`** | Nhập file định biên nhân sự (`templates/`), phân tích trang thiết bị theo chức danh (Kỹ sư CAD, NV Văn phòng, Giám đốc) và tự động sinh danh mục thiết bị. | `master_data.py`, `pandas` |
 | **`pricing.py`** | Quản lý nhà cung cấp, lịch sử biến động giá theo quý/năm, cập nhật đơn giá thị trường vào Master Catalog. | `db.py` |
-| **`workflow.py`** | Quy trình phê duyệt 4 bước (Nháp ➔ Chờ Trưởng phòng duyệt ➔ Khối CNTT thẩm định ➔ Ban Giám đốc phê duyệt), cơ chế khóa chỉnh sửa. | `db.py` |
+| **`workflow.py`** | Nộp & duyệt: Phòng ban nộp ➔ IT site duyệt / trả lại từng phòng ➔ IT site nộp site (khi đủ phòng đã duyệt) ➔ Admin duyệt site (chốt phiên bản); khóa sửa phòng đã nộp / duyệt. | `db.py` |
 | **`execution.py`** | Theo dõi thực tế giải ngân: so sánh Ngân sách dự toán vs PO ký kết vs Nghiệm thu thực tế vs Hóa đơn GTGT. | `db.py` |
 | **`versions.py`** | Snapshot phiên bản ngân sách (Kế hoạch V1, Trình duyệt V2, Chính thức), so sánh sai lệch (variance analysis). | `db.py` |
 | **`reports.py`** | Xuất báo cáo Excel theo đúng biểu mẫu tài chính DDC, báo cáo theo Khối, biểu đồ trực quan. | `openpyxl`, `xlsxwriter` |

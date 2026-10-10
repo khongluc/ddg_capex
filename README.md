@@ -43,11 +43,11 @@ d:\DATA\dev\I_Cost/
 ├── app.py                    # Presentation Layer: 11 Tabs giao diện Streamlit
 ├── auth.py                   # Xác thực & phân quyền 4 vai trò (RBAC)
 ├── capex_engine.py           # Core Engine: Khấu hao, phân kỳ, hạch toán TSCĐ/CCDC
-├── master_data.py            # Master Catalog: 13 nhóm CNTT & 112 hạng mục chuẩn
+├── master_data.py            # Master Catalog: 15 nhóm CNTT & 222 hạng mục chuẩn
 ├── smart_advisor.py          # AI Rule Engine & Cố vấn tối ưu ngân sách
 ├── quota.py                  # Module phân tích định biên nhân sự & tự động dự toán
 ├── pricing.py                # Quản lý đơn giá & lịch sử báo giá nhà cung cấp
-├── workflow.py               # Luồng phê duyệt 4 cấp & cơ chế khóa phòng ban
+├── workflow.py               # Nộp & duyệt phòng ban (Phòng ban → IT site → Admin), khóa phòng đã nộp/duyệt
 ├── execution.py              # Theo dõi thực hiện ngân sách & đối soát PO/Hóa đơn
 ├── versions.py               # Quản lý phiên bản ngân sách & so sánh chênh lệch
 ├── reports.py                # Xuất báo cáo tài chính & biểu mẫu Excel DDC
@@ -71,9 +71,9 @@ d:\DATA\dev\I_Cost/
 6. **📁 Nhập / Xuất**: Xuất file Excel chuẩn biểu mẫu tài chính DDC, nhập liệu từ sheet biểu mẫu và tải template mẫu.
 7. **🎯 Kịch bản**: Mô phỏng kịch bản cắt giảm ngân sách (What-If) và gom gói thầu mua sắm tập trung tiết kiệm chi phí.
 8. **💳 Giải ngân**: Đối soát kế hoạch ngân sách với PO thực tế ký kết, nghiệm thu và hóa đơn tài chính.
-9. **🗂️ Phiên bản**: Lưu snapshot các kỳ ngân sách (V1, V2, Approved) và phân tích biến động chênh lệch.
-10. **📈 Thẩm định**: Dự phóng khấu hao TSCĐ (theo TT 45/2013/TT-BTC) và thẩm định hiệu quả đầu tư dự án (NPV / IRR / ROI).
-11. **⚙️ Danh mục**: Quản lý 13 nhóm CNTT với 112 hạng mục chuẩn, đơn giá trần/sàn, đơn vị tính và nhà máy/site.
+9. **🗂️ Phiên bản**: Mỗi lần Admin duyệt site chốt 1 phiên bản (Bản duyệt, Điều chỉnh lần N, kèm lý do); so sánh 2 phiên bản theo hạng mục / phòng ban.
+10. **📈 Thẩm định**: Dự phóng khấu hao TSCĐ / phân bổ CCDC (thời gian sử dụng mặc định theo loại tài sản) và thẩm định hiệu quả đầu tư dự án (NPV / IRR / ROI).
+11. **⚙️ Danh mục**: Quản lý 15 nhóm CNTT với 222 hạng mục chuẩn, đơn giá tham chiếu (cập nhật từ file báo giá), đơn vị tính, bộ trang bị theo vị trí, pháp nhân và site.
 
 ---
 
