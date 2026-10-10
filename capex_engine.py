@@ -518,6 +518,26 @@ def export_capex_to_excel(df: pd.DataFrame, metadata: Dict[str, Any], months: Li
             c_cell.fill = fill_total_row
             c_cell.border = border_double_bottom
 
+        # Dự phòng phát sinh (% trên tổng hạng mục) và tổng CAPEX thường niên gồm dự phòng
+        cont_pct = clean_number(metadata.get("contingency_pct", 0), 0.0)
+        if cont_pct > 0:
+            cont_r, grand_r = tot_r + 1, tot_r + 2
+            ws.cell(row=cont_r, column=2, value=f"DỰ PHÒNG PHÁT SINH ({cont_pct * 100:g}%)").font = font_bold
+            ws.merge_cells(f"B{cont_r}:L{cont_r}")
+            ws.cell(row=cont_r, column=2).alignment = align_center
+            c_cont = ws.cell(row=cont_r, column=15, value=f"=ROUND(O{tot_r}*{cont_pct},0)")
+            ws.cell(row=grand_r, column=2, value="TỔNG CAPEX THƯỜNG NIÊN (GỒM DỰ PHÒNG)").font = font_bold
+            ws.merge_cells(f"B{grand_r}:L{grand_r}")
+            ws.cell(row=grand_r, column=2).alignment = align_center
+            c_grand2 = ws.cell(row=grand_r, column=15, value=f"=O{tot_r}+O{cont_r}")
+            for c in (c_cont, c_grand2):
+                c.font = font_bold
+                c.number_format = '#,##0'
+                c.alignment = align_right
+            for rr in (cont_r, grand_r):
+                for c_idx in range(2, 56):
+                    ws.cell(row=rr, column=c_idx).fill = fill_total_row
+
     # Set column widths
     column_widths = {
         2: 6,   # STT
@@ -592,41 +612,42 @@ def export_capex_to_excel(df: pd.DataFrame, metadata: Dict[str, Any], months: Li
     out_stream.seek(0)
     return out_stream.getvalue()
 
-def calculate_depreciation_schedule(df: pd.DataFrame, num_years: int = 5) -> pd.DataFrame:
+def calculate_depreciation_schedule(df: pd.DataFrame, num_years: int = 5, months: List[str] = None) -> pd.DataFrame:
     """
-    Calculate straight-line depreciation schedule per item and totals across future years.
+    Khấu hao / phân bổ đường thẳng theo năm tài chính (T10 - T9):
+      - TSCĐ (capex_type CAPEX): khấu hao theo thời gian sử dụng của nhóm (useful_life, năm)
+      - CCDC: phân bổ dần (TK 242) theo thời gian phân bổ
+      - Thuê bao / dịch vụ (OPEX): chi phí trả trước ngắn hạn, KHÔNG khấu hao -> bỏ qua
+    Bắt đầu từ tháng giải ngân đầu tiên (phân kỳ > 0); năm 1 = năm ngân sách, chỉ tính số tháng còn lại.
     """
+    months = months or DEFAULT_MONTHS
     dep_rows = []
     for idx, row in df.iterrows():
         total = clean_number(row.get("total_budget", 0))
-        if total <= 0:
+        kind = str(row.get("capex_type") or "")
+        if total <= 0 or kind not in ("CAPEX", "CCDC"):
             continue
-            
-        useful_life = clean_number(row.get("useful_life", 5), 5.0)
+        useful_life = clean_number(row.get("useful_life", 0), 0.0)
         if useful_life <= 0:
-            useful_life = 5.0
-            
-        annual_dep = total / useful_life
-        monthly_dep = annual_dep / 12.0
-        
+            useful_life = 5.0 if kind == "CAPEX" else 3.0
+        life_m = max(1, int(round(useful_life * 12)))
+        start = next((i for i, m in enumerate(months) if clean_number(row.get(f"pct_{m}", 0)) > 0), 0)
+        monthly_dep = total / life_m
         row_dep = {
             "item_name": row.get("item_name", f"Hạng mục {idx+1}"),
             "entity": row.get("entity", ""),
-            "cat1": row.get("asset_cat1", ""),
+            "dep_type": "TSCĐ - khấu hao" if kind == "CAPEX" else "CCDC - phân bổ",
             "total_budget": total,
-            "useful_life": int(useful_life),
-            "annual_depreciation": annual_dep,
+            "useful_life": round(useful_life, 2),
+            "start_month": months[start] if start < len(months) else "",
+            "annual_depreciation": monthly_dep * 12,
             "monthly_depreciation": monthly_dep,
         }
-        
         for y in range(1, num_years + 1):
-            if y <= useful_life:
-                row_dep[f"Năm {y}"] = annual_dep
-            else:
-                row_dep[f"Năm {y}"] = 0.0
-                
+            y0, y1 = 12 * (y - 1), 12 * y
+            overlap = max(0, min(y1, start + life_m) - max(y0, start))
+            row_dep[f"Năm {y}"] = monthly_dep * overlap
         dep_rows.append(row_dep)
-        
     return pd.DataFrame(dep_rows)
 
 def calculate_project_financials(initial_capex: float, annual_savings: float, opex_annual: float, life_years: int = 5, discount_rate: float = 0.10) -> Dict[str, Any]:

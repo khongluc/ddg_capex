@@ -589,6 +589,18 @@ def format_vnd_short(amount: float) -> str:
 current_user = auth.require_login()
 
 master = load_master_data()
+DEFAULT_CONTINGENCY = 0.05  # dự phòng phát sinh mặc định 5% trên tổng hạng mục
+
+
+def contingency_pct() -> float:
+    """Tỷ lệ dự phòng phát sinh của ngân sách CAPEX thường niên (Admin chỉnh ở tab Quản lý Danh mục)."""
+    try:
+        v = float(master.get("contingency_pct", DEFAULT_CONTINGENCY))
+    except (TypeError, ValueError):
+        v = DEFAULT_CONTINGENCY
+    return min(max(v, 0.0), 0.5)
+
+
 SITES = master.get("sites", [])
 SITE_NAME = {s["code"]: s["name"] for s in SITES}
 SITE_BY_NAME = {s["name"]: s["code"] for s in SITES}
@@ -644,6 +656,7 @@ def lazy_excel_download(df: pd.DataFrame, meta: dict, label: str, file_name: str
             st.session_state[flag] = True
             st.rerun()
         return None
+    meta = {**meta, "contingency_pct": contingency_pct()}
     data = _cached_export(df.drop(columns=["_order"], errors="ignore").reset_index(drop=True),
                           tuple(sorted((k, str(v)) for k, v in meta.items())), tuple(months))
     if st.download_button(label, data=data, file_name=file_name, mime=XLSX_MIME, use_container_width=True,
@@ -864,7 +877,7 @@ st.markdown(f"""
             <div class="brand-icon-box">💼</div>
             <div class="header-title-text">
                 <div class="sub-corp">Ngân sách đầu tư CNTT · Năm tài chính T10/{int(budget_year) - 1} – T9/{budget_year}</div>
-                <h1>HỆ THỐNG LẬP NGÂN SÁCH CAPEX {budget_year}</h1>
+                <h1>NGÂN SÁCH CAPEX THƯỜNG NIÊN {budget_year}</h1>
             </div>
         </div>
         <div>
@@ -1158,17 +1171,19 @@ with tab_dash:
         top_cat_val = df_curr.groupby("asset_cat1")["total_budget"].sum().max() if "asset_cat1" in df_curr.columns and not df_curr.empty else 0
 
         # KPI Row
+        cont_pct = contingency_pct()
+        cont_val = round(total_capex * cont_pct)
         entity_list = ", ".join(sorted(df_curr["entity"].dropna().astype(str).unique())) if "entity" in df_curr.columns else ""
         k1, k2, k3, k4 = st.columns(4)
         with k1:
             st.markdown(f"""
             <div class="kpi-card">
                 <div class="kpi-card-header">
-                    <span class="kpi-title">Tổng Ngân sách CapEx</span>
+                    <span class="kpi-title">CAPEX thường niên {budget_year} (gồm dự phòng)</span>
                     <span class="kpi-icon-badge kpi-icon-blue">💰</span>
                 </div>
-                <div class="kpi-value">{fmt_num(total_capex / 1e9, 2)} <span class="kpi-unit">tỷ VNĐ</span></div>
-                <div class="kpi-sub"><span class="kpi-pill kpi-pill-blue">Chi tiết: {fmt_num(total_capex)} VNĐ</span></div>
+                <div class="kpi-value">{fmt_num((total_capex + cont_val) / 1e9, 2)} <span class="kpi-unit">tỷ VNĐ</span></div>
+                <div class="kpi-sub"><span class="kpi-pill kpi-pill-blue">Hạng mục: {fmt_num(total_capex)} + dự phòng {fmt_num(cont_pct * 100, 0)}%: {fmt_num(cont_val)} VNĐ</span></div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -2803,14 +2818,18 @@ with tab_depreciation:
     sub_tab1, sub_tab2 = st.tabs(["📉 Dự phóng Khấu hao TSCĐ", "💰 Thẩm định Hiệu quả Đầu tư (NPV / IRR / ROI)"])
 
     with sub_tab1:
-        st.markdown("#### Dự phóng Khấu hao Đường thẳng (Theo Thông tư 45/2013/TT-BTC)")
-        st.caption("Khung thời gian trích khấu hao: Nhà xưởng (25 năm), MMTB (8 năm), PTVT (6 năm), Thiết bị QL (4 năm), Phần mềm (3 năm).")
+        st.markdown("#### Dự phóng Khấu hao TSCĐ & Phân bổ CCDC (đường thẳng, Thông tư 45/2013/TT-BTC)")
+        st.caption("Chỉ tính TSCĐ (khấu hao) và CCDC (phân bổ dần TK 242) theo thời gian sử dụng của từng nhóm CNTT; "
+                   "phần mềm thuê bao, dịch vụ (OPEX) là chi phí trả trước trong năm nên không khấu hao. "
+                   "Bắt đầu từ tháng giải ngân đầu tiên; Năm 1 = năm ngân sách (T10 – T9), chỉ tính số tháng còn lại.")
 
         if df_curr.empty:
             st.info("Chưa có dữ liệu để tính khấu hao.")
         else:
             dep_years = st.slider("Số năm dự phóng khấu hao:", min_value=3, max_value=10, value=5)
-            dep_df = calculate_depreciation_schedule(df_curr, num_years=dep_years)
+            dep_df = calculate_depreciation_schedule(df_curr, num_years=dep_years, months=months)
+            if dep_df.empty:
+                st.info("Phạm vi đang chọn không có TSCĐ / CCDC cần khấu hao, phân bổ.")
 
             if not dep_df.empty:
                 tot_annual_dep = dep_df["annual_depreciation"].sum()
@@ -2818,11 +2837,13 @@ with tab_depreciation:
 
                 d1, d2, d3 = st.columns(3)
                 with d1:
-                    st.metric("Khấu hao hàng năm", format_vnd(tot_annual_dep))
+                    st.metric(f"Khấu hao & phân bổ năm {budget_year}", format_vnd(dep_df["Năm 1"].sum()))
                 with d2:
-                    st.metric("Khấu hao hàng tháng", format_vnd(tot_month_dep))
+                    st.metric("Mức đầy đủ / năm (từ năm 2)", format_vnd(tot_annual_dep))
                 with d3:
-                    st.metric("Tỷ lệ khấu hao TB/năm", f"{(tot_annual_dep/df_curr['total_budget'].sum()*100):.1f}%")
+                    base_dep = dep_df["total_budget"].sum()
+                    st.metric("Nguyên giá TSCĐ + CCDC", format_vnd(base_dep),
+                              f"{fmt_num(tot_annual_dep / base_dep * 100 if base_dep else 0, 1)}%/năm", delta_color="off")
 
                 # Depreciation bar chart by year
                 dep_summary_by_year = [dep_df[f"Năm {y}"].sum() / 1e9 for y in range(1, dep_years + 1)]
@@ -2830,7 +2851,7 @@ with tab_depreciation:
                     x=[f"Năm {y}" for y in range(1, dep_years + 1)],
                     y=dep_summary_by_year,
                     labels={"x": "Năm tài chính", "y": "Chi phí Khấu hao (Tỷ VNĐ)"},
-                    title="Chi phí Khấu hao TSCĐ qua các Năm (Tỷ VNĐ)",
+                    title="Khấu hao TSCĐ & phân bổ CCDC theo năm tài chính (Tỷ VNĐ)",
                     color_discrete_sequence=["#0F2C59"]
                 )
                 fig_dep.update_layout(margin=dict(t=30, b=10, l=10, r=10), height=300)
@@ -2844,7 +2865,8 @@ with tab_depreciation:
                 for y in range(1, dep_years + 1):
                     disp_dep[f"Năm {y}"] = disp_dep[f"Năm {y}"].apply(format_vnd)
 
-                disp_dep.columns = ["Tên Tài sản", "Pháp nhân", "Loại TS", "Nguyên giá", "Số năm KH", "KH Năm", "KH Tháng"] + [f"Năm {y}" for y in range(1, dep_years + 1)]
+                disp_dep.columns = ["Tên Tài sản", "Pháp nhân", "Loại", "Nguyên giá", "Số năm KH / PB", "Bắt đầu", "KH năm (đầy đủ)",
+                                    "KH tháng"] + [f"Năm {y}" for y in range(1, dep_years + 1)]
                 st.dataframe(disp_dep, use_container_width=True, hide_index=True)
 
     with sub_tab2:
@@ -2917,6 +2939,17 @@ with tab_depreciation:
 with tab_master:
     st.markdown("### ⚙️ Danh mục Tham chiếu Master Data & Bảng giá Chuẩn")
     st.caption("Các danh mục chuẩn dùng chung cho biểu mẫu quản lý tài sản và lập ngân sách.")
+    cp1, cp2 = st.columns([1, 2])
+    new_cont = cp1.number_input("Dự phòng phát sinh (% trên tổng hạng mục)", min_value=0.0, max_value=50.0, step=0.5,
+                                value=round(contingency_pct() * 100, 2), disabled=not current_user.is_admin, key="cont_pct_input",
+                                help="Cộng vào tổng CAPEX thường niên trên Dashboard và dòng 'Dự phòng phát sinh' trong file Excel xuất ra")
+    if current_user.is_admin and abs(new_cont / 100 - contingency_pct()) > 1e-9:
+        if cp2.button("💾 Lưu tỷ lệ dự phòng", key="cont_pct_save"):
+            master["contingency_pct"] = round(new_cont / 100, 4)
+            save_master_data(master)
+            db.log(current_user.email, "contingency_pct", f"{new_cont:g}%")
+            st.session_state["flash"] = f"Đã đặt dự phòng phát sinh {new_cont:g}%."
+            st.rerun()
 
     m_sub1, m_sub2, m_sub3 = st.tabs(["💻 Danh mục CNTT & Giá chuẩn", "🏢 Pháp nhân & Nhà máy", "🏷️ Loại Tài sản & Chi phí"])
 

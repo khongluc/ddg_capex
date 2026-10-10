@@ -152,6 +152,7 @@ def compute_needs(headcount: List[Dict[str, Any]], inventory: List[Dict[str, Any
     catalog = catalog_by_code(master)
     kits = {k["code"]: k for k in standard_kits(master)}
     norm_qty: Dict[str, float] = {}
+    shared_only: Dict[str, bool] = {}  # chỉ có định mức lẻ < 1/người (vd. máy in 1/10 người) -> làm tròn gần nhất
     basis: Dict[str, List[str]] = {}
     month_need: Dict[str, List[float]] = {}  # nhu cầu tăng thêm theo tháng (nhân sự theo tháng) -> phân kỳ mua mới
     for h in headcount:
@@ -171,12 +172,14 @@ def compute_needs(headcount: List[Dict[str, Any]], inventory: List[Dict[str, Any
             fixed = _num(ki.get("fixed_qty"))
             if fixed > 0:  # số lượng cố định cho cả vị trí (vd. 3 bản quyền Tekla cho 10 kỹ sư)
                 norm_qty[code] = norm_qty.get(code, 0.0) + fixed
+                shared_only[code] = False
                 basis.setdefault(code, []).append(f"{fixed:g} cho {pos_name}")
                 continue
             q = _num(ki.get("qty_per_person"))
             if q <= 0:
                 continue
             norm_qty[code] = norm_qty.get(code, 0.0) + plan * q
+            shared_only[code] = shared_only.get(code, True) and q < 1
             basis.setdefault(code, []).append(f"{plan:g} {pos_name} × {q:g}")
             if increments:
                 acc = month_need.setdefault(code, [0.0] * len(increments))
@@ -190,7 +193,9 @@ def compute_needs(headcount: List[Dict[str, Any]], inventory: List[Dict[str, Any
         if not item:
             continue
         r = inv.get(code, {})
-        dinh_muc = math.ceil(round(norm_qty.get(code, 0.0), 6))
+        raw_q = round(norm_qty.get(code, 0.0), 6)
+        # Thiết bị dùng chung: làm tròn gần nhất (0,3 máy in -> 0, dùng chung với phòng khác); còn lại làm tròn lên
+        dinh_muc = int(math.floor(raw_q + 0.5)) if shared_only.get(code) else math.ceil(raw_q)
         override = r.get("quota_override")
         quota = int(_num(override)) if override is not None and not (isinstance(override, float) and math.isnan(override)) else dinh_muc
         current = _num(r.get("current_qty"))
