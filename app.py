@@ -1000,6 +1000,25 @@ def distribute_by_location(df: pd.DataFrame):
     return groups, unmatched
 
 
+def code_version() -> str:
+    """Commit đang chạy (đọc .git, không gọi lệnh ngoài) - để biết bản online đã lấy code mới chưa."""
+    root = os.path.dirname(os.path.abspath(__file__))
+    try:
+        head = open(os.path.join(root, ".git", "HEAD"), encoding="utf-8").read().strip()
+        if head.startswith("ref:"):
+            ref = head.split(" ", 1)[1].strip()
+            path = os.path.join(root, ".git", *ref.split("/"))
+            if os.path.exists(path):
+                return open(path, encoding="utf-8").read().strip()[:7]
+            for line in open(os.path.join(root, ".git", "packed-refs"), encoding="utf-8"):
+                if line.strip().endswith(" " + ref):
+                    return line.split(" ", 1)[0][:7]
+            return "?"
+        return head[:7]
+    except OSError:
+        return "?"
+
+
 def _default_metadata():
     return {
         "date": datetime.date.today().strftime("%Y-%m-%d"),
@@ -1035,7 +1054,8 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     if current_user.is_admin:
-        st.caption("💾 CSDL: " + ("PostgreSQL (lưu bền)" if db.using_server_db() else "SQLite (file cục bộ)"))
+        st.caption("💾 CSDL: " + ("PostgreSQL (lưu bền)" if db.using_server_db() else "SQLite (file cục bộ)")
+                   + f" · Phiên bản code: {code_version()}")
     if st.button("🚪 Đăng xuất", use_container_width=True):
         auth.logout()
 
