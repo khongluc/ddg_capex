@@ -103,5 +103,6 @@ Chạy bộ kiểm thử tự động trực tiếp bằng công cụ `unittest`
 python -m unittest
 ```
 
-- Toàn bộ **29+ test cases** được thực thi độc lập trong môi trường SQLite in-memory, đảm bảo tính toàn vẹn 100% của dữ liệu sản xuất.
-- Bao gồm kiểm tra: Thuật toán phân kỳ, quy tắc khấu hao theo Thông tư 45, khóa phê duyệt phòng ban, so sánh phiên bản, và đối soát thực hiện PO.
+- 34 kiểm thử, chạy trên file SQLite tạm (`tests/__init__.py` đặt `ICOST_DB_PATH`) - không đụng `data/icost.db`; dữ liệu mẫu tạo trong `tests/fixtures.py`, không dùng dữ liệu thật.
+- Bao gồm: phân kỳ số lượng nguyên, ngày bàn giao, Khối, Mã hạng mục cố định, sinh dòng định biên, khóa phòng ban đã nộp/duyệt, cập nhật giá từ báo giá, báo cáo theo Khối, thực hiện ngân sách, phiên bản, CSDL (sao lưu/khôi phục), lọc & lưu bảng, bảo vệ đăng nhập thử.
+- `tests/test_static.py` quét tên chưa định nghĩa trong toàn bộ code (lỗi NameError khi mở app) - cần `pip install pyflakes`, không có thì tự bỏ qua.
