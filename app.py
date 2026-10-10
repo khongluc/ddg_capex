@@ -805,7 +805,16 @@ with st.sidebar:
                 known.add(dept_key(d))
     if current_user.is_dept_user:
         dept_list = current_user.allowed_depts(selected_site)
-    selected_dept = st.selectbox("Phòng ban lập ngân sách", ([] if current_user.is_dept_user else [ALL_DEPTS]) + dept_list,
+    # Ô chọn ở thanh bên và ô chọn trong tab Lập & Nhập liệu dùng chung 1 phòng ban (đồng bộ 2 chiều)
+    sb_dept_options = ([] if current_user.is_dept_user else [ALL_DEPTS]) + dept_list
+    if st.session_state.get("sb_dept") not in sb_dept_options:
+        st.session_state.pop("sb_dept", None)
+
+    def _sync_dept_from_sidebar():
+        if st.session_state.get("sb_dept") not in (None, ALL_DEPTS):
+            st.session_state["active_dept_selector"] = st.session_state["sb_dept"]
+
+    selected_dept = st.selectbox("Phòng ban lập ngân sách", sb_dept_options, key="sb_dept", on_change=_sync_dept_from_sidebar,
                                  help="Lọc bảng & báo cáo theo phòng ban đề xuất. Dòng thêm mới được gán cho phòng ban này.")
     dept_prop = selected_dept if selected_dept != ALL_DEPTS else "Tất cả phòng ban"
 
@@ -1337,21 +1346,21 @@ with tab_dash:
             plot_chart(fig_site, use_container_width=True)
 
         # CƠ CẤU: trang bị theo định biên / hạ tầng dùng chung / phát sinh mới
-        if "need_type" in df_site.columns and not df_site.empty:
+        if "need_type" in df_curr.columns and not df_curr.empty:
             st.markdown("##### 🧭 Cơ cấu ngân sách CNTT")
-            nt = df_site["need_type"].fillna("Chưa phân loại")
+            nt = df_curr["need_type"].fillna("Chưa phân loại")
             cc = st.columns(4)
             for col_box, (lbl, key) in zip(cc, [("Trang bị theo định biên", qt.NEED_QUOTA), ("Hạ tầng dùng chung", qt.NEED_INFRA),
                                                 ("Phát sinh mới", qt.NEED_NEW), ("Chưa phân loại", "Chưa phân loại")]):
-                col_box.metric(lbl, format_vnd_short(df_site.loc[nt == key, "total_budget"].sum()) + " VNĐ")
+                col_box.metric(lbl, format_vnd_short(df_curr.loc[nt == key, "total_budget"].sum()) + " VNĐ")
 
-        # TỔNG HỢP THEO PHÒNG BAN (toàn bộ phòng ban trong phạm vi site)
-        if "dept_proposing" in df_site.columns and not df_site.empty:
+        # TỔNG HỢP THEO PHÒNG BAN (theo phòng ban đang chọn; "Tất cả" = mọi phòng ban của site)
+        if "dept_proposing" in df_curr.columns and not df_curr.empty:
             st.markdown("##### 🏢 Tổng hợp Ngân sách theo Phòng ban")
             canon = {dept_key(d): d for d in dept_list}
-            df_dept = df_site.assign(
-                dept=df_site["dept_proposing"].map(lambda d: canon.get(dept_key(d), d) if str(d or "").strip() else "(Chưa ghi phòng ban)"),
-                it_group=df_site["it_group"].fillna("(Chưa phân nhóm)") if "it_group" in df_site.columns else "(Chưa phân nhóm)")
+            df_dept = df_curr.assign(
+                dept=df_curr["dept_proposing"].map(lambda d: canon.get(dept_key(d), d) if str(d or "").strip() else "(Chưa ghi phòng ban)"),
+                it_group=df_curr["it_group"].fillna("(Chưa phân nhóm)") if "it_group" in df_curr.columns else "(Chưa phân nhóm)")
             quarters = {"Q1 (T10-T12)": months[0:3], "Q2 (T1-T3)": months[3:6], "Q3 (T4-T6)": months[6:9], "Q4 (T7-T9)": months[9:12]}
             for q, ms in quarters.items():
                 cols = [f"val_{m}" for m in ms if f"val_{m}" in df_dept.columns]
@@ -1398,7 +1407,7 @@ with tab_dash:
                 st.dataframe(t4, use_container_width=True, column_config={c: money for c in t4.columns})
                 st.caption("Định biên: sinh từ định biên nhân sự × bộ trang bị tiêu chuẩn (tab 'Định biên & Nhu cầu'). "
                            "Phát sinh mới: nhu cầu ngoài định biên, có lý do. 'Chưa phân loại': dữ liệu cũ/nhập Excel.")
-            st.caption("Bảng tổng hợp tính trên toàn bộ phòng ban của phạm vi site đang chọn (không áp bộ lọc phòng ban/biểu đồ).")
+            st.caption("Bảng tổng hợp tính theo phòng ban đang chọn ở thanh bên trái (không áp bộ lọc biểu đồ).")
 
         # TOP 10 LARGEST CAPEX ITEMS
         # CHARTS ROW 3: Nhóm CNTT & phân loại hạch toán
@@ -1454,17 +1463,23 @@ with tab_input:
     col_d1, col_d2 = st.columns([1.6, 2.4])
     with col_d1:
         dept_options_input = [d for d in dept_list if d != ALL_DEPTS]
-        default_d_idx = 0
         if selected_dept != ALL_DEPTS and selected_dept in dept_options_input:
-            default_d_idx = dept_options_input.index(selected_dept)
+            st.session_state["active_dept_selector"] = selected_dept
+        elif st.session_state.get("active_dept_selector") not in dept_options_input:
+            st.session_state.pop("active_dept_selector", None)
+
+        def _sync_dept_from_input():
+            st.session_state["sb_dept"] = st.session_state["active_dept_selector"]
 
         active_dept = st.selectbox(
             "🏢 Phòng ban lập ngân sách:",
             dept_options_input,
-            index=default_d_idx,
             key="active_dept_selector",
-            help="Chọn phòng ban cần trang bị thiết bị, phần mềm và dịch vụ CNTT"
+            on_change=_sync_dept_from_input,
+            help="Chọn phòng ban cần trang bị thiết bị, phần mềm và dịch vụ CNTT. Bảng & báo cáo lọc theo phòng ban này."
         )
+        if selected_dept == ALL_DEPTS:
+            st.caption("Bảng bên dưới đang hiện **tất cả phòng ban**. Chọn một phòng ban ở ô trên để lọc.")
 
     dept_rows_now = df_site[df_site["dept_proposing"].map(dept_key) == dept_key(active_dept)] if not df_site.empty and "dept_proposing" in df_site.columns else pd.DataFrame()
     dept_cnt = len(dept_rows_now)
@@ -1493,7 +1508,105 @@ with tab_input:
         </div>
         """, unsafe_allow_html=True)
 
+    # Bảng chi tiết của phòng ban đang chọn (đặt ngay dưới ô chọn phòng ban)
+    grid_title = f"📋 Bảng Ngân sách Hiện hành – {active_dept}" if selected_dept != ALL_DEPTS else f"📋 Bảng Ngân sách Hiện hành – {site_label(selected_site)} (Tất cả phòng ban)"
+    st.markdown(f"#### {grid_title}")
+
+    if df_curr.empty:
+        st.info("Bảng đang trống. Hãy thêm hạng mục mới bằng form phía dưới hoặc nhập file Excel!")
+    else:
+        # Display summary row on top of grid
+        tot_budget_all = df_curr["total_budget"].sum()
+        col_m1, col_m2, col_m3, col_m4 = st.columns([2, 1, 1, 1])
+        with col_m1:
+            st.write(f"**Tổng số dòng:** {len(df_curr)} mục | **Tổng Ngân sách:** {format_vnd(tot_budget_all)}")
+        with col_m2:
+            if can_edit and st.button("⚡ Chuẩn hóa & Tính lại", use_container_width=True,
+                                      help="Đổi tên theo danh mục chuẩn, gán nhóm CNTT, ĐVT, loại tài sản, loại chi phí và phân loại kế toán"):
+                rows = [r.to_dict() for _, r in df_curr.iterrows()]
+                matched = sum(apply_it_catalog(r, master) for r in rows)
+                save_view(pd.DataFrame(rows))
+                st.session_state["flash"] = (f"Đã chuẩn hóa {matched}/{len(rows)} dòng theo Danh mục CNTT và tính lại toàn bộ bảng!"
+                                             + (" Các dòng còn lại không có trong danh mục - kiểm tra tên hoặc bổ sung danh mục." if matched < len(rows) else ""))
+                st.rerun()
+        with col_m3:
+            if not dept_rows_now.empty:
+                dept_meta = dict(st.session_state["metadata"])
+                dept_meta["proposing_dept"] = active_dept
+                lazy_excel_download(dept_rows_now, dept_meta, f"📥 Tải Excel ({active_dept[:15]}...)",
+                                    f"CAPEX_{budget_year}_{active_dept.replace(' ', '_')}.xlsx",
+                                    key=f"dept_{budget_year}_{selected_site}_{active_dept}",
+                                    help_text=f"Tải riêng file Excel phiếu ngân sách của phòng ban {active_dept}")
+        with col_m4:
+            if can_edit:
+                st.caption("💡 Chọn dòng và bấm Delete để xóa dòng.")
+
+        # Setup columns for interactive editor
+        core_cols = [
+            "stt", "need_type", "need_reason", "it_group", "catalog_code", "item_name", "detail_work", "unit", "quantity", "unit_price",
+            "total_budget", "invest_type", "item_kind_label", "capex_type", "accounting_class", "total_pct",
+            "entity", "dept_using", "location", "asset_cat1", "asset_cat2", "cost_lv1", "cost_lv2",
+            "handover_date", "project_code", "item_code", "budget_code"
+        ]
+        column_order = [c for c in core_cols if c in df_curr.columns] + [c for c in df_curr.columns if c not in core_cols]
+
+        if not can_edit:
+            st.dataframe(df_curr, use_container_width=True, height=450, hide_index=True,
+                         column_order=[c for c in column_order if c != "_order"],
+                         column_config={**{c: st.column_config.NumberColumn(format=MONEY_FMT) for c in df_curr.columns
+                                           if c in ("quantity", "unit_price", "total_budget", "total_val") or c.startswith("val_")},
+                                        "total_pct": st.column_config.ProgressColumn(min_value=0.0, max_value=1.0, format="%.0f%%")})
+            edited_df = df_curr
+        else:
+            main_editor_key = f"editor_{budget_year}_{selected_site}_{dept_key(selected_dept)}_{st.session_state.get('editor_version', 0)}"
+            edited_df = st.data_editor(
+                df_curr,
+                key=main_editor_key,
+                column_order=column_order,
+                num_rows="dynamic",
+                use_container_width=True,
+                height=450,
+                column_config={
+                    "stt": st.column_config.NumberColumn("STT", width="small", disabled=True),
+                    "entity": st.column_config.SelectboxColumn("Pháp nhân", options=[e["name"] for e in master.get("entities", [])], required=True),
+                    "location": st.column_config.TextColumn("Vị trí/Site", disabled=True),
+                    "asset_cat1": st.column_config.SelectboxColumn("Loại TS 1", options=[c["name"] for c in master.get("asset_cat1", [])]),
+                    "item_name": st.column_config.TextColumn("Tên Tài sản", width="large", required=True),
+                    "quantity": st.column_config.NumberColumn("Số lượng", min_value=1, format=MONEY_FMT),
+                    "unit_price": st.column_config.NumberColumn("Đơn giá (VNĐ)", format=MONEY_FMT),
+                    "total_budget": st.column_config.NumberColumn("Tổng ngân sách (VNĐ)", format=MONEY_FMT, disabled=True),
+                    "total_pct": st.column_config.ProgressColumn("Tổng % Phân kỳ", min_value=0.0, max_value=1.0, format="%.0f%%"),
+                    "project_code": st.column_config.TextColumn("Mã công trình", disabled=True),
+                    "item_code": st.column_config.TextColumn("Mã hạng mục", disabled=True),
+                    "budget_code": st.column_config.TextColumn("Mã ngân sách", disabled=True),
+                    "it_group": st.column_config.TextColumn("Nhóm CNTT", disabled=True),
+                    "catalog_code": st.column_config.TextColumn("Mã danh mục", disabled=True),
+                    "unit": st.column_config.TextColumn("ĐVT"),
+                    "invest_type": st.column_config.SelectboxColumn("Hình thức đầu tư", options=INVEST_TYPES),
+                    "item_kind": None,
+                    "_order": None,
+                    "item_kind_label": st.column_config.TextColumn("Loại hạng mục", disabled=True),
+                    "accounting_class": st.column_config.TextColumn("Phân loại kế toán", disabled=True, width="large"),
+                    "capex_type": st.column_config.TextColumn("CAPEX/CCDC/OPEX", disabled=True),
+                    "need_type": st.column_config.SelectboxColumn("Loại nhu cầu", options=qt.NEED_TYPES),
+                    "need_reason": st.column_config.TextColumn("Lý do / căn cứ", width="medium"),
+                    "auto_quota": None,
+                    **{c: st.column_config.NumberColumn(format=MONEY_FMT, disabled=True) for c in df_curr.columns if c.startswith("val_") or c == "total_val"},
+                }
+            )
+
+        # Check if edits happened
+        # Chỉ lưu khi người dùng thật sự sửa bảng (Streamlit ghi nhận ô sửa / dòng thêm / dòng xóa).
+        # So sánh DataFrame đơn thuần có thể khác do kiểu dữ liệu -> tự lưu & chạy lại trang ngoài ý muốn,
+        # làm mất các dòng đang nhập ở bảng khác (vd. Hạ tầng CNTT).
+        _ed_state = st.session_state.get(main_editor_key) if can_edit else None
+        _has_edits = isinstance(_ed_state, dict) and any(_ed_state.get(k) for k in ("edited_rows", "added_rows", "deleted_rows"))
+        if can_edit and _has_edits and not edited_df.equals(df_curr):
+            save_view(edited_df)
+            st.rerun()
+
     if can_edit:
+        st.markdown(f"#### ➕ Thêm hạng mục cho {active_dept}")
         # Form nhập liệu thuận tiện: 2 phương thức nhập
         in_mode_tab1, in_mode_tab2 = st.tabs([
             "🛒 CHỌN NHANH THEO DANH MỤC CNTT (Nhiều thiết bị cùng lúc - Tiện lợi nhất)",
@@ -1826,104 +1939,6 @@ with tab_input:
                         save_site(updated_site_df.reset_index(drop=True), selected_site)
                         st.session_state["flash"] = f"✅ Đã thêm hạng mục '{f_item_name}' vào phòng ban '{active_dept}' thành công! (Mã: {calculated['item_code']})"
                         st.rerun()
-
-    # Bảng tính tương tác (Interactive Data Table Grid)
-    # Bảng tính tương tác (Interactive Data Table Grid)
-    grid_title = f"📋 Bảng Ngân sách Hiện hành – {active_dept}" if selected_dept != ALL_DEPTS else f"📋 Bảng Ngân sách Hiện hành – {site_label(selected_site)} (Tất cả phòng ban)"
-    st.markdown(f"#### {grid_title}")
-
-    if df_curr.empty:
-        st.info("Bảng đang trống. Hãy thêm hạng mục mới bằng form phía trên hoặc nhập file Excel!")
-    else:
-        # Display summary row on top of grid
-        tot_budget_all = df_curr["total_budget"].sum()
-        col_m1, col_m2, col_m3, col_m4 = st.columns([2, 1, 1, 1])
-        with col_m1:
-            st.write(f"**Tổng số dòng:** {len(df_curr)} mục | **Tổng Ngân sách:** {format_vnd(tot_budget_all)}")
-        with col_m2:
-            if can_edit and st.button("⚡ Chuẩn hóa & Tính lại", use_container_width=True,
-                                      help="Đổi tên theo danh mục chuẩn, gán nhóm CNTT, ĐVT, loại tài sản, loại chi phí và phân loại kế toán"):
-                rows = [r.to_dict() for _, r in df_curr.iterrows()]
-                matched = sum(apply_it_catalog(r, master) for r in rows)
-                save_view(pd.DataFrame(rows))
-                st.session_state["flash"] = (f"Đã chuẩn hóa {matched}/{len(rows)} dòng theo Danh mục CNTT và tính lại toàn bộ bảng!"
-                                             + (" Các dòng còn lại không có trong danh mục - kiểm tra tên hoặc bổ sung danh mục." if matched < len(rows) else ""))
-                st.rerun()
-        with col_m3:
-            if not dept_rows_now.empty:
-                dept_meta = dict(st.session_state["metadata"])
-                dept_meta["proposing_dept"] = active_dept
-                lazy_excel_download(dept_rows_now, dept_meta, f"📥 Tải Excel ({active_dept[:15]}...)",
-                                    f"CAPEX_{budget_year}_{active_dept.replace(' ', '_')}.xlsx",
-                                    key=f"dept_{budget_year}_{selected_site}_{active_dept}",
-                                    help_text=f"Tải riêng file Excel phiếu ngân sách của phòng ban {active_dept}")
-        with col_m4:
-            if can_edit:
-                st.caption("💡 Chọn dòng và bấm Delete để xóa dòng.")
-
-        # Setup columns for interactive editor
-        core_cols = [
-            "stt", "need_type", "need_reason", "it_group", "catalog_code", "item_name", "detail_work", "unit", "quantity", "unit_price",
-            "total_budget", "invest_type", "item_kind_label", "capex_type", "accounting_class", "total_pct",
-            "entity", "dept_using", "location", "asset_cat1", "asset_cat2", "cost_lv1", "cost_lv2",
-            "handover_date", "project_code", "item_code", "budget_code"
-        ]
-        column_order = [c for c in core_cols if c in df_curr.columns] + [c for c in df_curr.columns if c not in core_cols]
-
-        if not can_edit:
-            st.dataframe(df_curr, use_container_width=True, height=450, hide_index=True,
-                         column_order=[c for c in column_order if c != "_order"],
-                         column_config={**{c: st.column_config.NumberColumn(format=MONEY_FMT) for c in df_curr.columns
-                                           if c in ("quantity", "unit_price", "total_budget", "total_val") or c.startswith("val_")},
-                                        "total_pct": st.column_config.ProgressColumn(min_value=0.0, max_value=1.0, format="%.0f%%")})
-            edited_df = df_curr
-        else:
-            main_editor_key = f"editor_{budget_year}_{selected_site}_{st.session_state.get('editor_version', 0)}"
-            edited_df = st.data_editor(
-                df_curr,
-                key=main_editor_key,
-                column_order=column_order,
-                num_rows="dynamic",
-                use_container_width=True,
-                height=450,
-                column_config={
-                    "stt": st.column_config.NumberColumn("STT", width="small", disabled=True),
-                    "entity": st.column_config.SelectboxColumn("Pháp nhân", options=[e["name"] for e in master.get("entities", [])], required=True),
-                    "location": st.column_config.TextColumn("Vị trí/Site", disabled=True),
-                    "asset_cat1": st.column_config.SelectboxColumn("Loại TS 1", options=[c["name"] for c in master.get("asset_cat1", [])]),
-                    "item_name": st.column_config.TextColumn("Tên Tài sản", width="large", required=True),
-                    "quantity": st.column_config.NumberColumn("Số lượng", min_value=1, format=MONEY_FMT),
-                    "unit_price": st.column_config.NumberColumn("Đơn giá (VNĐ)", format=MONEY_FMT),
-                    "total_budget": st.column_config.NumberColumn("Tổng ngân sách (VNĐ)", format=MONEY_FMT, disabled=True),
-                    "total_pct": st.column_config.ProgressColumn("Tổng % Phân kỳ", min_value=0.0, max_value=1.0, format="%.0f%%"),
-                    "project_code": st.column_config.TextColumn("Mã công trình", disabled=True),
-                    "item_code": st.column_config.TextColumn("Mã hạng mục", disabled=True),
-                    "budget_code": st.column_config.TextColumn("Mã ngân sách", disabled=True),
-                    "it_group": st.column_config.TextColumn("Nhóm CNTT", disabled=True),
-                    "catalog_code": st.column_config.TextColumn("Mã danh mục", disabled=True),
-                    "unit": st.column_config.TextColumn("ĐVT"),
-                    "invest_type": st.column_config.SelectboxColumn("Hình thức đầu tư", options=INVEST_TYPES),
-                    "item_kind": None,
-                    "_order": None,
-                    "item_kind_label": st.column_config.TextColumn("Loại hạng mục", disabled=True),
-                    "accounting_class": st.column_config.TextColumn("Phân loại kế toán", disabled=True, width="large"),
-                    "capex_type": st.column_config.TextColumn("CAPEX/CCDC/OPEX", disabled=True),
-                    "need_type": st.column_config.SelectboxColumn("Loại nhu cầu", options=qt.NEED_TYPES),
-                    "need_reason": st.column_config.TextColumn("Lý do / căn cứ", width="medium"),
-                    "auto_quota": None,
-                    **{c: st.column_config.NumberColumn(format=MONEY_FMT, disabled=True) for c in df_curr.columns if c.startswith("val_") or c == "total_val"},
-                }
-            )
-
-        # Check if edits happened
-        # Chỉ lưu khi người dùng thật sự sửa bảng (Streamlit ghi nhận ô sửa / dòng thêm / dòng xóa).
-        # So sánh DataFrame đơn thuần có thể khác do kiểu dữ liệu -> tự lưu & chạy lại trang ngoài ý muốn,
-        # làm mất các dòng đang nhập ở bảng khác (vd. Hạ tầng CNTT).
-        _ed_state = st.session_state.get(main_editor_key) if can_edit else None
-        _has_edits = isinstance(_ed_state, dict) and any(_ed_state.get(k) for k in ("edited_rows", "added_rows", "deleted_rows"))
-        if can_edit and _has_edits and not edited_df.equals(df_curr):
-            save_view(edited_df)
-            st.rerun()
 
 
 # =====================================================================
@@ -2420,6 +2435,8 @@ with tab_infra:
     else:
         df_inf = df_site[infra_mask]
         st.markdown(f"#### {site_label(selected_site)}")
+        if selected_dept != ALL_DEPTS:
+            st.caption("Hạ tầng dùng chung lập theo site, nên hiển thị toàn bộ hạ tầng của site (không lọc theo phòng ban đang chọn).")
 
         def _infra_row(item, invest_type, qty, price, month, dept, reason):
             entity = (df_site["entity"].mode().iloc[0] if "entity" in df_site.columns and not df_site["entity"].dropna().empty else "DDC")
