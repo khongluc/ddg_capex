@@ -81,6 +81,7 @@ def logout():
         st.session_state.pop(key, None)
     if _is_logged_in():
         st.logout()
+        st.stop()  # st.logout() không dừng lượt chạy: dừng ngay để phần còn lại của trang không chạy với phiên đã xóa
     else:
         st.rerun()
 

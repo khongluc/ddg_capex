@@ -1119,7 +1119,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("#### 🏢 Thông tin Đề xuất")
-    meta = st.session_state["metadata"]
+    meta = st.session_state.setdefault("metadata", _default_metadata())  # có thể vừa bị xóa (đăng xuất) trong lượt chạy này
     creator_name = st.text_input("Họ và tên người lập", value=meta.get("creator_name") or current_user.name)
     creator_email = st.text_input("Email người lập", value=current_user.email, disabled=True)
     plan_date = st.date_input("Ngày lập", value=datetime.date.today())

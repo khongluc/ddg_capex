@@ -41,6 +41,21 @@ class DevLoginGuardTest(unittest.TestCase):
             with mock.patch.object(auth.st, "context", ctx(host, ip)):
                 self.assertEqual(auth._is_local_request(), expected, (host, ip))
 
+    def test_logout_stops_run_after_oidc_logout(self):
+        """st.logout() không dừng lượt chạy: phải st.stop() ngay, nếu không trang chạy tiếp với phiên đã xóa (lỗi KeyError metadata)."""
+        state = {"metadata": {}, "dev_login_email": "x@icost.test", "login_logged": True}
+
+        class Stop(Exception):
+            pass
+        with (mock.patch.object(auth.st, "session_state", state),
+              mock.patch.object(auth, "_is_logged_in", return_value=True),
+              mock.patch.object(auth.st, "logout") as lo,
+              mock.patch.object(auth.st, "stop", side_effect=Stop)):
+            with self.assertRaises(Stop):
+                auth.logout()
+        lo.assert_called_once()
+        self.assertNotIn("metadata", state)
+
     def test_no_auto_admin_login(self):
         src = open(auth.__file__, encoding="utf-8").read()
         self.assertNotIn("@daidung.vn", src)                       # không ghi cứng email trong code
