@@ -148,6 +148,20 @@ CREATE TABLE IF NOT EXISTS budget_exec (
     created_at  TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_budget_exec_year_site ON budget_exec(year, site_code);
+CREATE TABLE IF NOT EXISTS budget_versions (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    year        TEXT NOT NULL,
+    site_code   TEXT NOT NULL,
+    version_no  INTEGER NOT NULL,
+    label       TEXT,
+    reason      TEXT,
+    data        TEXT NOT NULL,
+    total       REAL NOT NULL DEFAULT 0,
+    n_lines     INTEGER NOT NULL DEFAULT 0,
+    created_by  TEXT,
+    created_at  TEXT
+);
+CREATE INDEX IF NOT EXISTS ix_budget_versions_year_site ON budget_versions(year, site_code);
 CREATE TABLE IF NOT EXISTS audit_log (
     id      INTEGER PRIMARY KEY AUTOINCREMENT,
     ts      TEXT NOT NULL,
@@ -175,10 +189,12 @@ TABLE_COLUMNS = {
                        "updated_by", "updated_at"],
     "budget_exec": ["id", "year", "site_code", "item_code", "kind", "doc_no", "doc_date", "amount", "vendor", "note",
                     "created_by", "created_at"],
+    "budget_versions": ["id", "year", "site_code", "version_no", "label", "reason", "data", "total", "n_lines",
+                        "created_by", "created_at"],
     "audit_log": ["id", "ts", "email", "action", "detail"],
     "app_settings": ["key", "value", "updated_at"],
 }
-SERIAL_TABLES = {"budget_lines", "audit_log", "budget_exec"}  # cột id tự tăng
+SERIAL_TABLES = {"budget_lines", "audit_log", "budget_exec", "budget_versions"}  # cột id tự tăng
 
 
 def _now() -> str:
@@ -527,6 +543,54 @@ def set_dept_status(year: str, site_code: str, dept: str, status: str, actor: st
             "updated_by = excluded.updated_by, updated_at = excluded.updated_at",
             (year, site_code, name, status, note, actor, _now()))
     log(actor, "set_dept_status", f"{year}/{site_code}/{name} -> {status} {note}".strip())
+
+
+# ---------------------------------------------------------------------
+# Phiên bản ngân sách: chốt khi Admin duyệt site (bản duyệt, điều chỉnh lần N)
+# ---------------------------------------------------------------------
+def save_version(year: str, site_code: str, rows: List[Dict[str, Any]], actor: str, reason: str = "") -> Dict[str, Any]:
+    """Chốt toàn bộ dòng ngân sách hiện tại của site thành 1 phiên bản. Trả về thông tin phiên bản."""
+    init_db()
+    clean = [_jsonable({k: v for k, v in r.items() if k != "site_code"}) for r in rows]
+    total = float(sum(float(r.get("total_budget") or 0) for r in clean))
+    with connect() as conn:
+        row = conn.execute("SELECT MAX(version_no) AS n FROM budget_versions WHERE year = ? AND site_code = ?",
+                           (year, site_code)).fetchone()
+        no = int(row["n"] or 0) + 1
+        label = "Bản duyệt" if no == 1 else f"Điều chỉnh lần {no - 1}"
+        conn.execute("INSERT INTO budget_versions(year, site_code, version_no, label, reason, data, total, n_lines, created_by, created_at) "
+                     "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                     (year, site_code, no, label, reason, json.dumps(clean, ensure_ascii=False), total, len(clean), actor, _now()))
+    log(actor, "save_version", f"{year}/{site_code}: v{no} {label} - {len(clean)} dòng, {total:,.0f}" + (f" ({reason})" if reason else ""))
+    return {"version_no": no, "label": label, "total": total, "n_lines": len(clean)}
+
+
+def list_versions(year: str, site_codes: List[str]) -> List[Dict[str, Any]]:
+    """Danh sách phiên bản (không kèm dữ liệu dòng), mới nhất trước."""
+    if not site_codes:
+        return []
+    init_db()
+    marks = ",".join("?" * len(site_codes))
+    with connect() as conn:
+        return [dict(r) for r in conn.execute(
+            f"SELECT id, year, site_code, version_no, label, reason, total, n_lines, created_by, created_at FROM budget_versions "
+            f"WHERE year = ? AND site_code IN ({marks}) ORDER BY site_code, version_no DESC", [year, *site_codes])]
+
+
+def load_version(version_id: int) -> List[Dict[str, Any]]:
+    init_db()
+    with connect() as conn:
+        row = conn.execute("SELECT data FROM budget_versions WHERE id = ?", (int(version_id),)).fetchone()
+    return json.loads(row["data"]) if row else []
+
+
+def latest_version_lines(year: str, site_codes: List[str]) -> Dict[str, Dict[str, Any]]:
+    """Bản duyệt gần nhất của từng site: {site: {"info": {...}, "rows": [...]}}."""
+    out = {}
+    for v in list_versions(year, site_codes):
+        if v["site_code"] not in out:
+            out[v["site_code"]] = {"info": v, "rows": load_version(v["id"])}
+    return out
 
 
 # ---------------------------------------------------------------------

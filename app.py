@@ -46,6 +46,7 @@ import pricing
 import reports
 import workflow as wf
 import execution as ex
+import versions as vs
 import headcount_import as hi
 import unicodedata
 from capex_engine import (
@@ -1227,14 +1228,29 @@ if selected_site != ALL_SITES:
         ac1, ac2 = st.columns(2)
         if ac1.button("✅ Phê duyệt ngân sách", use_container_width=True, type="primary"):
             db.set_status(budget_year, selected_site, db.STATUS_APPROVED, current_user.email, note)
+            rev_key = f"rev_reason|{budget_year}|{selected_site}"
+            ver = db.save_version(budget_year, selected_site, db.load_lines(budget_year, [selected_site]), current_user.email,
+                                  reason=db.get_setting(rev_key) or note)
+            db.set_setting(rev_key, "")
+            st.session_state["flash"] = (f"Đã duyệt ngân sách {site_label(selected_site)} và chốt phiên bản v{ver['version_no']} "
+                                         f"({ver['label']}, {ver['n_lines']} dòng, {format_vnd(ver['total'])}).")
             st.rerun()
         if ac2.button("↩️ Trả lại yêu cầu chỉnh sửa", use_container_width=True):
             db.set_status(budget_year, selected_site, db.STATUS_RETURNED, current_user.email, note)
             st.rerun()
     if current_user.is_admin and status == db.STATUS_APPROVED:
-        if st.button("🔓 Mở lại để chỉnh sửa ngân sách", use_container_width=True):
-            db.set_status(budget_year, selected_site, db.STATUS_DRAFT, current_user.email, "Mở lại")
-            st.rerun()
+        with st.popover("🔓 Mở điều chỉnh ngân sách", use_container_width=True):
+            st.caption("Bản đã duyệt được giữ làm phiên bản để so sánh; theo dõi thực hiện vẫn tính theo bản duyệt cho tới khi duyệt bản điều chỉnh. "
+                       "Các phòng ban giữ trạng thái đã duyệt - IT site mở lại đúng phòng cần điều chỉnh.")
+            rev_reason = st.text_area("Lý do điều chỉnh (bắt buộc)", key="rev_reason_input")
+            if st.button("Xác nhận mở điều chỉnh", type="primary", key="rev_open"):
+                if not rev_reason.strip():
+                    st.error("Ghi lý do điều chỉnh.")
+                else:
+                    db.set_setting(f"rev_reason|{budget_year}|{selected_site}", rev_reason.strip())
+                    db.set_status(budget_year, selected_site, db.STATUS_DRAFT, current_user.email, f"Điều chỉnh: {rev_reason.strip()}")
+                    st.session_state["flash"] = f"Đã mở điều chỉnh ngân sách {site_label(selected_site)}."
+                    st.rerun()
 
 # TABS NAVIGATION
 tab_names = [
@@ -1245,6 +1261,7 @@ tab_names = [
     "💿 Đầu tư Phần mềm",
     "📁 Nhập / Xuất Excel",
     "💳 Thực hiện ngân sách",
+    "🗂️ Phiên bản",
     "📈 Khấu hao & Thẩm định",
     "⚙️ Quản lý Danh mục",
 ]
@@ -1424,7 +1441,7 @@ if current_user.is_admin and admin_view == "👥 Phân quyền & Tiến độ":
     render_admin_page()
     st.stop()
 
-tab_dash, tab_input, tab_quota, tab_infra, tab_software, tab_excel, tab_exec, tab_depreciation, tab_master = st.tabs(tab_names)
+tab_dash, tab_input, tab_quota, tab_infra, tab_software, tab_excel, tab_exec, tab_versions, tab_depreciation, tab_master = st.tabs(tab_names)
 
 # =====================================================================
 # TAB 1: DASHBOARD
@@ -3181,6 +3198,22 @@ with tab_exec:
     lines_exec = df_curr.drop(columns=["_order"], errors="ignore").copy()
     if "site_code" not in lines_exec.columns:
         lines_exec["site_code"] = selected_site
+    # Ngân sách để so = bản duyệt gần nhất của site (đang điều chỉnh vẫn tính theo bản đã duyệt); chưa duyệt -> bản hiện tại
+    approved_v = db.latest_version_lines(budget_year, scope_sites)
+    if approved_v:
+        parts = []
+        for sc in scope_sites:
+            if sc in approved_v:
+                vdf = pd.DataFrame(approved_v[sc]["rows"]).assign(site_code=sc)
+                parts.append(vdf[dept_mask(vdf, selected_dept)] if not vdf.empty else vdf)
+            else:
+                parts.append(lines_exec[lines_exec["site_code"] == sc])
+        lines_exec = pd.concat(parts, ignore_index=True) if parts else lines_exec
+        if current_user.is_dept_user and "dept_proposing" in lines_exec.columns:
+            _allowed_x = {dept_key(d) for d in current_user.allowed_depts(selected_site)}
+            lines_exec = lines_exec[lines_exec["dept_proposing"].map(dept_key).isin(_allowed_x)]
+        st.caption("Ngân sách so sánh theo bản duyệt gần nhất: " + " · ".join(
+            f"{sc} v{v['info']['version_no']} ({v['info']['label']}, {str(v['info']['created_at'])[:10]})" for sc, v in approved_v.items()))
     in_scope = set(lines_exec["item_code"]) if "item_code" in lines_exec.columns else set()
     if selected_dept != ALL_DEPTS:  # theo phòng ban: chỉ chứng từ của mã thuộc phòng
         exec_rows = [r for r in exec_rows if r["item_code"] in in_scope]
@@ -3280,6 +3313,76 @@ with tab_exec:
                      column_config={c: money_ex for c in pva.columns if c != "Tháng"})
         if pva.attrs.get("outside"):
             st.caption(f"Ngoài ra {format_vnd(pva.attrs['outside'])} thanh toán có ngày ngoài năm ngân sách {budget_year} (T10/{int(budget_year) - 1} – T9/{budget_year}).")
+
+
+with tab_versions:
+    st.markdown("### 🗂️ Phiên bản & điều chỉnh ngân sách")
+    st.caption("Mỗi lần Admin duyệt site, toàn bộ ngân sách được chốt thành 1 phiên bản (Bản duyệt, Điều chỉnh lần 1, 2...). "
+               "So sánh theo Mã hạng mục cố định.")
+    if selected_site == ALL_SITES:
+        vl = pd.DataFrame(db.list_versions(budget_year, scope_sites))
+        if vl.empty:
+            st.info(f"Chưa site nào được duyệt ngân sách năm {budget_year}.")
+        else:
+            st.dataframe(vl.assign(site_code=vl["site_code"].map(site_label))[["site_code", "version_no", "label", "reason", "n_lines", "total", "created_by", "created_at"]],
+                         use_container_width=True, hide_index=True,
+                         column_config={"site_code": "Site", "version_no": "Phiên bản", "label": "Loại", "reason": "Lý do", "n_lines": "Số dòng",
+                                        "total": st.column_config.NumberColumn("Tổng ngân sách", format=MONEY_FMT),
+                                        "created_by": "Người duyệt", "created_at": "Lúc chốt"})
+            st.caption("Chọn 1 site ở thanh bên trái để so sánh chi tiết.")
+    else:
+        vl = db.list_versions(budget_year, [selected_site])
+        if not vl:
+            st.info(f"{site_label(selected_site)} chưa có phiên bản nào - phiên bản đầu tiên được chốt khi Admin duyệt ngân sách site.")
+        else:
+            st.dataframe(pd.DataFrame(vl)[["version_no", "label", "reason", "n_lines", "total", "created_by", "created_at"]],
+                         use_container_width=True, hide_index=True,
+                         column_config={"version_no": "Phiên bản", "label": "Loại", "reason": "Lý do", "n_lines": "Số dòng",
+                                        "total": st.column_config.NumberColumn("Tổng ngân sách", format=MONEY_FMT),
+                                        "created_by": "Người duyệt", "created_at": "Lúc chốt"})
+            CURRENT = "__current__"
+            vlabel = {v["id"]: f"v{v['version_no']} · {v['label']} · {str(v['created_at'])[:10]}" for v in vl}
+            vlabel[CURRENT] = "Hiện tại (đang lập / điều chỉnh)"
+            c1, c2 = st.columns(2)
+            old_id = c1.selectbox("So sánh từ", [v["id"] for v in vl], format_func=vlabel.get, key="ver_old")
+            new_opts = [CURRENT] + [v["id"] for v in vl if v["id"] != old_id]
+            new_id = c2.selectbox("Đến", new_opts, format_func=vlabel.get, key="ver_new")
+            old_rows = db.load_version(old_id)
+            new_rows = [{k: v for k, v in r.items() if k != "site_code"} for r in db.load_lines(budget_year, [selected_site])] \
+                if new_id == CURRENT else db.load_version(new_id)
+            if selected_dept != ALL_DEPTS:
+                old_rows = [r for r in old_rows if dept_key(r.get("dept_proposing")) == dept_key(selected_dept)]
+                new_rows = [r for r in new_rows if dept_key(r.get("dept_proposing")) == dept_key(selected_dept)]
+            if current_user.is_dept_user:
+                _al = {dept_key(d) for d in current_user.allowed_depts(selected_site)}
+                old_rows = [r for r in old_rows if dept_key(r.get("dept_proposing")) in _al]
+                new_rows = [r for r in new_rows if dept_key(r.get("dept_proposing")) in _al]
+            dv = vs.diff(old_rows, new_rows)
+            sm = vs.summary(dv, old_rows, new_rows)
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Tổng (từ)", format_vnd_short(sm["total_old"]))
+            m2.metric("Tổng (đến)", format_vnd_short(sm["total_new"]),
+                      f"{'+' if sm['total_new'] >= sm['total_old'] else ''}{format_vnd_short(sm['total_new'] - sm['total_old'])}", delta_color="off")
+            m3.metric("Hạng mục thêm / bỏ", f"{sm['added']} / {sm['removed']}")
+            m4.metric("Hạng mục đổi", sm["changed"])
+            if dv.empty:
+                st.success("Hai bản giống nhau trong phạm vi đang chọn.")
+            else:
+                money_v = st.column_config.NumberColumn(format=MONEY_FMT)
+                vt1, vt2 = st.tabs(["Theo hạng mục", "Theo phòng ban"])
+                with vt1:
+                    st.dataframe(dv, use_container_width=True, hide_index=True, height=420,
+                                 column_config={"item_code": "Mã hạng mục", "status": "Thay đổi", "dept": "Phòng ban", "item_name": "Hạng mục",
+                                                "qty_old": "SL (từ)", "qty_new": "SL (đến)",
+                                                "total_old": st.column_config.NumberColumn("Thành tiền (từ)", format=MONEY_FMT),
+                                                "total_new": st.column_config.NumberColumn("Thành tiền (đến)", format=MONEY_FMT),
+                                                "delta": st.column_config.NumberColumn("Chênh lệch", format=MONEY_FMT), "what": "Nội dung đổi"})
+                    st.download_button("📥 Tải bảng so sánh (.csv)", dv.to_csv(index=False).encode("utf-8-sig"),
+                                       file_name=f"SoSanh_{budget_year}_{selected_site}_{datetime.date.today():%Y%m%d}.csv", mime="text/csv", key="ver_csv")
+                with vt2:
+                    st.dataframe(vs.by_dept(old_rows, new_rows), use_container_width=True, hide_index=True,
+                                 column_config={"dept": "Phòng ban", "total_old": st.column_config.NumberColumn("Từ", format=MONEY_FMT),
+                                                "total_new": st.column_config.NumberColumn("Đến", format=MONEY_FMT), "delta": money_v})
 
 
 with tab_depreciation:
