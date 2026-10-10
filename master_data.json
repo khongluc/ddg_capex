@@ -1814,6 +1814,180 @@
       "ref_usd": 73
     },
     {
+      "code": "IT09-053",
+      "group": "IT09",
+      "name": "Bảo trì, cập nhật Windows Server (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 3450000,
+      "aliases": [
+        "Bảo trì Windows Server (bản quyền vĩnh viễn)",
+        "Maintenance Windows Server (bản quyền vĩnh viễn)",
+        "Gia hạn bảo trì Windows Server (bản quyền vĩnh viễn)"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT09-001",
+      "seed": 3,
+      "scope": "shared",
+      "vendor": "Microsoft"
+    },
+    {
+      "code": "IT09-054",
+      "group": "IT09",
+      "name": "Bảo trì, cập nhật Windows máy trạm (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 1840000,
+      "aliases": [
+        "Bảo trì Windows máy trạm (bản quyền vĩnh viễn)",
+        "Maintenance Windows máy trạm (bản quyền vĩnh viễn)",
+        "Gia hạn bảo trì Windows máy trạm (bản quyền vĩnh viễn)"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT09-002",
+      "seed": 3,
+      "vendor": "Microsoft"
+    },
+    {
+      "code": "IT09-055",
+      "group": "IT09",
+      "name": "Bảo trì, cập nhật SQL Server Standard (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 5750000,
+      "aliases": [
+        "Bảo trì SQL Server Standard",
+        "Maintenance SQL Server Standard",
+        "Gia hạn bảo trì SQL Server Standard"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT09-003",
+      "seed": 3,
+      "scope": "shared",
+      "vendor": "Microsoft"
+    },
+    {
+      "code": "IT09-056",
+      "group": "IT09",
+      "name": "Bảo trì, cập nhật SQL Server Enterprise (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 11500000,
+      "aliases": [
+        "Bảo trì SQL Server Enterprise",
+        "Maintenance SQL Server Enterprise",
+        "Gia hạn bảo trì SQL Server Enterprise"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT09-004",
+      "seed": 3,
+      "scope": "shared",
+      "vendor": "Microsoft"
+    },
+    {
+      "code": "IT09-057",
+      "group": "IT09",
+      "name": "Bảo trì, cập nhật VMware vSphere (license) (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 0,
+      "aliases": [
+        "Bảo trì VMware vSphere (license)",
+        "Maintenance VMware vSphere (license)",
+        "Gia hạn bảo trì VMware vSphere (license)"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá; giá bản quyền đang = 0",
+      "maintenance_of": "IT09-005",
+      "seed": 3,
+      "scope": "shared",
+      "vendor": "Broadcom (VMware)"
+    },
+    {
+      "code": "IT09-058",
+      "group": "IT09",
+      "name": "Bảo trì, cập nhật Windows Server Datacenter (16 core) (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 35886000,
+      "aliases": [
+        "Bảo trì Windows Server Datacenter (16 core)",
+        "Maintenance Windows Server Datacenter (16 core)",
+        "Gia hạn bảo trì Windows Server Datacenter (16 core)"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT09-012",
+      "seed": 3,
+      "vendor": "Microsoft"
+    },
+    {
+      "code": "IT09-059",
+      "group": "IT09",
+      "name": "Bảo trì, cập nhật Windows Server User CAL (hằng năm)",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 244000,
+      "aliases": [
+        "Bảo trì Windows Server User CAL",
+        "Maintenance Windows Server User CAL",
+        "Gia hạn bảo trì Windows Server User CAL"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT09-013",
+      "seed": 3,
+      "vendor": "Microsoft"
+    },
+    {
+      "code": "IT09-060",
+      "group": "IT09",
+      "name": "Bảo trì, cập nhật Remote Desktop Services (RDS) User CAL (hằng năm)",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 1060000,
+      "aliases": [
+        "Bảo trì Remote Desktop Services (RDS) User CAL",
+        "Maintenance Remote Desktop Services (RDS) User CAL",
+        "Gia hạn bảo trì Remote Desktop Services (RDS) User CAL"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT09-014",
+      "seed": 3,
+      "vendor": "Microsoft"
+    },
+    {
+      "code": "IT09-061",
+      "group": "IT09",
+      "name": "Bảo trì, cập nhật Office LTSC Standard 2024 (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 2650000,
+      "aliases": [
+        "Bảo trì Office LTSC Standard 2024 (bản quyền vĩnh viễn)",
+        "Maintenance Office LTSC Standard 2024 (bản quyền vĩnh viễn)",
+        "Gia hạn bảo trì Office LTSC Standard 2024 (bản quyền vĩnh viễn)"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT09-015",
+      "seed": 3,
+      "vendor": "Microsoft"
+    },
+    {
+      "code": "IT09-062",
+      "group": "IT09",
+      "name": "Bảo trì, cập nhật WinRAR (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 154000,
+      "aliases": [
+        "Bảo trì WinRAR (bản quyền vĩnh viễn)",
+        "Maintenance WinRAR (bản quyền vĩnh viễn)",
+        "Gia hạn bảo trì WinRAR (bản quyền vĩnh viễn)"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT09-035",
+      "seed": 3,
+      "vendor": "win.rar GmbH"
+    },
+    {
       "code": "IT10-001",
       "group": "IT10",
       "name": "Autodesk AutoCAD",
@@ -1901,10 +2075,10 @@
       "group": "IT10",
       "name": "SAP2000",
       "unit": "License",
-      "kind": "software_subscription",
+      "kind": "software_perpetual",
       "price": 500000000,
       "aliases": [],
-      "note": "",
+      "note": "Bản quyền vĩnh viễn (ĐVT License); bảo trì hằng năm là hạng mục riêng",
       "vendor": "CSI"
     },
     {
@@ -1912,12 +2086,12 @@
       "group": "IT10",
       "name": "ETABS",
       "unit": "License",
-      "kind": "software_subscription",
+      "kind": "software_perpetual",
       "price": 500000000,
       "aliases": [
         "Etabs"
       ],
-      "note": "",
+      "note": "Bản quyền vĩnh viễn (ĐVT License); bảo trì hằng năm là hạng mục riêng",
       "vendor": "CSI"
     },
     {
@@ -1938,13 +2112,13 @@
       "group": "IT10",
       "name": "IDEA StatiCa",
       "unit": "License",
-      "kind": "software_subscription",
+      "kind": "software_perpetual",
       "price": 223000000,
       "aliases": [
         "idea",
         "Ideas"
       ],
-      "note": "Dòng 'Ideas' năm 2025 dùng giá 101.000.000 - kiểm tra lại",
+      "note": "Bản quyền vĩnh viễn (ĐVT License); bảo trì hằng năm là hạng mục riêng",
       "vendor": "IDEA StatiCa"
     },
     {
@@ -2439,6 +2613,142 @@
       "useful_months": 12
     },
     {
+      "code": "IT10-047",
+      "group": "IT10",
+      "name": "Bảo trì, cập nhật SAP2000 (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 100000000,
+      "aliases": [
+        "Bảo trì SAP2000",
+        "Maintenance SAP2000",
+        "Gia hạn bảo trì SAP2000"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT10-007",
+      "seed": 3,
+      "vendor": "CSI"
+    },
+    {
+      "code": "IT10-048",
+      "group": "IT10",
+      "name": "Bảo trì, cập nhật ETABS (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 100000000,
+      "aliases": [
+        "Bảo trì ETABS",
+        "Maintenance ETABS",
+        "Gia hạn bảo trì ETABS"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT10-008",
+      "seed": 3,
+      "vendor": "CSI"
+    },
+    {
+      "code": "IT10-049",
+      "group": "IT10",
+      "name": "Bảo trì, cập nhật IDEA StatiCa (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 44600000,
+      "aliases": [
+        "Bảo trì IDEA StatiCa",
+        "Maintenance IDEA StatiCa",
+        "Gia hạn bảo trì IDEA StatiCa"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT10-010",
+      "seed": 3,
+      "vendor": "IDEA StatiCa"
+    },
+    {
+      "code": "IT10-050",
+      "group": "IT10",
+      "name": "Bảo trì, cập nhật ZWCAD (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 5400000,
+      "aliases": [
+        "Bảo trì ZWCAD",
+        "Maintenance ZWCAD",
+        "Gia hạn bảo trì ZWCAD"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT10-014",
+      "seed": 3,
+      "vendor": "ZWSOFT"
+    },
+    {
+      "code": "IT10-051",
+      "group": "IT10",
+      "name": "Bảo trì, cập nhật CSI SAFE (thiết kế sàn, móng) (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 26500000,
+      "aliases": [
+        "Bảo trì CSI SAFE (thiết kế sàn, móng)",
+        "Maintenance CSI SAFE (thiết kế sàn, móng)",
+        "Gia hạn bảo trì CSI SAFE (thiết kế sàn, móng)"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT10-029",
+      "seed": 3,
+      "vendor": "CSI"
+    },
+    {
+      "code": "IT10-052",
+      "group": "IT10",
+      "name": "Bảo trì, cập nhật Rhino 8 (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 5274000,
+      "aliases": [
+        "Bảo trì Rhino 8 (bản quyền vĩnh viễn)",
+        "Maintenance Rhino 8 (bản quyền vĩnh viễn)",
+        "Gia hạn bảo trì Rhino 8 (bản quyền vĩnh viễn)"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT10-035",
+      "seed": 3,
+      "vendor": "Robert McNeel"
+    },
+    {
+      "code": "IT10-053",
+      "group": "IT10",
+      "name": "Bảo trì, cập nhật Global Mapper Pro (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 7950000,
+      "aliases": [
+        "Bảo trì Global Mapper Pro (bản quyền vĩnh viễn)",
+        "Maintenance Global Mapper Pro (bản quyền vĩnh viễn)",
+        "Gia hạn bảo trì Global Mapper Pro (bản quyền vĩnh viễn)"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT10-042",
+      "seed": 3,
+      "vendor": "Blue Marble"
+    },
+    {
+      "code": "IT10-054",
+      "group": "IT10",
+      "name": "Bảo trì, cập nhật Phần mềm cắt CNC / sắp hình tấm (SigmaNEST, ProNest, Lantek) (hằng năm)",
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "price": 79500000,
+      "aliases": [
+        "Bảo trì Phần mềm cắt CNC / sắp hình tấm (SigmaNEST, ProNest, Lantek)",
+        "Maintenance Phần mềm cắt CNC / sắp hình tấm (SigmaNEST, ProNest, Lantek)",
+        "Gia hạn bảo trì Phần mềm cắt CNC / sắp hình tấm (SigmaNEST, ProNest, Lantek)"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT10-043",
+      "seed": 3,
+      "vendor": "SigmaNEST / Hypertherm / Lantek"
+    },
+    {
       "code": "IT11-001",
       "group": "IT11",
       "name": "Microsoft Power BI Pro",
@@ -2675,6 +2985,40 @@
       "seed": 2,
       "useful_months": 12,
       "ref_usd": 900
+    },
+    {
+      "code": "IT11-019",
+      "group": "IT11",
+      "name": "Bảo trì, cập nhật SAP Business One Professional (hằng năm)",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 17029000,
+      "aliases": [
+        "Bảo trì SAP Business One Professional (bản quyền vĩnh viễn)",
+        "Maintenance SAP Business One Professional (bản quyền vĩnh viễn)",
+        "Gia hạn bảo trì SAP Business One Professional (bản quyền vĩnh viễn)"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT11-005",
+      "seed": 3,
+      "vendor": "SAP"
+    },
+    {
+      "code": "IT11-020",
+      "group": "IT11",
+      "name": "Bảo trì, cập nhật Phần mềm ERP nội địa (Bravo / FAST / MISA) – bản quyền & triển khai (hằng năm)",
+      "unit": "Gói/năm",
+      "kind": "software_subscription",
+      "price": 300000000,
+      "aliases": [
+        "Bảo trì Phần mềm ERP nội địa (Bravo / FAST / MISA) – bản quyền & triển khai",
+        "Maintenance Phần mềm ERP nội địa (Bravo / FAST / MISA) – bản quyền & triển khai",
+        "Gia hạn bảo trì Phần mềm ERP nội địa (Bravo / FAST / MISA) – bản quyền & triển khai"
+      ],
+      "note": "Giá ước tính 20% giá bản quyền / năm - cần cập nhật theo báo giá",
+      "maintenance_of": "IT11-007",
+      "seed": 3,
+      "vendor": "Bravo / FAST / MISA"
     },
     {
       "code": "IT12-001",
@@ -4821,6 +5165,136 @@
       "useful_life": 1.0
     },
     {
+      "code": "IT09-053",
+      "name": "Bảo trì, cập nhật Windows Server (hằng năm)",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 3450000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-054",
+      "name": "Bảo trì, cập nhật Windows máy trạm (hằng năm)",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 1840000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-055",
+      "name": "Bảo trì, cập nhật SQL Server Standard (hằng năm)",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 5750000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-056",
+      "name": "Bảo trì, cập nhật SQL Server Enterprise (hằng năm)",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 11500000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-057",
+      "name": "Bảo trì, cập nhật VMware vSphere (license) (hằng năm)",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 0,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-058",
+      "name": "Bảo trì, cập nhật Windows Server Datacenter (16 core) (hằng năm)",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 35886000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-059",
+      "name": "Bảo trì, cập nhật Windows Server User CAL (hằng năm)",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 244000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-060",
+      "name": "Bảo trì, cập nhật Remote Desktop Services (RDS) User CAL (hằng năm)",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 1060000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-061",
+      "name": "Bảo trì, cập nhật Office LTSC Standard 2024 (hằng năm)",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 2650000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT09-062",
+      "name": "Bảo trì, cập nhật WinRAR (hằng năm)",
+      "group": "IT09. Phần mềm hệ thống & văn phòng",
+      "price": 154000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
       "code": "IT10-001",
       "name": "Autodesk AutoCAD",
       "group": "IT10. Phần mềm kỹ thuật – thiết kế",
@@ -4904,9 +5378,9 @@
       "group": "IT10. Phần mềm kỹ thuật – thiết kế",
       "price": 500000000,
       "unit": "License",
-      "kind": "software_subscription",
+      "kind": "software_perpetual",
       "asset_cat1": "E. Bản quyền, Phần mềm",
-      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "asset_cat2": "E1. BQPM: Mua mới",
       "cost_lv1": "04. Chi phí MMTB",
       "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
       "useful_life": 1.0
@@ -4917,9 +5391,9 @@
       "group": "IT10. Phần mềm kỹ thuật – thiết kế",
       "price": 500000000,
       "unit": "License",
-      "kind": "software_subscription",
+      "kind": "software_perpetual",
       "asset_cat1": "E. Bản quyền, Phần mềm",
-      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "asset_cat2": "E1. BQPM: Mua mới",
       "cost_lv1": "04. Chi phí MMTB",
       "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
       "useful_life": 1.0
@@ -4943,9 +5417,9 @@
       "group": "IT10. Phần mềm kỹ thuật – thiết kế",
       "price": 223000000,
       "unit": "License",
-      "kind": "software_subscription",
+      "kind": "software_perpetual",
       "asset_cat1": "E. Bản quyền, Phần mềm",
-      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "asset_cat2": "E1. BQPM: Mua mới",
       "cost_lv1": "04. Chi phí MMTB",
       "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
       "useful_life": 1.0
@@ -5419,6 +5893,110 @@
       "useful_life": 1.0
     },
     {
+      "code": "IT10-047",
+      "name": "Bảo trì, cập nhật SAP2000 (hằng năm)",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 100000000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-048",
+      "name": "Bảo trì, cập nhật ETABS (hằng năm)",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 100000000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-049",
+      "name": "Bảo trì, cập nhật IDEA StatiCa (hằng năm)",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 44600000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-050",
+      "name": "Bảo trì, cập nhật ZWCAD (hằng năm)",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 5400000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-051",
+      "name": "Bảo trì, cập nhật CSI SAFE (thiết kế sàn, móng) (hằng năm)",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 26500000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-052",
+      "name": "Bảo trì, cập nhật Rhino 8 (hằng năm)",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 5274000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-053",
+      "name": "Bảo trì, cập nhật Global Mapper Pro (hằng năm)",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 7950000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT10-054",
+      "name": "Bảo trì, cập nhật Phần mềm cắt CNC / sắp hình tấm (SigmaNEST, ProNest, Lantek) (hằng năm)",
+      "group": "IT10. Phần mềm kỹ thuật – thiết kế",
+      "price": 79500000,
+      "unit": "License/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
       "code": "IT11-001",
       "name": "Microsoft Power BI Pro",
       "group": "IT11. Phần mềm quản trị doanh nghiệp",
@@ -5645,6 +6223,32 @@
       "group": "IT11. Phần mềm quản trị doanh nghiệp",
       "price": 23850000,
       "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT11-019",
+      "name": "Bảo trì, cập nhật SAP Business One Professional (hằng năm)",
+      "group": "IT11. Phần mềm quản trị doanh nghiệp",
+      "price": 17029000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT11-020",
+      "name": "Bảo trì, cập nhật Phần mềm ERP nội địa (Bravo / FAST / MISA) – bản quyền & triển khai (hằng năm)",
+      "group": "IT11. Phần mềm quản trị doanh nghiệp",
+      "price": 300000000,
+      "unit": "Gói/năm",
       "kind": "software_subscription",
       "asset_cat1": "E. Bản quyền, Phần mềm",
       "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
@@ -6154,7 +6758,7 @@
   },
   "infra_owner": "PHÒNG CNTT",
   "fx_usd_vnd": 26500,
-  "catalog_seed": 2,
+  "catalog_seed": 3,
   "dept_divisions": {
     "BAN CHUYỂN ĐỔI SỐ": "VĂN PHÒNG CHUYỂN ĐỔI SỐ",
     "BAN KIỂM SOÁT NỘI BỘ": "BAN KIỂM SOÁT NỘI BỘ",
@@ -6218,5 +6822,34 @@
     "VP HỘI ĐỒNG QUẢN TRỊ": "VĂN PHÒNG HỘI ĐỒNG QUẢN TRỊ",
     "ĐỐI TÁC NHÂN SỰ CÁC NHÀ MÁY": "KHỐI QTNNL",
     "ĐỐI TÁC NHÂN SỰ CÁC NHÀ MÁY": "CÁC NHÀ MÁY"
-  }
+  },
+  "catalog_updates": [
+    {
+      "seed": 3,
+      "code": "IT10-007",
+      "name": "SAP2000",
+      "set": {
+        "kind": "software_perpetual",
+        "note": "Bản quyền vĩnh viễn (ĐVT License); bảo trì hằng năm là hạng mục riêng"
+      }
+    },
+    {
+      "seed": 3,
+      "code": "IT10-008",
+      "name": "ETABS",
+      "set": {
+        "kind": "software_perpetual",
+        "note": "Bản quyền vĩnh viễn (ĐVT License); bảo trì hằng năm là hạng mục riêng"
+      }
+    },
+    {
+      "seed": 3,
+      "code": "IT10-010",
+      "name": "IDEA StatiCa",
+      "set": {
+        "kind": "software_perpetual",
+        "note": "Bản quyền vĩnh viễn (ĐVT License); bảo trì hằng năm là hạng mục riêng"
+      }
+    }
+  ]
 }

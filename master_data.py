@@ -293,6 +293,11 @@ def _merge_catalog_seed(data: Dict[str, Any]) -> bool:
             items.append(new)
             by_code[new["code"]] = new
             names.add(str(new.get("name", "")).strip().lower())
+    # Sửa thuộc tính hạng mục có sẵn theo đợt (vd. đổi loại thuê bao -> vĩnh viễn); bỏ qua nếu admin đã đổi tên hạng mục
+    for upd in file_data.get("catalog_updates", []):
+        cur = by_code.get(upd.get("code"))
+        if int(upd.get("seed") or 0) > applied and cur is not None and cur.get("name") == upd.get("name"):
+            cur.update(upd.get("set") or {})
     order = {g.get("code"): i for i, g in enumerate(data.get("it_groups", []))}
     data["standard_items"] = sorted(items, key=lambda it: (order.get(it.get("group"), 99), str(it.get("code"))))
     data["catalog_seed"] = file_seed
