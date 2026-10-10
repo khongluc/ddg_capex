@@ -1851,6 +1851,331 @@ with tab_dash:
                 )
 
 
+def _commit_checklist_items(selected_items_df: pd.DataFrame, target_dept: str, target_site: str,
+                            target_month: str, need_type: str, need_reason: str):
+    ent_names = [e["name"] for e in master.get("entities", [])]
+    target_ent = ent_names[0] if ent_names else "DDC"
+    target_div = division_of(target_dept, master)
+    target_loc = SITE_NAME.get(target_site, target_site)
+    cat_all = master.get("standard_items", [])
+
+    new_items_list = []
+    for _, r_it in selected_items_df.iterrows():
+        it_code = str(r_it.get("Mã", "")).strip()
+        it_name = str(r_it.get("Tên thiết bị / Hạng mục", "")).strip()
+        cat_it = next((x for x in cat_all if x.get("code") == it_code or x.get("name") == it_name), None)
+        q = int(r_it.get("Số lượng", 1))
+        p = float(r_it.get("Đơn giá (VNĐ)", 0))
+        note_txt = str(r_it.get("Ghi chú", "")).strip()
+
+        row_dict = {
+            "entity": target_ent,
+            "division": target_div,
+            "dept_proposing": target_dept,
+            "dept_using": target_dept,
+            "location": target_loc,
+            "item_name": it_name,
+            "detail_work": note_txt,
+            "supplier": "",
+            "quantity": q,
+            "unit_price": p,
+            "contract_date": "",
+            "completion_date": "",
+            "handover_date": "",
+            "need_type": need_type,
+            "need_reason": need_reason if need_type in qt.NEED_WITH_REASON else "",
+        }
+        for m in months:
+            row_dict[f"pct_{m}"] = 1.0 if m == target_month else 0.0
+
+        if cat_it:
+            apply_it_catalog(row_dict, master, item=cat_it, invest_type="Mua mới")
+        else:
+            row_dict.update({"it_group": "(Ngoài danh mục)", "invest_type": "Mua mới"})
+
+        calc_row = calculate_row(row_dict, months=months, year_code=year_code, master=master)
+        new_items_list.append(calc_row)
+
+    current_stored_df = pd.DataFrame(db.load_lines(budget_year, [target_site]))
+    if not current_stored_df.empty:
+        current_stored_df = current_stored_df.drop(columns=["site_code"], errors="ignore")
+    updated_df_all = pd.concat([current_stored_df, pd.DataFrame(new_items_list)], ignore_index=True)
+    save_site(updated_df_all.reset_index(drop=True), target_site)
+    total_cost = (selected_items_df["Số lượng"] * selected_items_df["Đơn giá (VNĐ)"]).sum()
+    st.session_state["flash"] = f"🎉 Đã thêm thành công {len(new_items_list)} hạng mục vào ngân sách phòng ban '{target_dept}' ({format_vnd(total_cost)})!"
+    st.rerun()
+
+
+@st.dialog("🛒 Checklist Lập Ngân Sách CNTT Thông Minh", width="large")
+def render_item_picker_dialog(target_dept: str, target_site: str):
+    st.markdown(f"""
+    <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:10px 14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <div style="font-size:11px; font-weight:700; color:#1E40AF; text-transform:uppercase;">Phòng ban lập ngân sách</div>
+            <div style="font-size:16px; font-weight:800; color:#0F2C59;">🏢 {_html.escape(target_dept)} <span style="font-size:12px; font-weight:500; color:#64748B;">({site_label(target_site)})</span></div>
+        </div>
+        <div style="text-align:right;">
+            <div style="font-size:11px; color:#64748B;">Năm tài chính</div>
+            <div style="font-size:15px; font-weight:700; color:#1E40AF;">{budget_year}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    dlg_tab1, dlg_tab2 = st.tabs([
+        "📦 GÓI TRANG BỊ THEO CHỨC DANH (1-Click Presets)",
+        "🔍 CHECKLIST TÌM KIẾM TOÀN DANH MỤC"
+    ])
+
+    standard_kits = qt.standard_kits(master)
+    cat_all = master.get("standard_items", [])
+    cat_by_code = {x.get("code"): x for x in cat_all if x.get("code")}
+
+    # Tab 1: Bundles
+    with dlg_tab1:
+        st.caption("Chọn chức danh và số lượng nhân sự. Hệ thống tự động tính toán số lượng toàn bộ thiết bị & bản quyền theo định mức.")
+        b1, b2 = st.columns([2, 1])
+        with b1:
+            kit_codes = [k["code"] for k in standard_kits]
+            kit_labels = {k["code"]: f"{k['code']} · {k['name']}" for k in standard_kits}
+            sel_k_code = st.selectbox("1. Vị trí / Chức danh cần trang bị:", kit_codes, format_func=lambda c: kit_labels.get(c, c), key="dlg_kit_pick")
+        with b2:
+            n_people = st.number_input("2. Số lượng nhân sự (người):", min_value=1, value=1, step=1, key="dlg_kit_people")
+
+        kit_obj = next((k for k in standard_kits if k["code"] == sel_k_code), None)
+        k_rows = []
+        if kit_obj:
+            for it_entry in kit_obj.get("items", []):
+                cc = it_entry.get("catalog_code", "")
+                cat_it = cat_by_code.get(cc)
+                if not cat_it:
+                    continue
+                q_ratio = float(it_entry.get("qty_per_person", 1))
+                calc_q = max(1, int(round(q_ratio * n_people)))
+                p = float(cat_it.get("price", 0))
+                cls_prev = classify_item(cat_it, master)
+                _, capex_tg = accounting_class(cls_prev.get("item_kind", KIND_HARDWARE), p, master)
+                k_rows.append({
+                    "Chọn": True,
+                    "Mã": cc,
+                    "Tên thiết bị / Hạng mục": cat_it["name"],
+                    "ĐVT": cat_it.get("unit", "Cái"),
+                    "Đơn giá (VNĐ)": p,
+                    "Phân loại": capex_tg,
+                    "Số lượng": calc_q,
+                    "Ghi chú": f"Trang bị {n_people} {kit_obj['name']}",
+                })
+
+        df_k = pd.DataFrame(k_rows)
+        ed_kit = st.data_editor(
+            df_k,
+            key=f"ed_dlg_kit_{sel_k_code}_{n_people}",
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Chọn": st.column_config.CheckboxColumn("Chọn", default=True),
+                "Mã": st.column_config.TextColumn("Mã", disabled=True, width="small"),
+                "Tên thiết bị / Hạng mục": st.column_config.TextColumn("Tên thiết bị", disabled=True, width="large"),
+                "ĐVT": st.column_config.TextColumn("ĐVT", disabled=True, width="small"),
+                "Đơn giá (VNĐ)": st.column_config.NumberColumn("Đơn giá (VNĐ)", disabled=True, format=MONEY_FMT),
+                "Phân loại": st.column_config.TextColumn("Phân loại", disabled=True, width="small"),
+                "Số lượng": st.column_config.NumberColumn("Số lượng", min_value=0, step=1, format=MONEY_FMT),
+                "Ghi chú": st.column_config.TextColumn("Ghi chú", width="medium"),
+            }
+        )
+        sel_kit_df = ed_kit[(ed_kit["Chọn"] == True) & (ed_kit["Số lượng"] > 0)]
+        cost_kit = (sel_kit_df["Số lượng"] * sel_kit_df["Đơn giá (VNĐ)"]).sum() if not sel_kit_df.empty else 0.0
+
+        st.markdown("---")
+        kb1, kb2, kb3 = st.columns([1.2, 1.2, 1.6])
+        with kb1:
+            k_month = st.selectbox("Tháng sử dụng:", months, index=0, key="dlg_k_month")
+        with kb2:
+            k_need = st.radio("Nhu cầu:", qt.NEED_TYPES, index=0, horizontal=True, key="dlg_k_need")
+        with kb3:
+            st.markdown(f"""
+            <div style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:8px; padding:8px 12px; text-align:right;">
+                <div style="font-size:11px; color:#64748B;">Đã chọn: <b>{len(sel_kit_df)}</b> món</div>
+                <div style="font-size:15px; font-weight:800; color:#1E40AF;">{format_vnd(cost_kit)}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        k_reason = ""
+        if k_need in qt.NEED_WITH_REASON:
+            k_reason = st.text_input("Lý do phát sinh / căn cứ trang bị:", value=f"Tuyển mới {n_people} {kit_obj['name'] if kit_obj else ''}", key="dlg_k_reason")
+
+        if st.button(f"💾 XÁC NHẬN THÊM {len(sel_kit_df)} MỤC TRONG GÓI VÀO {target_dept}", type="primary", use_container_width=True, disabled=sel_kit_df.empty, key="btn_apply_dlg_kit"):
+            _commit_checklist_items(sel_kit_df, target_dept, target_site, k_month, k_need, k_reason)
+
+    # Tab 2: Universal Search Checklist
+    with dlg_tab2:
+        st.caption("Tìm kiếm nhanh trong toàn bộ 222 hạng mục CNTT chuẩn hóa, tick chọn và điều chỉnh số lượng.")
+        sc1, sc2 = st.columns([2, 1.2])
+        with sc1:
+            search_kw = st.text_input("🔍 Gõ từ khóa tìm kiếm (tên thiết bị, phần mềm, mã...):", placeholder="VD: laptop, dell, tekla, autocad, màn hình, máy in...", key="dlg_search_kw")
+        with sc2:
+            grp_choices = ["(Tất cả 13 nhóm CNTT)"] + [f"{g['code']}. {g['name']}" for g in it_groups(master)]
+            sel_g_filter = st.selectbox("Lọc theo nhóm:", grp_choices, key="dlg_grp_filter")
+
+        items_pool = cat_all
+        if sel_g_filter != "(Tất cả 13 nhóm CNTT)":
+            pfx = sel_g_filter.split(".")[0].strip()
+            items_pool = [x for x in items_pool if str(x.get("group", "")).startswith(pfx)]
+        if search_kw.strip():
+            kw_l = search_kw.strip().lower()
+            items_pool = [x for x in items_pool if kw_l in x.get("name", "").lower() or kw_l in x.get("code", "").lower() or kw_l in str(x.get("note", "")).lower()]
+
+        c_rows = []
+        for it in items_pool[:60]:
+            p = float(it.get("price", 0))
+            cls_prev = classify_item(it, master)
+            _, capex_tg = accounting_class(cls_prev.get("item_kind", KIND_HARDWARE), p, master)
+            c_rows.append({
+                "Chọn": False,
+                "Mã": it.get("code", ""),
+                "Tên thiết bị / Hạng mục": it["name"],
+                "ĐVT": it.get("unit", "Cái"),
+                "Đơn giá (VNĐ)": p,
+                "Phân loại": capex_tg,
+                "Số lượng": 1,
+                "Ghi chú": "",
+            })
+
+        if not c_rows:
+            st.info("Không tìm thấy hạng mục nào phù hợp với từ khóa.")
+        else:
+            df_c = pd.DataFrame(c_rows)
+            ed_cat = st.data_editor(
+                df_c,
+                key=f"ed_dlg_cat_{sel_g_filter}_{search_kw}",
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Chọn": st.column_config.CheckboxColumn("Chọn", default=False),
+                    "Mã": st.column_config.TextColumn("Mã", disabled=True, width="small"),
+                    "Tên thiết bị / Hạng mục": st.column_config.TextColumn("Tên thiết bị", disabled=True, width="large"),
+                    "ĐVT": st.column_config.TextColumn("ĐVT", disabled=True, width="small"),
+                    "Đơn giá (VNĐ)": st.column_config.NumberColumn("Đơn giá (VNĐ)", disabled=True, format=MONEY_FMT),
+                    "Phân loại": st.column_config.TextColumn("Phân loại", disabled=True, width="small"),
+                    "Số lượng": st.column_config.NumberColumn("Số lượng", min_value=1, step=1, format=MONEY_FMT),
+                    "Ghi chú": st.column_config.TextColumn("Ghi chú", width="medium"),
+                }
+            )
+            sel_cat_df = ed_cat[ed_cat["Chọn"] == True]
+            cost_cat = (sel_cat_df["Số lượng"] * sel_cat_df["Đơn giá (VNĐ)"]).sum() if not sel_cat_df.empty else 0.0
+
+            st.markdown("---")
+            cb1, cb2, cb3 = st.columns([1.2, 1.2, 1.6])
+            with cb1:
+                c_month = st.selectbox("Tháng sử dụng:", months, index=0, key="dlg_c_month")
+            with cb2:
+                c_need = st.radio("Nhu cầu:", qt.NEED_TYPES, index=1, horizontal=True, key="dlg_c_need")
+            with cb3:
+                st.markdown(f"""
+                <div style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:8px; padding:8px 12px; text-align:right;">
+                    <div style="font-size:11px; color:#64748B;">Đã chọn: <b>{len(sel_cat_df)}</b> món</div>
+                    <div style="font-size:15px; font-weight:800; color:#1E40AF;">{format_vnd(cost_cat)}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            c_reason = ""
+            if c_need in qt.NEED_WITH_REASON:
+                c_reason = st.text_input("Lý do phát sinh / căn cứ trang bị:", placeholder="VD: Tuyển thêm nhân sự, nâng cấp máy...", key="dlg_c_reason")
+
+            if st.button(f"💾 XÁC NHẬN THÊM {len(sel_cat_df)} MỤC ĐÃ TICK VÀO {target_dept}", type="primary", use_container_width=True, disabled=sel_cat_df.empty, key="btn_apply_dlg_cat"):
+                if c_need in qt.NEED_WITH_REASON and not c_reason.strip():
+                    st.error("Vui lòng nhập lý do / căn cứ phát sinh trước khi thêm!")
+                else:
+                    _commit_checklist_items(sel_cat_df, target_dept, target_site, c_month, c_need, c_reason)
+
+
+@st.dialog("📋 Checklist Rà Soát & Điều Chỉnh Nhanh Phòng Ban", width="large")
+def render_batch_adjust_dialog(target_dept: str, target_site: str):
+    lines = db.load_lines(budget_year, [target_site])
+    stored_df = pd.DataFrame(lines).drop(columns=["site_code"], errors="ignore") if lines else pd.DataFrame()
+    dept_rows = stored_df[stored_df["dept_proposing"].map(dept_key) == dept_key(target_dept)].reset_index(drop=True) if not stored_df.empty and "dept_proposing" in stored_df.columns else pd.DataFrame()
+
+    if dept_rows.empty:
+        st.info(f"Phòng ban {target_dept} hiện chưa có hạng mục nào trong ngân sách {budget_year}.")
+        if st.button("Đóng", use_container_width=True):
+            st.rerun()
+        return
+
+    st.markdown(f"""
+    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:10px 14px; margin-bottom:12px;">
+        <div style="font-size:11px; font-weight:700; color:#64748B; text-transform:uppercase;">Danh sách hiện có</div>
+        <div style="font-size:15px; font-weight:800; color:#0F2C59;">🏢 {_html.escape(target_dept)} · <b>{len(dept_rows)}</b> hạng mục · Tổng: <b>{format_vnd(dept_rows['total_budget'].sum())}</b></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    adj_rows = []
+    for idx, r in dept_rows.iterrows():
+        adj_rows.append({
+            "Chọn": False,
+            "ID": idx,
+            "Mã": r.get("item_code", ""),
+            "Tên hạng mục": r.get("item_name", ""),
+            "Số lượng": clean_number(r.get("quantity", 1)),
+            "Đơn giá": clean_number(r.get("unit_price", 0)),
+            "Thành tiền": clean_number(r.get("total_budget", 0)),
+            "Phân loại": r.get("capex_type", ""),
+            "Loại nhu cầu": r.get("need_type", ""),
+        })
+
+    df_adj = pd.DataFrame(adj_rows)
+    ed_adj = st.data_editor(
+        df_adj,
+        key=f"ed_dlg_adj_{dept_key(target_dept)}_{len(dept_rows)}",
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Chọn": st.column_config.CheckboxColumn("Chọn", default=False),
+            "ID": None,
+            "Mã": st.column_config.TextColumn("Mã", disabled=True, width="small"),
+            "Tên hạng mục": st.column_config.TextColumn("Tên hạng mục", disabled=True, width="large"),
+            "Số lượng": st.column_config.NumberColumn("Số lượng", disabled=True, format=MONEY_FMT),
+            "Đơn giá": st.column_config.NumberColumn("Đơn giá", disabled=True, format=MONEY_FMT),
+            "Thành tiền": st.column_config.NumberColumn("Thành tiền", disabled=True, format=MONEY_FMT),
+            "Phân loại": st.column_config.TextColumn("Phân loại", disabled=True, width="small"),
+            "Loại nhu cầu": st.column_config.TextColumn("Nhu cầu", disabled=True, width="small"),
+        }
+    )
+    sel_adj = ed_adj[ed_adj["Chọn"] == True]
+    n_sel = len(sel_adj)
+
+    st.markdown("---")
+    st.markdown(f"##### 🛠️ Thao tác hàng loạt cho **{n_sel}** mục đã chọn:")
+
+    act_col1, act_col2 = st.columns(2)
+    with act_col1:
+        st.markdown("**1. Đổi tháng giải ngân hàng loạt:**")
+        new_m = st.selectbox("Chọn tháng giải ngân mới:", months, key="dlg_adj_new_m")
+        if st.button(f"📅 Chuyển {n_sel} mục sang {new_m}", use_container_width=True, disabled=n_sel == 0, key="btn_move_month"):
+            sel_codes = set(sel_adj["Mã"])
+            updated_stored = stored_df.copy()
+            match_mask = (updated_stored["dept_proposing"].map(dept_key) == dept_key(target_dept)) & (updated_stored["item_code"].isin(sel_codes))
+            for i in updated_stored[match_mask].index:
+                for m in months:
+                    updated_stored.at[i, f"pct_{m}"] = 1.0 if m == new_m else 0.0
+                r_dict = updated_stored.loc[i].to_dict()
+                c_dict = calculate_row(r_dict, months=months, year_code=year_code, master=master)
+                for k, v in c_dict.items():
+                    updated_stored.at[i, k] = v
+            save_site(updated_stored.reset_index(drop=True), target_site)
+            st.session_state["flash"] = f"✅ Đã chuyển {n_sel} hạng mục của {target_dept} sang tháng {new_m} thành công!"
+            st.rerun()
+
+    with act_col2:
+        st.markdown("**2. Xóa bỏ các mục không cần thiết:**")
+        st.caption("Các dòng được tick chọn sẽ bị xóa vĩnh viễn khỏi ngân sách phòng ban.")
+        if st.button(f"🗑️ Xóa {n_sel} mục đã chọn", use_container_width=True, disabled=n_sel == 0, key="btn_del_batch"):
+            sel_codes = set(sel_adj["Mã"])
+            del_mask = (stored_df["dept_proposing"].map(dept_key) == dept_key(target_dept)) & (stored_df["item_code"].isin(sel_codes))
+            updated_stored = stored_df[~del_mask].reset_index(drop=True)
+            save_site(updated_stored, target_site)
+            st.session_state["flash"] = f"🗑️ Đã xóa thành công {n_sel} hạng mục khỏi phòng ban {target_dept}!"
+            st.rerun()
+
+
 # =====================================================================
 # TAB 2: LẬP & NHẬP LIỆU CAPEX
 # =====================================================================
@@ -1987,8 +2312,11 @@ with tab_input:
                                     key=f"dept_{budget_year}_{selected_site}_{active_dept}",
                                     help_text=f"Tải riêng file Excel phiếu ngân sách của phòng ban {active_dept}")
         with col_m4:
-            if can_edit:
-                st.caption("💡 Chọn dòng và bấm Delete để xóa dòng.")
+            if can_edit and not dept_rows_now.empty:
+                if st.button("📋 Rà soát & Sửa nhanh", use_container_width=True, key="btn_tbl_adj_dlg", help="Mở popup checklist để đổi tháng hoặc xóa hàng loạt"):
+                    render_batch_adjust_dialog(active_dept, selected_site)
+            elif can_edit:
+                st.caption("💡 Chọn dòng và bấm Delete để xóa.")
 
         # Setup columns for interactive editor
         core_cols = [
@@ -2065,7 +2393,16 @@ with tab_input:
     if can_edit and dept_state(active_dept)["status"] in db.DEPT_LOCKED_STATUSES:
         st.info(f"🔒 {active_dept} đã nộp / đã duyệt - không thêm hạng mục. IT site trả lại hoặc mở lại phòng ban nếu cần bổ sung.")
     elif can_edit:
-        st.markdown(f"#### ➕ Thêm hạng mục cho {active_dept}")
+        st.markdown(f"#### ⚡ Lập & Điều chỉnh Ngân sách – {active_dept}")
+        col_dlg_btn1, col_dlg_btn2 = st.columns([1.6, 1.4])
+        with col_dlg_btn1:
+            if st.button("✨ MỞ POPUP CHECKLIST THÔNG MINH (Gói Chức Danh & Chọn Nhanh)", type="primary", use_container_width=True, key="btn_open_picker_dlg"):
+                render_item_picker_dialog(active_dept, selected_site)
+        with col_dlg_btn2:
+            if not dept_rows_now.empty and st.button("📋 POPUP CHECKLIST RÀ SOÁT & SỬA NHANH", use_container_width=True, key="btn_open_adj_dlg"):
+                render_batch_adjust_dialog(active_dept, selected_site)
+
+        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
         # Form nhập liệu thuận tiện: 2 phương thức nhập
         in_mode_tab1, in_mode_tab2 = st.tabs([
             "🛒 CHỌN NHANH THEO DANH MỤC CNTT (Nhiều thiết bị cùng lúc - Tiện lợi nhất)",

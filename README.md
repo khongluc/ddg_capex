@@ -63,8 +63,9 @@ d:\DATA\dev\I_Cost/
 
 1. **📊 Tổng quan**: KPI tổng hợp, cơ cấu CAPEX / CCDC / OPEX, phân kỳ theo tháng/quý và phân bổ theo Khối.
 2. **📝 Lập CapEx**:
-   - **Multi-Item Batch Picker**: Chọn nhanh nhiều thiết bị trong nhóm CNTT, nhập số lượng và đẩy vào phòng ban chỉ trong 10 giây.
-   - **Single Item Detailed Form**: Nhập chi tiết thiết bị đặc thù, nhà cung cấp, cấu hình và phân kỳ tùy chỉnh.
+   - **✨ Smart Modal Popup Checklist**: Bật cửa sổ Popup chọn nhanh theo Gói Chức danh mẫu (1-Click Presets: Kỹ sư Thiết kế, Chuyên viên, Lãnh đạo...) hoặc Tìm kiếm nhanh toàn bộ 222 hạng mục với checklist tương tác và tính tiền tức thì.
+   - **📋 Checklist Rà soát & Sửa nhanh**: Popup rà soát danh sách hiện có, hỗ trợ đổi tháng giải ngân hàng loạt hoặc xóa nhanh nhiều mục cùng lúc.
+   - **Multi-Item Batch Picker & Single Item Form**: Chế độ nhập nhanh trên trang và form chi tiết từng hạng mục.
 3. **👥 Định biên**: Phân tích bảng định biên nhân sự, tự động phát hiện số lượng vị trí để đề xuất bộ trang bị chuẩn (PC/Laptop, bản quyền).
 4. **🏗️ Hạ tầng**: Lập dự toán hạ tầng CNTT dùng chung toàn site (Phòng Server, Core Switch, Firewall, Camera, UPS...).
 5. **💿 Phần mềm**: Quản lý danh mục & phân bổ đầu tư bản quyền phần mềm (Office 365, Tekla, AutoCAD, ERP, E-Office...).
