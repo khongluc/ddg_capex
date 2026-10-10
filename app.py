@@ -1113,6 +1113,10 @@ with st.sidebar:
         dept_list = current_user.allowed_depts(selected_site)
     # Ô chọn ở thanh bên và ô chọn trong tab Lập & Nhập liệu dùng chung 1 phòng ban (đồng bộ 2 chiều)
     sb_dept_options = ([] if current_user.is_dept_user else [ALL_DEPTS]) + dept_list
+    _pending_dept = st.session_state.pop("pending_dept", None)  # phòng ban vừa sửa trong popup
+    if _pending_dept in sb_dept_options:
+        st.session_state["sb_dept"] = _pending_dept
+        st.session_state["active_dept_selector"] = _pending_dept
     if st.session_state.get("sb_dept") not in sb_dept_options:
         st.session_state.pop("sb_dept", None)
 
@@ -1924,11 +1928,33 @@ def _commit_checklist_items(selected_items_df: pd.DataFrame, target_dept: str, t
     save_site(updated_df_all.reset_index(drop=True), target_site)
     total_cost = (selected_items_df["Số lượng"] * selected_items_df["Đơn giá (VNĐ)"]).sum()
     st.session_state["flash"] = f"🎉 Đã thêm thành công {len(new_items_list)} hạng mục vào ngân sách phòng ban '{target_dept}' ({format_vnd(total_cost)})!"
+    st.session_state["pending_dept"] = target_dept
     st.rerun()
+
+
+def dialog_dept_picker(default_dept: str, key: str) -> tuple:
+    """Ô chọn phòng ban trong popup: chỉ phòng tài khoản được sửa, kèm trạng thái duyệt. Trả về (phòng, đang khóa?)."""
+    options = [d for d in dept_list if d != ALL_DEPTS]
+    if not options:
+        return default_dept, True
+    idx = next((i for i, d in enumerate(options) if dept_key(d) == dept_key(default_dept)), 0)
+
+    def _label(d):
+        stt = dept_state(d)["status"]
+        return f"{d}  ·  {db.DEPT_STATUS_LABELS.get(stt, stt)}"
+    dept = st.selectbox("🏢 Chọn phòng ban cần lập / chỉnh sửa", options, index=idx, key=key, format_func=_label,
+                        help="Đổi phòng ngay trong popup; lưu xong trang chính chuyển sang phòng này")
+    locked = dept_state(dept)["status"] in db.DEPT_LOCKED_STATUSES
+    if locked:
+        st.warning(f"🔒 {dept} đã nộp / đã duyệt - không thêm / sửa được. IT site trả lại hoặc mở lại phòng ban nếu cần điều chỉnh.")
+    return dept, locked
 
 
 @st.dialog("🛒 Checklist Lập Ngân Sách CNTT Thông Minh", width="large")
 def render_item_picker_dialog(target_dept: str, target_site: str):
+    target_dept, _locked = dialog_dept_picker(target_dept, "dlg_pick_dept")
+    if _locked:
+        return
     st.markdown(f"""
     <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:10px 14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
         <div>
@@ -1990,7 +2016,7 @@ def render_item_picker_dialog(target_dept: str, target_site: str):
         df_k = pd.DataFrame(k_rows)
         ed_kit = st.data_editor(
             df_k,
-            key=f"ed_dlg_kit_{sel_k_code}_{n_people}",
+            key=f"ed_dlg_kit_{dept_key(target_dept)}_{sel_k_code}_{n_people}",
             use_container_width=True,
             hide_index=True,
             column_config={
@@ -2073,7 +2099,7 @@ def render_item_picker_dialog(target_dept: str, target_site: str):
             df_c = pd.DataFrame(c_rows)
             ed_cat = st.data_editor(
                 df_c,
-                key=f"ed_dlg_cat_{sel_g_filter}_{search_kw}",
+                key=f"ed_dlg_cat_{dept_key(target_dept)}_{sel_g_filter}_{search_kw}",
                 use_container_width=True,
                 hide_index=True,
                 column_config={
@@ -2117,6 +2143,9 @@ def render_item_picker_dialog(target_dept: str, target_site: str):
 
 @st.dialog("📋 Checklist Rà Soát & Điều Chỉnh Nhanh Phòng Ban", width="large")
 def render_batch_adjust_dialog(target_dept: str, target_site: str):
+    target_dept, _locked = dialog_dept_picker(target_dept, "dlg_adj_dept")
+    if _locked:
+        return
     lines = db.load_lines(budget_year, [target_site])
     stored_df = pd.DataFrame(lines).drop(columns=["site_code"], errors="ignore") if lines else pd.DataFrame()
     dept_rows = stored_df[stored_df["dept_proposing"].map(dept_key) == dept_key(target_dept)].reset_index(drop=True) if not stored_df.empty and "dept_proposing" in stored_df.columns else pd.DataFrame()
@@ -2189,6 +2218,7 @@ def render_batch_adjust_dialog(target_dept: str, target_site: str):
                     updated_stored.at[i, k] = v
             save_site(updated_stored.reset_index(drop=True), target_site)
             st.session_state["flash"] = f"✅ Đã chuyển {n_sel} hạng mục của {target_dept} sang tháng {new_m} thành công!"
+            st.session_state["pending_dept"] = target_dept
             st.rerun()
 
     with act_col2:
@@ -2200,6 +2230,7 @@ def render_batch_adjust_dialog(target_dept: str, target_site: str):
             updated_stored = stored_df[~del_mask].reset_index(drop=True)
             save_site(updated_stored, target_site)
             st.session_state["flash"] = f"🗑️ Đã xóa thành công {n_sel} hạng mục khỏi phòng ban {target_dept}!"
+            st.session_state["pending_dept"] = target_dept
             st.rerun()
 
 
