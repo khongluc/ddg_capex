@@ -133,24 +133,27 @@ def _dev_login_allowed(providers: List[str]) -> bool:
     và chưa cấu hình nhà cung cấp đăng nhập / CSDL máy chủ. Không dựa vào header Host (client tự đặt được)."""
     try:
         from streamlit import config as _st_config
-        address = str(_st_config.get_option("server.address") or "")
+        raw_addr = _st_config.get_option("server.address")
+        address = str(raw_addr or "").strip().lower()
     except Exception:
         return False
-    if address not in ("localhost", "127.0.0.1", "::1"):
+    if address not in ("localhost", "127.0.0.1", "::1"):  # để trống = lắng nghe mọi card mạng -> không cho đăng nhập thử
         return False
     return not providers and not db.using_server_db()
 
 
 def _is_local_request() -> bool:
-    """Truy cập từ chính máy chạy app (localhost). Không có header (chạy test) cũng coi là local."""
+    """Truy cập từ chính máy chạy app: Host là localhost và IP kết nối là loopback.
+    Chỉ là lớp phụ (header / IP có thể bị giả); lớp chính là _dev_login_allowed (app chỉ lắng nghe trên localhost)."""
     try:
         host = str(st.context.headers.get("Host") or "")
+        ip = st.context.ip_address
     except Exception:
-        return True
-    if not host:
-        return True
+        return False
     host = host.rsplit(":", 1)[0] if not host.startswith("[") else host.split("]")[0] + "]"
-    return host in ("localhost", "127.0.0.1", "[::1]")
+    if host not in ("localhost", "127.0.0.1", "[::1]"):
+        return False
+    return ip is None or ip in ("127.0.0.1", "::1") or str(ip).startswith("::ffff:127.")
 
 
 _FORCE_LIGHT_JS = """
