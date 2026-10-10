@@ -682,6 +682,41 @@ def dept_mask(df: pd.DataFrame, dept: str) -> pd.Series:
     return df["dept_proposing"].map(dept_key) == dept_key(dept)
 
 
+# Bộ lọc theo hạng mục: (nhãn, cột dữ liệu); cột "_item_label" ghép mã danh mục + tên hạng mục
+ITEM_FILTERS = [("Nhóm CNTT", "it_group"), ("Hạng mục", "_item_label"),
+                ("Loại nhu cầu", "need_type"), ("CAPEX / CCDC / OPEX", "capex_type")]
+FILTER_BLANK = "(Trống)"
+
+
+def filter_values(df: pd.DataFrame, col: str) -> pd.Series:
+    """Giá trị dùng để lọc của 1 cột (ô trống -> '(Trống)')."""
+    if col == "_item_label":
+        name = df["item_name"].fillna("").astype(str).str.strip() if "item_name" in df.columns else pd.Series("", index=df.index)
+        code = df["catalog_code"].fillna("").astype(str).str.strip() if "catalog_code" in df.columns else pd.Series("", index=df.index)
+        s = code.where(code == "", code + " · ") + name
+    elif col in df.columns:
+        s = df[col].fillna("").astype(str).str.strip()
+    else:
+        s = pd.Series("", index=df.index)
+    return s.replace("", FILTER_BLANK)
+
+
+def item_filter_widgets(df: pd.DataFrame, key_prefix: str, cols=None) -> pd.Series:
+    """Hàng multiselect lọc theo hạng mục; trả về mask (True = giữ dòng). Không chọn gì = không lọc."""
+    mask = pd.Series(True, index=df.index)
+    boxes = cols or st.columns(len(ITEM_FILTERS))
+    for box, (label, col) in zip(boxes, ITEM_FILTERS):
+        vals = filter_values(df, col)
+        opts = sorted(vals.unique().tolist(), key=lambda v: (v == FILTER_BLANK, v))
+        k = f"{key_prefix}_{col}"
+        if k in st.session_state:
+            st.session_state[k] = [v for v in st.session_state[k] if v in opts]
+        chosen = box.multiselect(f"Lọc theo {label}", opts, key=k, placeholder="Tất cả")
+        if chosen:
+            mask &= vals.isin(chosen)
+    return mask
+
+
 def save_view(view_df: pd.DataFrame):
     """Lưu bảng đang xem (đã lọc theo phòng ban) vào site: giữ nguyên dòng của phòng ban khác và thứ tự dòng."""
     view = view_df.copy()
@@ -1244,8 +1279,9 @@ with tab_dash:
                 filter_cat1 = st.multiselect("Lọc theo Loại tài sản cấp 1", options=sorted(df_curr["asset_cat1"].dropna().unique().tolist()))
             with fc3:
                 filter_site = st.multiselect("Lọc theo Vị trí / Nhà máy", options=sorted(df_curr["location"].dropna().unique().tolist()))
+            dash_item_mask = item_filter_widgets(df_curr, f"dashflt_{budget_year}_{selected_site}_{dept_key(selected_dept)}")
 
-        df_filtered = df_curr.copy()
+        df_filtered = df_curr[dash_item_mask].copy()
         if filter_entity:
             df_filtered = df_filtered[df_filtered["entity"].isin(filter_entity)]
         if filter_cat1:
@@ -1515,11 +1551,21 @@ with tab_input:
     if df_curr.empty:
         st.info("Bảng đang trống. Hãy thêm hạng mục mới bằng form phía dưới hoặc nhập file Excel!")
     else:
+        # Lọc theo hạng mục (riêng cho từng site + phòng ban)
+        grid_filter_key = f"gridflt_{budget_year}_{selected_site}_{dept_key(selected_dept)}"
+        grid_mask = item_filter_widgets(df_curr, grid_filter_key)
+        grid_filtered = not bool(grid_mask.all())
+        df_grid = df_curr[grid_mask]
+
         # Display summary row on top of grid
-        tot_budget_all = df_curr["total_budget"].sum()
+        tot_budget_all = df_grid["total_budget"].sum()
         col_m1, col_m2, col_m3, col_m4 = st.columns([2, 1, 1, 1])
         with col_m1:
-            st.write(f"**Tổng số dòng:** {len(df_curr)} mục | **Tổng Ngân sách:** {format_vnd(tot_budget_all)}")
+            if grid_filtered:
+                st.write(f"**Đang lọc:** {len(df_grid)}/{len(df_curr)} mục | **Tổng Ngân sách (đã lọc):** {format_vnd(tot_budget_all)}")
+                st.caption(f"Tổng cả phòng ban: {format_vnd(df_curr['total_budget'].sum())}. Tải Excel / Chuẩn hóa vẫn tính toàn bộ dòng.")
+            else:
+                st.write(f"**Tổng số dòng:** {len(df_curr)} mục | **Tổng Ngân sách:** {format_vnd(tot_budget_all)}")
         with col_m2:
             if can_edit and st.button("⚡ Chuẩn hóa & Tính lại", use_container_width=True,
                                       help="Đổi tên theo danh mục chuẩn, gán nhóm CNTT, ĐVT, loại tài sản, loại chi phí và phân loại kế toán"):
@@ -1551,16 +1597,18 @@ with tab_input:
         column_order = [c for c in core_cols if c in df_curr.columns] + [c for c in df_curr.columns if c not in core_cols]
 
         if not can_edit:
-            st.dataframe(df_curr, use_container_width=True, height=450, hide_index=True,
+            st.dataframe(df_grid, use_container_width=True, height=450, hide_index=True,
                          column_order=[c for c in column_order if c != "_order"],
                          column_config={**{c: st.column_config.NumberColumn(format=MONEY_FMT) for c in df_curr.columns
                                            if c in ("quantity", "unit_price", "total_budget", "total_val") or c.startswith("val_")},
                                         "total_pct": st.column_config.ProgressColumn(min_value=0.0, max_value=1.0, format="%.0f%%")})
-            edited_df = df_curr
+            edited_df = df_grid
         else:
-            main_editor_key = f"editor_{budget_year}_{selected_site}_{dept_key(selected_dept)}_{st.session_state.get('editor_version', 0)}"
+            # Khóa gồm cả bộ lọc: đổi bộ lọc -> bảng sửa tạo lại (tránh áp chỗ sửa dở sang dòng khác)
+            _flt_sig = abs(hash(tuple(tuple(st.session_state.get(f"{grid_filter_key}_{c}", [])) for _, c in ITEM_FILTERS)))
+            main_editor_key = f"editor_{budget_year}_{selected_site}_{dept_key(selected_dept)}_{_flt_sig}_{st.session_state.get('editor_version', 0)}"
             edited_df = st.data_editor(
-                df_curr,
+                df_grid,
                 key=main_editor_key,
                 column_order=column_order,
                 num_rows="dynamic",
@@ -1601,8 +1649,9 @@ with tab_input:
         # làm mất các dòng đang nhập ở bảng khác (vd. Hạ tầng CNTT).
         _ed_state = st.session_state.get(main_editor_key) if can_edit else None
         _has_edits = isinstance(_ed_state, dict) and any(_ed_state.get(k) for k in ("edited_rows", "added_rows", "deleted_rows"))
-        if can_edit and _has_edits and not edited_df.equals(df_curr):
-            save_view(edited_df)
+        if can_edit and _has_edits and not edited_df.equals(df_grid):
+            # Đang lọc: giữ nguyên các dòng bị ẩn của phòng ban, chỉ thay các dòng đang hiển thị
+            save_view(pd.concat([df_curr[~grid_mask], edited_df], ignore_index=True) if grid_filtered else edited_df)
             st.rerun()
 
     if can_edit:
