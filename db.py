@@ -133,6 +133,21 @@ CREATE TABLE IF NOT EXISTS dept_inventory (
     updated_at      TEXT,
     PRIMARY KEY (year, site_code, dept, catalog_code)
 );
+CREATE TABLE IF NOT EXISTS budget_exec (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    year        TEXT NOT NULL,
+    site_code   TEXT NOT NULL,
+    item_code   TEXT NOT NULL,
+    kind        TEXT NOT NULL,
+    doc_no      TEXT,
+    doc_date    TEXT,
+    amount      REAL NOT NULL DEFAULT 0,
+    vendor      TEXT,
+    note        TEXT,
+    created_by  TEXT,
+    created_at  TEXT
+);
+CREATE INDEX IF NOT EXISTS ix_budget_exec_year_site ON budget_exec(year, site_code);
 CREATE TABLE IF NOT EXISTS audit_log (
     id      INTEGER PRIMARY KEY AUTOINCREMENT,
     ts      TEXT NOT NULL,
@@ -158,10 +173,12 @@ TABLE_COLUMNS = {
     "dept_headcount": ["year", "site_code", "dept", "kit_code", "hc_current", "hc_plan", "hc_months", "kit_items", "updated_by", "updated_at"],
     "dept_inventory": ["year", "site_code", "dept", "catalog_code", "current_qty", "replace_qty", "quota_override", "note",
                        "updated_by", "updated_at"],
+    "budget_exec": ["id", "year", "site_code", "item_code", "kind", "doc_no", "doc_date", "amount", "vendor", "note",
+                    "created_by", "created_at"],
     "audit_log": ["id", "ts", "email", "action", "detail"],
     "app_settings": ["key", "value", "updated_at"],
 }
-SERIAL_TABLES = {"budget_lines", "audit_log"}  # cột id tự tăng
+SERIAL_TABLES = {"budget_lines", "audit_log", "budget_exec"}  # cột id tự tăng
 
 
 def _now() -> str:
@@ -510,6 +527,46 @@ def set_dept_status(year: str, site_code: str, dept: str, status: str, actor: st
             "updated_by = excluded.updated_by, updated_at = excluded.updated_at",
             (year, site_code, name, status, note, actor, _now()))
     log(actor, "set_dept_status", f"{year}/{site_code}/{name} -> {status} {note}".strip())
+
+
+# ---------------------------------------------------------------------
+# Thực hiện ngân sách: đề nghị mua / hợp đồng / thanh toán theo Mã hạng mục
+# ---------------------------------------------------------------------
+EXEC_REQUEST, EXEC_CONTRACT, EXEC_PAYMENT = "request", "contract", "payment"
+EXEC_LABELS = {EXEC_REQUEST: "Đề nghị mua", EXEC_CONTRACT: "Hợp đồng / PO", EXEC_PAYMENT: "Thanh toán"}
+
+
+def load_exec(year: str, site_codes: List[str]) -> List[Dict[str, Any]]:
+    if not site_codes:
+        return []
+    init_db()
+    marks = ",".join("?" * len(site_codes))
+    with connect() as conn:
+        return [dict(r) for r in conn.execute(
+            f"SELECT * FROM budget_exec WHERE year = ? AND site_code IN ({marks}) ORDER BY doc_date, id", [year, *site_codes])]
+
+
+def add_exec(year: str, site_code: str, item_code: str, kind: str, amount: float, actor: str,
+             doc_no: str = "", doc_date: str = "", vendor: str = "", note: str = ""):
+    if kind not in EXEC_LABELS:
+        raise ValueError(f"Loại chứng từ không hợp lệ: {kind}")
+    init_db()
+    with connect() as conn:
+        conn.execute("INSERT INTO budget_exec(year, site_code, item_code, kind, doc_no, doc_date, amount, vendor, note, created_by, created_at) "
+                     "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                     (year, site_code, item_code, kind, doc_no, doc_date, float(amount), vendor, note, actor, _now()))
+    log(actor, "add_exec", f"{year}/{site_code}/{item_code}: {EXEC_LABELS[kind]} {doc_no} {float(amount):,.0f}".strip())
+
+
+def delete_exec(exec_id: int, actor: str):
+    init_db()
+    with connect() as conn:
+        row = conn.execute("SELECT * FROM budget_exec WHERE id = ?", (int(exec_id),)).fetchone()
+        if not row:
+            return
+        conn.execute("DELETE FROM budget_exec WHERE id = ?", (int(exec_id),))
+    log(actor, "delete_exec", f"{row['year']}/{row['site_code']}/{row['item_code']}: {EXEC_LABELS.get(row['kind'], row['kind'])} "
+                              f"{row['doc_no'] or ''} {row['amount']:,.0f} (id {row['id']})")
 
 
 # ---------------------------------------------------------------------
