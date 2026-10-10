@@ -39,7 +39,7 @@ DEFAULT_STANDARD_KITS = [
         {"catalog_code": "IT01-011", "qty_per_person": 2},    # 2 màn hình 27"
         {"catalog_code": "IT09-007", "qty_per_person": 1},
         {"catalog_code": "IT05-006", "qty_per_person": 1},
-        {"catalog_code": "IT10-001", "qty_per_person": 1},    # AutoCAD
+        {"catalog_code": "IT10-014", "qty_per_person": 1},    # ZWCAD (thay AutoCAD)
         {"catalog_code": "IT09-011", "qty_per_person": 1},    # PDF
     ]},
     {"code": "KIT03", "name": "Kỹ sư kết cấu / BIM (Tekla, Revit)", "items": [
@@ -62,12 +62,12 @@ DEFAULT_STANDARD_KITS = [
         {"catalog_code": "IT09-006", "qty_per_person": 1},    # M365 Business Basic (email)
         {"catalog_code": "IT05-006", "qty_per_person": 0.2},
     ]},
-    {"code": "KIT06", "name": "Kỹ sư dự án / kinh doanh (laptop + AutoCAD)", "items": [
+    {"code": "KIT06", "name": "Kỹ sư dự án / kinh doanh (laptop + ZWCAD)", "items": [
         {"catalog_code": "IT01-004", "qty_per_person": 1},
         {"catalog_code": "IT01-010", "qty_per_person": 1},
         {"catalog_code": "IT09-007", "qty_per_person": 1},
         {"catalog_code": "IT05-006", "qty_per_person": 1},
-        {"catalog_code": "IT10-001", "qty_per_person": 1},
+        {"catalog_code": "IT10-014", "qty_per_person": 1},    # ZWCAD
         {"catalog_code": "IT09-011", "qty_per_person": 1},    # PDF
     ]},
     {"code": "KIT07", "name": "Nhân viên văn phòng (máy bàn)", "items": [
@@ -78,12 +78,12 @@ DEFAULT_STANDARD_KITS = [
         {"catalog_code": "IT02-001", "qty_per_person": 0.1},
         {"catalog_code": "IT09-011", "qty_per_person": 1},    # PDF
     ]},
-    {"code": "KIT08", "name": "Dự toán / khối lượng / QS (máy bàn + AutoCAD)", "items": [
+    {"code": "KIT08", "name": "Dự toán / khối lượng / QS (máy bàn + ZWCAD)", "items": [
         {"catalog_code": "IT01-003", "qty_per_person": 1},    # Máy bàn Core i7
         {"catalog_code": "IT01-011", "qty_per_person": 2},
         {"catalog_code": "IT09-007", "qty_per_person": 1},
         {"catalog_code": "IT05-006", "qty_per_person": 1},
-        {"catalog_code": "IT10-001", "qty_per_person": 1},
+        {"catalog_code": "IT10-014", "qty_per_person": 1},    # ZWCAD
         {"catalog_code": "IT09-011", "qty_per_person": 1},    # PDF
     ]},
     {"code": "KIT09", "name": "Lái xe / phụ kho / công nhân (chỉ email)", "items": [
@@ -253,7 +253,11 @@ def build_quota_lines(needs: pd.DataFrame, dept: str, old_lines: List[Dict[str, 
                         row[k] = v
             else:
                 weights = n.get("add_weights") if invest_type == "Mua mới" else None
-                units = split_units(qty, weights[:len(months)]) if isinstance(weights, list) else None
+                if isinstance(weights, list) and weights:
+                    # Phần mua mới vượt số tuyển thêm (vd. nhân sự hiện có chưa có phần mềm) -> mua ngay tháng đầu
+                    weights = list(weights[:len(months)])
+                    weights[0] += max(0.0, qty - sum(weights))
+                units = split_units(qty, weights) if isinstance(weights, list) and weights else None
                 for i, m in enumerate(months):
                     if units is not None:  # số máy nguyên theo tháng tuyển người; tỷ lệ = SL tháng / tổng SL
                         row[f"pct_{m}"] = units[i] / qty if i < len(units) else 0.0
