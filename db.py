@@ -399,6 +399,18 @@ def load_lines(year: str, site_codes: List[str]) -> List[Dict[str, Any]]:
     return out
 
 
+def get_item_seq_counters(year: str, site_code: str) -> Dict[str, int]:
+    raw = get_setting(f"item_seq|{year}|{site_code}")
+    try:
+        return {k: int(v) for k, v in json.loads(raw).items()} if raw else {}
+    except (ValueError, TypeError, AttributeError):
+        return {}
+
+
+def set_item_seq_counters(year: str, site_code: str, counters: Dict[str, int]):
+    set_setting(f"item_seq|{year}|{site_code}", json.dumps(counters, ensure_ascii=False, sort_keys=True))
+
+
 def replace_lines(year: str, site_code: str, rows: List[Dict[str, Any]], actor: str):
     """Overwrite all budget lines of one site for one year."""
     now = _now()

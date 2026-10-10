@@ -43,6 +43,40 @@ def clean_number(val, default=0.0):
     except Exception:
         return default
 
+def _int_or_none(v) -> Optional[int]:
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return int(f) if f == f and f >= 1 else None
+
+
+def assign_item_seqs(rows: List[Dict[str, Any]], counters: Dict[str, int]) -> Dict[str, int]:
+    """Cấp số cố định cho Mã hạng mục ({mã công trình}-{mã loại TS}-{số}).
+    Dòng đã có số giữ nguyên; dòng mới/đổi nhóm mã/trùng số nhận số kế tiếp của nhóm. Bộ đếm chỉ tăng nên
+    số của dòng đã xóa không bị cấp lại. Trả về bộ đếm mới {base: số lớn nhất đã cấp}."""
+    counters = dict(counters or {})
+    used: Dict[str, set] = {}
+    for r in rows:
+        seq = _int_or_none(r.get("item_seq"))
+        base = r.get("item_code_base")
+        if seq is not None and base:
+            counters[base] = max(counters.get(base, 0), seq)
+    for r in rows:
+        base = r.get("item_code_base")
+        if not base:
+            continue
+        seq = _int_or_none(r.get("item_seq"))
+        taken = used.setdefault(base, set())
+        if seq is None or seq in taken:
+            counters[base] = counters.get(base, 0) + 1
+            seq = counters[base]
+        taken.add(seq)
+        r["item_seq"] = seq
+        r["item_code"] = f"{base}-{seq:03d}"
+    return counters
+
+
 def split_units(qty: float, weights: List[float]) -> Optional[List[int]]:
     """Chia SL nguyên theo trọng số tháng (phần dư lớn nhất), tổng đúng bằng SL. None nếu SL không nguyên / không có trọng số."""
     total = sum(w for w in weights if w > 0)
@@ -116,11 +150,17 @@ def calculate_row(row: Dict[str, Any], months: List[str] = DEFAULT_MONTHS, year_
     cost_lv2 = str(row.get("cost_lv2", "04.01. Máy móc thiết bị đầu tư mới"))
     
     p_code = generate_project_code(entity, site, cat1, year_code, master)
-    i_code = generate_item_code(p_code, cat1, stt, master)
+    base = generate_item_code(p_code, cat1, 0, master).rsplit("-", 1)[0]
     b_code = generate_budget_code(cost_lv2)
-    
+    seq = _int_or_none(row.get("item_seq"))
+    if seq is None or row.get("item_code_base") != base:
+        # Chưa có số cố định (dòng mới) hoặc đổi pháp nhân/site/loại TS -> cấp số mới khi lưu (assign_item_seqs)
+        row["item_seq"] = None
+        seq = stt
+    row["item_code_base"] = base
+
     row["project_code"] = p_code
-    row["item_code"] = i_code
+    row["item_code"] = f"{base}-{seq:03d}"
     row["budget_code"] = b_code
     
     # Useful life for depreciation

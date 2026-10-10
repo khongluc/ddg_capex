@@ -47,6 +47,7 @@ from capex_engine import (
     load_capex_from_excel,
     export_capex_to_excel,
     calculate_row,
+    assign_item_seqs,
     calculate_depreciation_schedule,
     calculate_project_financials,
     clean_number,
@@ -623,6 +624,8 @@ def rows_for_site(df: pd.DataFrame, site_code: str, months, year_code: str):
         d["stt"] = i + 1
         d["location"] = SITE_NAME.get(site_code, site_code)
         rows.append(calculate_row(d, months=months, year_code=year_code, master=master))
+    counters = assign_item_seqs(rows, db.get_item_seq_counters(budget_year, site_code))
+    db.set_item_seq_counters(budget_year, site_code, counters)
     return rows
 
 
@@ -635,8 +638,10 @@ def save_site(df: pd.DataFrame, site_code: str):
             stored = stored.drop(columns=["site_code"], errors="ignore")
             stored = stored[~stored["dept_proposing"].map(dept_key).isin(allowed)] if "dept_proposing" in stored.columns else stored
         df = pd.concat([stored, mine], ignore_index=True)
-    db.replace_lines(budget_year, site_code, rows_for_site(df, site_code, months, year_code), actor=current_user.email)
+    rows = rows_for_site(df, site_code, months, year_code)
+    db.replace_lines(budget_year, site_code, rows, actor=current_user.email)
     st.session_state["editor_version"] = st.session_state.get("editor_version", 0) + 1
+    return rows
 
 
 ALL_DEPTS = "(Tất cả phòng ban)"
@@ -1598,7 +1603,7 @@ with tab_input:
 
         if not can_edit:
             st.dataframe(df_grid, use_container_width=True, height=450, hide_index=True,
-                         column_order=[c for c in column_order if c != "_order"],
+                         column_order=[c for c in column_order if c not in ("_order", "item_seq", "item_code_base")],
                          column_config={**{c: st.column_config.NumberColumn(format=MONEY_FMT) for c in df_curr.columns
                                            if c in ("quantity", "unit_price", "total_budget", "total_val") or c.startswith("val_")},
                                         "total_pct": st.column_config.ProgressColumn(min_value=0.0, max_value=1.0, format="%.0f%%")})
@@ -1639,6 +1644,8 @@ with tab_input:
                     "need_type": st.column_config.SelectboxColumn("Loại nhu cầu", options=qt.NEED_TYPES),
                     "need_reason": st.column_config.TextColumn("Lý do / căn cứ", width="medium"),
                     "auto_quota": None,
+                    "item_seq": None,
+                    "item_code_base": None,
                     **{c: st.column_config.NumberColumn(format=MONEY_FMT, disabled=True) for c in df_curr.columns if c.startswith("val_") or c == "total_val"},
                 }
             )
@@ -1985,8 +1992,8 @@ with tab_input:
 
                         calculated = calculate_row(new_row, months=months, year_code=year_code, master=master)
                         updated_site_df = pd.concat([df_site, pd.DataFrame([calculated])], ignore_index=True)
-                        save_site(updated_site_df.reset_index(drop=True), selected_site)
-                        st.session_state["flash"] = f"✅ Đã thêm hạng mục '{f_item_name}' vào phòng ban '{active_dept}' thành công! (Mã: {calculated['item_code']})"
+                        saved_rows = save_site(updated_site_df.reset_index(drop=True), selected_site)
+                        st.session_state["flash"] = f"✅ Đã thêm hạng mục '{f_item_name}' vào phòng ban '{active_dept}' thành công! (Mã: {saved_rows[-1]['item_code']})"
                         st.rerun()
 
 
@@ -2548,7 +2555,9 @@ with tab_infra:
             "item": sh_label.get(r.get("catalog_code"), r.get("item_name")), "invest_type": r.get("invest_type") or "Mua mới",
             "quantity": r.get("quantity"), "unit_price": r.get("unit_price"), "month": first_month(r),
             "dept_proposing": r.get("dept_proposing"), "need_reason": r.get("need_reason") or "",
-        } for _, r in df_inf.iterrows()], columns=["item", "invest_type", "quantity", "unit_price", "month", "dept_proposing", "need_reason"])
+            "item_seq": r.get("item_seq"), "item_code_base": r.get("item_code_base"),  # ẩn: giữ Mã hạng mục cố định
+        } for _, r in df_inf.iterrows()], columns=["item", "invest_type", "quantity", "unit_price", "month", "dept_proposing", "need_reason",
+                                                    "item_seq", "item_code_base"])
         owners = sorted({item_owner(it, master) for it in shared_items} | set(dept_list))
         ed_inf = st.data_editor(
             df_edit, key=f"infra_{budget_year}_{selected_site}_{st.session_state.get('infra_version', 0)}",
@@ -2561,6 +2570,7 @@ with tab_infra:
                 "month": st.column_config.SelectboxColumn("Tháng triển khai", options=months, required=True),
                 "dept_proposing": st.column_config.SelectboxColumn("Phòng đề xuất (trống = phòng phụ trách)", options=owners),
                 "need_reason": st.column_config.TextColumn("Căn cứ / lý do (bắt buộc)", width="large"),
+                "item_seq": None, "item_code_base": None,
             })
         if not df_inf.empty:
             g = df_inf.groupby("it_group")["total_budget"].sum().sort_values(ascending=False)
@@ -2593,7 +2603,8 @@ with tab_infra:
                        "quantity": qt._num(r.get("quantity"), 1.0) or 1.0,
                        "unit_price": float(item.get("price", 0)) if price is None or pd.isna(price) else float(price),
                        "dept_proposing": r.get("dept_proposing") or item_owner(item, master), "dept_using": "Dùng chung toàn site",
-                       "need_type": qt.NEED_INFRA, "need_reason": reason, "detail_work": "Hạ tầng CNTT dùng chung"}
+                       "need_type": qt.NEED_INFRA, "need_reason": reason, "detail_work": "Hạ tầng CNTT dùng chung",
+                       "item_seq": r.get("item_seq"), "item_code_base": r.get("item_code_base")}
                 apply_it_catalog(row, master, item=item, invest_type=r.get("invest_type") or "Mua mới")
                 for m in months:
                     row[f"pct_{m}"] = 1.0 if m == r.get("month") else 0.0
