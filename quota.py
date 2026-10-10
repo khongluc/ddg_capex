@@ -10,6 +10,8 @@ from typing import Dict, List, Any, Optional, Tuple
 
 import pandas as pd
 
+from capex_engine import split_units
+
 from master_data import (
     KIND_SW_SUBSCRIPTION,
     KIND_SERVICE,
@@ -250,14 +252,11 @@ def build_quota_lines(needs: pd.DataFrame, dept: str, old_lines: List[Dict[str, 
                         row[k] = v
             else:
                 weights = n.get("add_weights") if invest_type == "Mua mới" else None
-                total = sum(weights) if isinstance(weights, list) else 0
+                units = split_units(qty, weights[:len(months)]) if isinstance(weights, list) else None
                 for i, m in enumerate(months):
-                    if total > 0:
-                        row[f"pct_{m}"] = round(weights[i] / total, 4) if i < len(weights) else 0.0
+                    if units is not None:  # số máy nguyên theo tháng tuyển người; tỷ lệ = SL tháng / tổng SL
+                        row[f"pct_{m}"] = units[i] / qty if i < len(units) else 0.0
                     else:
                         row[f"pct_{m}"] = 1.0 if i == 0 else 0.0
-                if total > 0:  # làm tròn để tổng đúng 100%
-                    first = next(m for i, m in enumerate(months) if i < len(weights) and weights[i] > 0)
-                    row[f"pct_{first}"] = round(row[f"pct_{first}"] + 1.0 - sum(row[f"pct_{m}"] for m in months), 4)
             lines.append(row)
     return lines

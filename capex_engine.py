@@ -4,6 +4,7 @@ Core calculation engine, data model, import/export for CAPEX Web App
 import os
 import io
 import datetime
+import math
 import numpy as np
 import pandas as pd
 import openpyxl
@@ -42,6 +43,31 @@ def clean_number(val, default=0.0):
     except Exception:
         return default
 
+def split_units(qty: float, weights: List[float]) -> Optional[List[int]]:
+    """Chia SL nguyên theo trọng số tháng (phần dư lớn nhất), tổng đúng bằng SL. None nếu SL không nguyên / không có trọng số."""
+    total = sum(w for w in weights if w > 0)
+    n = int(round(qty))
+    if total <= 0 or n <= 0 or abs(qty - n) > 1e-9:
+        return None
+    exact = [max(w, 0.0) / total * n for w in weights]
+    units = [int(math.floor(e)) for e in exact]
+    for i in sorted(range(len(exact)), key=lambda i: (-(exact[i] - units[i]), i))[:n - sum(units)]:
+        units[i] += 1
+    return units
+
+
+def snap_units(pcts: List[float], qty: float, tol: float = 0.05) -> Optional[List[int]]:
+    """Số lượng nguyên theo tháng nếu tỷ lệ phân kỳ ứng với số lượng gần nguyên (vd. 33,34% × 21 máy = 7,0014 -> 7).
+    Trả về None khi SL không nguyên hoặc phân kỳ có tháng lẻ thật (vd. 50/50 cho 3 máy) - khi đó giữ nguyên tỷ lệ."""
+    if qty <= 0 or abs(qty - round(qty)) > 1e-9 or not any(pcts):
+        return None
+    raw = [p * qty for p in pcts]
+    units = [int(round(u)) for u in raw]
+    if any(abs(u - r) > tol for u, r in zip(units, raw)) or sum(units) != int(round(qty)):
+        return None
+    return units
+
+
 def calculate_row(row: Dict[str, Any], months: List[str] = DEFAULT_MONTHS, year_code: str = "A26", master: Dict[str, Any] = None) -> Dict[str, Any]:
     """Calculate and standardize all values for a single CapEx row"""
     if master is None:
@@ -55,17 +81,26 @@ def calculate_row(row: Dict[str, Any], months: List[str] = DEFAULT_MONTHS, year_
     row["total_budget"] = total_budget
 
     # Monthly percentages and values
-    total_pct = 0.0
+    pcts = []
     for m in months:
-        pct_key = f"pct_{m}"
-        val_key = f"val_{m}"
-        p = clean_number(row.get(pct_key, 0.0), 0.0)
+        p = clean_number(row.get(f"pct_{m}", 0.0), 0.0)
         # In case user entered 20 instead of 0.2
         if p > 1.0 and p <= 100.0:
             p = p / 100.0
-        row[pct_key] = p
-        row[val_key] = p * total_budget
-        total_pct += p
+        pcts.append(p)
+    units = snap_units(pcts, qty)
+    auto_q = row.get("auto_quota")
+    if units is None and auto_q is not None and not (isinstance(auto_q, float) and math.isnan(auto_q)) and bool(auto_q):  # dòng định biên: luôn mua số lượng nguyên mỗi tháng
+        units = split_units(qty, pcts)
+    total_pct = 0.0
+    for i, m in enumerate(months):
+        if units is not None:  # phân kỳ theo số lượng nguyên: giá trị tháng = SL tháng × đơn giá
+            row[f"pct_{m}"] = units[i] / qty
+            row[f"val_{m}"] = units[i] * price
+        else:
+            row[f"pct_{m}"] = pcts[i]
+            row[f"val_{m}"] = pcts[i] * total_budget
+        total_pct += row[f"pct_{m}"]
 
     row["total_pct"] = round(total_pct, 4)
     row["total_val"] = sum(row.get(f"val_{m}", 0.0) for m in months)
