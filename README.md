@@ -75,3 +75,18 @@ Hệ thống đã nâng cấp toàn diện Tab **"📝 Lập & Nhập liệu Cap
 11. **IT11. Phần mềm quản trị doanh nghiệp**: Dự án ERP, Hệ thống Văn phòng số E-Office / BPM...
 12. **IT12. Dịch vụ CNTT, Cloud & đường truyền**: Dịch vụ Cloud Viettel (ERP/E-Office), Cloud Wasabi (Backup), License VMware, Leased-line...
 13. **IT13. Linh kiện, vật tư & ngoại vi**: Nâng cấp RAM, SSD/HDD, Card VGA rời, Nguồn PC, Webcam, Chuột phím, USB...
+
+## 🧪 Kiểm thử tự động
+
+Chạy từ thư mục dự án (không cần cài thêm gói - dùng `unittest` có sẵn của Python):
+
+```bash
+python -m unittest
+```
+
+- 29 kiểm thử trong `tests/` (khoảng 3 giây): phân kỳ theo số lượng nguyên, ngày bàn giao, Khối, Mã hạng mục cố định,
+  sinh dòng định biên, khóa phòng ban đã nộp/duyệt, cập nhật giá từ báo giá, báo cáo theo Khối, thực hiện ngân sách,
+  phiên bản & so sánh, CSDL (trạng thái phòng ban, chứng từ, phiên bản, sao lưu/khôi phục), lọc & lưu bảng đang lọc.
+- Dùng CSDL SQLite tạm (`tests/__init__.py` đặt `ICOST_DB_PATH`), **không đụng `data/icost.db`**.
+- Dữ liệu ngân sách tạo trong `tests/fixtures.py` từ `master_data.json` - không dùng file định biên / dữ liệu thật.
+- Chạy lại sau mỗi lần sửa code; thêm kiểm thử khi thêm tính năng.
