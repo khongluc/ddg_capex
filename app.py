@@ -43,6 +43,7 @@ from master_data import (
 )
 import quota as qt
 import pricing
+import reports
 import headcount_import as hi
 import unicodedata
 from capex_engine import (
@@ -968,6 +969,22 @@ with st.sidebar:
 # Dữ liệu hiện hành theo site + phòng ban được chọn
 df_curr = df_site[dept_mask(df_site, selected_dept)].reset_index(drop=True)
 
+
+def prev_year_lines() -> pd.DataFrame:
+    """Dòng ngân sách năm trước cùng phạm vi site + phòng ban (để so sánh)."""
+    prev = pd.DataFrame(db.load_lines(str(int(budget_year) - 1), scope_sites))
+    if prev.empty:
+        return prev
+    if current_user.is_dept_user and "dept_proposing" in prev.columns:
+        allowed = {dept_key(d) for d in current_user.allowed_depts(selected_site)}
+        prev = prev[prev["dept_proposing"].map(dept_key).isin(allowed)]
+    return prev[dept_mask(prev, selected_dept)].reset_index(drop=True)
+
+
+@st.cache_data(max_entries=8, show_spinner="Đang tạo báo cáo theo Khối...")
+def _cached_division_report(df: pd.DataFrame, prev: pd.DataFrame, meta_items: tuple) -> bytes:
+    return reports.report_xlsx(df, prev, master, dict(meta_items))
+
 # MAIN HEADER BANNER
 if selected_site == ALL_SITES:
     status_pill_html = '<span class="header-status-pill status-pill-all">🌐 Tổng hợp tất cả site</span>'
@@ -1518,6 +1535,21 @@ with tab_dash:
                 st.caption("Định biên: sinh từ định biên nhân sự × bộ trang bị tiêu chuẩn (tab 'Định biên & Nhu cầu'). "
                            "Phát sinh mới: nhu cầu ngoài định biên, có lý do. 'Chưa phân loại': dữ liệu cũ/nhập Excel.")
             st.caption("Bảng tổng hợp tính theo phòng ban đang chọn ở thanh bên trái (không áp bộ lọc biểu đồ).")
+
+        # TỔNG HỢP THEO KHỐI (so sánh năm trước)
+        div_tbl = reports.summary_by_division(df_curr, prev_year_lines(), master)
+        if not div_tbl.empty:
+            st.markdown("##### 🏛️ Tổng hợp Ngân sách theo Khối")
+            prev_label = f"Năm {int(budget_year) - 1}"
+            show = div_tbl.rename(columns={"Tổng": f"Tổng {budget_year}", "Năm trước": prev_label})
+            st.dataframe(show, use_container_width=True, hide_index=True,
+                         column_config={**{c: st.column_config.NumberColumn(format=MONEY_FMT) for c in
+                                           ("TSCĐ (CAPEX)", "CCDC", "OPEX", "Chưa phân loại", f"Tổng {budget_year}", prev_label, "Chênh lệch")},
+                                        "Tỷ trọng": st.column_config.ProgressColumn(format="%.1f%%", min_value=0.0, max_value=1.0),
+                                        "% so năm trước": st.column_config.NumberColumn(format="percent")})
+            st.caption("Khối theo phòng ban đề xuất (bảng phòng ban → khối từ file định biên). "
+                       f"{prev_label}: cùng phạm vi site & phòng ban; khối chỉ có ở năm trước hiện tổng năm nay = 0. "
+                       "Tải file chi tiết Khối → Phòng ban → Hạng mục ở tab Nhập / Xuất Excel.")
 
         # TOP 10 LARGEST CAPEX ITEMS
         # CHARTS ROW 3: Nhóm CNTT & phân loại hạch toán
@@ -2910,6 +2942,15 @@ with tab_excel:
                                               key=f"all_{budget_year}_{selected_site}_{selected_dept}")
             if excel_bytes:
                 st.caption(f"File: {file_name} (~{len(excel_bytes)//1024} KB)")
+
+            # Báo cáo tổng hợp theo Khối -> Phòng ban -> Hạng mục
+            scope_txt = (site_label(selected_site) if selected_site != ALL_SITES else "Tất cả site được xem") +                         ("" if selected_dept == ALL_DEPTS else f" · {selected_dept}")
+            rep_meta = (("budget_year", budget_year), ("scope", scope_txt), ("date", datetime.date.today().strftime("%d/%m/%Y")))
+            st.download_button("🏛️ Tải báo cáo theo Khối (.xlsx)",
+                               _cached_division_report(df_curr.drop(columns=["_order"], errors="ignore"), prev_year_lines(), rep_meta),
+                               file_name=f"BaoCao_Khoi_{budget_year}_{scope_tag}_{datetime.date.today():%Y%m%d}.xlsx",
+                               mime=XLSX_MIME, use_container_width=True, key=f"div_rep_{budget_year}_{selected_site}_{selected_dept}",
+                               help=f"Sheet 'Theo Khối' (so sánh năm {int(budget_year) - 1}) và 'Khối - Phòng - Hạng mục' (thu gọn được)")
 
     with ex_c2:
         st.markdown("""
