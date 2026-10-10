@@ -6,6 +6,7 @@ import html as _html
 import datetime
 import io
 import json
+import math
 import pandas as pd
 import numpy as np
 import openpyxl
@@ -1950,7 +1951,8 @@ def render_item_picker_dialog(target_dept: str, target_site: str):
                 if not cat_it:
                     continue
                 q_ratio = float(it_entry.get("qty_per_person", 1))
-                calc_q = max(1, int(round(q_ratio * n_people)))
+                raw_q = q_ratio * n_people  # như sinh dòng định biên (BR-05): dùng chung (< 1/người) làm tròn gần nhất, còn lại làm tròn lên
+                calc_q = int(math.floor(raw_q + 0.5)) if q_ratio < 1 else int(math.ceil(round(raw_q, 6)))
                 p = float(cat_it.get("price", 0))
                 cls_prev = classify_item(cat_it, master)
                 _, capex_tg = accounting_class(cls_prev.get("item_kind", KIND_HARDWARE), p, master)
@@ -1990,7 +1992,8 @@ def render_item_picker_dialog(target_dept: str, target_site: str):
         with kb1:
             k_month = st.selectbox("Tháng sử dụng:", months, index=0, key="dlg_k_month")
         with kb2:
-            k_need = st.radio("Nhu cầu:", qt.NEED_TYPES, index=0, horizontal=True, key="dlg_k_need")
+            k_need = st.radio("Nhu cầu:", qt.NEED_TYPES, index=qt.NEED_TYPES.index(qt.NEED_NEW), horizontal=True, key="dlg_k_need",
+                              help="Dòng 'Định biên' nên sinh từ tab Định biên (tránh tính trùng); thêm tay mặc định là Phát sinh mới, bắt buộc ghi lý do")
         with kb3:
             st.markdown(f"""
             <div style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:8px; padding:8px 12px; text-align:right;">
@@ -2004,20 +2007,24 @@ def render_item_picker_dialog(target_dept: str, target_site: str):
             k_reason = st.text_input("Lý do phát sinh / căn cứ trang bị:", value=f"Tuyển mới {n_people} {kit_obj['name'] if kit_obj else ''}", key="dlg_k_reason")
 
         if st.button(f"💾 XÁC NHẬN THÊM {len(sel_kit_df)} MỤC TRONG GÓI VÀO {target_dept}", type="primary", use_container_width=True, disabled=sel_kit_df.empty, key="btn_apply_dlg_kit"):
-            _commit_checklist_items(sel_kit_df, target_dept, target_site, k_month, k_need, k_reason)
+            if k_need in qt.NEED_WITH_REASON and not k_reason.strip():
+                st.error("Vui lòng nhập lý do / căn cứ phát sinh trước khi thêm!")
+            else:
+                _commit_checklist_items(sel_kit_df, target_dept, target_site, k_month, k_need, k_reason)
 
     # Tab 2: Universal Search Checklist
     with dlg_tab2:
-        st.caption("Tìm kiếm nhanh trong toàn bộ 222 hạng mục CNTT chuẩn hóa, tick chọn và điều chỉnh số lượng.")
+        st.caption(f"Tìm kiếm nhanh trong toàn bộ {len(cat_all)} hạng mục CNTT chuẩn hóa, tick chọn và điều chỉnh số lượng.")
         sc1, sc2 = st.columns([2, 1.2])
         with sc1:
             search_kw = st.text_input("🔍 Gõ từ khóa tìm kiếm (tên thiết bị, phần mềm, mã...):", placeholder="VD: laptop, dell, tekla, autocad, màn hình, máy in...", key="dlg_search_kw")
         with sc2:
-            grp_choices = ["(Tất cả 13 nhóm CNTT)"] + [f"{g['code']}. {g['name']}" for g in it_groups(master)]
+            all_groups_label = f"(Tất cả {len(it_groups(master))} nhóm CNTT)"
+            grp_choices = [all_groups_label] + [f"{g['code']}. {g['name']}" for g in it_groups(master)]
             sel_g_filter = st.selectbox("Lọc theo nhóm:", grp_choices, key="dlg_grp_filter")
 
         items_pool = cat_all
-        if sel_g_filter != "(Tất cả 13 nhóm CNTT)":
+        if sel_g_filter != all_groups_label:
             pfx = sel_g_filter.split(".")[0].strip()
             items_pool = [x for x in items_pool if str(x.get("group", "")).startswith(pfx)]
         if search_kw.strip():
@@ -2068,7 +2075,7 @@ def render_item_picker_dialog(target_dept: str, target_site: str):
             with cb1:
                 c_month = st.selectbox("Tháng sử dụng:", months, index=0, key="dlg_c_month")
             with cb2:
-                c_need = st.radio("Nhu cầu:", qt.NEED_TYPES, index=1, horizontal=True, key="dlg_c_need")
+                c_need = st.radio("Nhu cầu:", qt.NEED_TYPES, index=qt.NEED_TYPES.index(qt.NEED_NEW), horizontal=True, key="dlg_c_need")
             with cb3:
                 st.markdown(f"""
                 <div style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:8px; padding:8px 12px; text-align:right;">
