@@ -6,7 +6,7 @@
 """
 import json
 import math
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Optional, Tuple
 
 import pandas as pd
 
@@ -119,6 +119,34 @@ def _num(v, default=0.0) -> float:
         return default
 
 
+def parse_kit_items(v) -> Optional[List[Dict[str, Any]]]:
+    """Trang bị phòng ban tự chọn cho 1 vị trí (JSON). None = dùng bộ trang bị tiêu chuẩn."""
+    if v is None or (isinstance(v, float) and math.isnan(v)) or v == "":
+        return None
+    if isinstance(v, str):
+        try:
+            v = json.loads(v)
+        except ValueError:
+            return None
+    if not isinstance(v, list):
+        return None
+    out = []
+    for x in v:
+        if isinstance(x, dict) and x.get("catalog_code"):
+            out.append({"catalog_code": str(x["catalog_code"]), "qty_per_person": _num(x.get("qty_per_person")),
+                        "fixed_qty": _num(x.get("fixed_qty")), "note": str(x.get("note") or "")})
+    return out
+
+
+def kit_items_of(h: Dict[str, Any], kits: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Danh sách trang bị áp cho 1 dòng định biên: phòng ban tự chọn, không có thì theo bộ tiêu chuẩn."""
+    custom = parse_kit_items(h.get("kit_items"))
+    if custom is not None:
+        return custom
+    kit = kits.get(h.get("kit_code"))
+    return list(kit["items"]) if kit else []
+
+
 def compute_needs(headcount: List[Dict[str, Any]], inventory: List[Dict[str, Any]], master: Dict[str, Any]) -> pd.DataFrame:
     """Bảng nhu cầu theo hạng mục cho 1 phòng ban."""
     catalog = catalog_by_code(master)
@@ -131,16 +159,25 @@ def compute_needs(headcount: List[Dict[str, Any]], inventory: List[Dict[str, Any
         plan = _num(h.get("hc_plan"))
         if not kit or plan <= 0:
             continue
+        custom = parse_kit_items(h.get("kit_items")) is not None
+        pos_name = kit["name"] + (" (tự chọn)" if custom else "")
         increments = []
         prev = _num(h.get("hc_current"))
         for v in parse_months(h.get("hc_months")):
             increments.append(max(0.0, v - prev))
             prev = max(prev, v)
-        for ki in kit["items"]:
+        for ki in kit_items_of(h, kits):
             code = ki["catalog_code"]
+            fixed = _num(ki.get("fixed_qty"))
+            if fixed > 0:  # số lượng cố định cho cả vị trí (vd. 3 bản quyền Tekla cho 10 kỹ sư)
+                norm_qty[code] = norm_qty.get(code, 0.0) + fixed
+                basis.setdefault(code, []).append(f"{fixed:g} cho {pos_name}")
+                continue
             q = _num(ki.get("qty_per_person"))
+            if q <= 0:
+                continue
             norm_qty[code] = norm_qty.get(code, 0.0) + plan * q
-            basis.setdefault(code, []).append(f"{plan:g} {kit['name']} × {q:g}")
+            basis.setdefault(code, []).append(f"{plan:g} {pos_name} × {q:g}")
             if increments:
                 acc = month_need.setdefault(code, [0.0] * len(increments))
                 for i, d in enumerate(increments[:len(acc)]):

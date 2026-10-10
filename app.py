@@ -6,6 +6,7 @@ import os
 import html as _html
 import datetime
 import io
+import json
 import pandas as pd
 import numpy as np
 import openpyxl
@@ -69,71 +70,298 @@ st.markdown("""
     [data-testid="stAppDeployButton"], .stDeployButton, #MainMenu,
     [data-testid="stDecoration"] { display: none !important; visibility: hidden !important; }
     a[href*="github.com"] { display: none !important; }
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    html, body, [class*="css"], [data-testid="stAppViewContainer"] {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        -webkit-font-smoothing: antialiased;
     }
 
-    .main-header {
-        background: linear-gradient(135deg, #0F2C59 0%, #1E4E8C 100%);
-        padding: 24px 30px;
+    [data-testid="stAppViewContainer"] {
+        background-color: #F8FAFC !important;
+    }
+
+    /* Tùy chỉnh thanh cuộn hiện đại */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #CBD5E1;
+        border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #94A3B8;
+    }
+
+    /* Sidebar Custom Styling */
+    [data-testid="stSidebar"] {
+        background: #FFFFFF !important;
+        border-right: 1px solid #E2E8F0 !important;
+        box-shadow: 2px 0 12px rgba(15, 23, 42, 0.03) !important;
+    }
+
+    .user-profile-card {
+        background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+        border: 1px solid #E2E8F0;
         border-radius: 12px;
-        color: white;
-        margin-bottom: 24px;
-        box-shadow: 0 4px 15px rgba(15, 44, 89, 0.15);
+        padding: 12px 14px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     }
 
-    .main-header h1 {
-        color: #FFFFFF !important;
-        font-size: 26px;
+    .user-avatar-circle {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+        color: #FFFFFF;
         font-weight: 700;
-        margin: 0;
-        padding: 0;
-    }
-
-    .main-header p {
-        color: #D0E1FD;
         font-size: 14px;
-        margin-top: 6px;
-        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+        flex-shrink: 0;
     }
 
+    .user-info-text {
+        flex-grow: 1;
+        overflow: hidden;
+    }
+
+    .user-name {
+        font-weight: 700;
+        font-size: 13.5px;
+        color: #0F2C59;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .user-email {
+        font-size: 11.5px;
+        color: #64748B;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .role-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-top: 4px;
+    }
+    .role-badge-admin { background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; }
+    .role-badge-it { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+    .role-badge-dept { background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; }
+    .role-badge-viewer { background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; }
+
+    /* Main Executive Header Banner */
+    .main-header {
+        background: linear-gradient(135deg, #0A192F 0%, #0F2C59 55%, #173B75 100%);
+        padding: 22px 28px;
+        border-radius: 14px;
+        color: white;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 10px 25px -5px rgba(15, 44, 89, 0.22), 0 8px 10px -6px rgba(15, 44, 89, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .main-header::before {
+        content: "";
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0) 70%);
+        pointer-events: none;
+    }
+
+    .header-top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .header-brand-title {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .brand-icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+    }
+
+    .header-title-text h1 {
+        color: #FFFFFF !important;
+        font-size: 22px !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.01em;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 1.25 !important;
+    }
+
+    .header-title-text .sub-corp {
+        color: #93C5FD;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 2px;
+    }
+
+    .header-meta-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .meta-chip {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #E2E8F0;
+        padding: 4px 11px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .meta-chip strong {
+        color: #FFFFFF;
+    }
+
+    .header-status-pill {
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 12.5px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        backdrop-filter: blur(6px);
+    }
+    .status-pill-draft { background: rgba(59, 130, 246, 0.25); color: #93C5FD; border: 1px solid rgba(59, 130, 246, 0.45); }
+    .status-pill-submitted { background: rgba(245, 158, 11, 0.25); color: #FCD34D; border: 1px solid rgba(245, 158, 11, 0.45); }
+    .status-pill-approved { background: rgba(16, 185, 129, 0.25); color: #6EE7B7; border: 1px solid rgba(16, 185, 129, 0.45); }
+    .status-pill-returned { background: rgba(239, 68, 68, 0.25); color: #FCA5A5; border: 1px solid rgba(239, 68, 68, 0.45); }
+    .status-pill-all { background: rgba(255, 255, 255, 0.18); color: #FFFFFF; border: 1px solid rgba(255, 255, 255, 0.35); }
+
+    /* Executive KPI Cards */
     .kpi-card {
         background: #FFFFFF;
         border: 1px solid #E2E8F0;
-        border-radius: 10px;
+        border-radius: 14px;
         padding: 18px 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
     }
 
     .kpi-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 24px -4px rgba(15, 44, 89, 0.08), 0 4px 6px -2px rgba(15, 44, 89, 0.03);
+        border-color: #CBD5E1;
+    }
+
+    .kpi-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
     }
 
     .kpi-title {
         color: #64748B;
-        font-size: 13px;
-        font-weight: 600;
+        font-size: 11.5px;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 8px;
+        letter-spacing: 0.05em;
+        margin: 0;
     }
 
+    .kpi-icon-badge {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 17px;
+        flex-shrink: 0;
+    }
+    .kpi-icon-blue { background: #EFF6FF; color: #1D4ED8; border: 1px solid #DBEAFE; }
+    .kpi-icon-emerald { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+    .kpi-icon-amber { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
+    .kpi-icon-purple { background: #FAF5FF; color: #6D28D9; border: 1px solid #E9D5FF; }
+
     .kpi-value {
-        color: #0F2C59;
+        color: #0F172A;
         font-size: 26px;
-        font-weight: 700;
-        margin-bottom: 4px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+        margin-bottom: 6px;
+    }
+
+    .kpi-unit {
+        font-size: 14px;
+        font-weight: 600;
+        color: #475569;
     }
 
     .kpi-sub {
-        color: #10B981;
         font-size: 12px;
+        color: #64748B;
         font-weight: 500;
     }
+
+    .kpi-pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 11.5px;
+        font-weight: 600;
+    }
+    .kpi-pill-blue { background: #F0F7FF; color: #1E40AF; }
+    .kpi-pill-emerald { background: #ECFDF5; color: #047857; }
+    .kpi-pill-amber { background: #FFFBEB; color: #B45309; }
+    .kpi-pill-purple { background: #F5F3FF; color: #6D28D9; }
 
     .badge-code {
         background: #EFF6FF;
@@ -145,15 +373,121 @@ st.markdown("""
         font-family: monospace;
     }
 
+    /* Segmented Capsule Pill Tabs */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
+        background: #EEF2F6 !important;
+        padding: 5px !important;
+        border-radius: 12px !important;
+        gap: 6px !important;
+        border-bottom: none !important;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+        margin-bottom: 16px !important;
     }
 
     .stTabs [data-baseweb="tab"] {
-        height: 48px;
-        padding: 0 20px;
-        font-weight: 600;
-        border-radius: 8px 8px 0 0;
+        height: 42px !important;
+        padding: 0 16px !important;
+        font-size: 13.5px !important;
+        font-weight: 600 !important;
+        color: #475569 !important;
+        border-radius: 8px !important;
+        border: none !important;
+        background: transparent !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .stTabs [data-baseweb="tab"]:hover {
+        color: #0F2C59 !important;
+        background: rgba(255, 255, 255, 0.7) !important;
+    }
+
+    .stTabs [aria-selected="true"] {
+        background: #FFFFFF !important;
+        color: #1E40AF !important;
+        box-shadow: 0 2px 8px rgba(15, 44, 89, 0.12), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+        font-weight: 700 !important;
+    }
+
+    .stTabs [data-baseweb="tab-border"] {
+        display: none !important;
+    }
+
+    /* Modern Primary & Secondary Buttons */
+    .stButton > button[kind="primary"], [data-testid="baseButton-primary"] {
+        background: linear-gradient(135deg, #1E40AF 0%, #2563EB 100%) !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        padding: 8px 18px !important;
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .stButton > button[kind="primary"]:hover, [data-testid="baseButton-primary"]:hover {
+        background: linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 100%) !important;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.38) !important;
+        transform: translateY(-1px);
+    }
+
+    .stButton > button[kind="secondary"], [data-testid="baseButton-secondary"] {
+        background: #FFFFFF !important;
+        color: #1E293B !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        padding: 8px 18px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .stButton > button[kind="secondary"]:hover, [data-testid="baseButton-secondary"]:hover {
+        border-color: #94A3B8 !important;
+        background: #F8FAFC !important;
+        color: #0F172A !important;
+    }
+
+    /* Auto Metric Card Styling */
+    [data-testid="stMetric"] {
+        background: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 12px !important;
+        padding: 14px 18px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+        transition: all 0.2s ease !important;
+    }
+    [data-testid="stMetric"]:hover {
+        border-color: #CBD5E1 !important;
+        box-shadow: 0 4px 12px rgba(15, 44, 89, 0.06) !important;
+    }
+    [data-testid="stMetricLabel"] {
+        font-size: 11.5px !important;
+        font-weight: 700 !important;
+        color: #64748B !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+    }
+    [data-testid="stMetricValue"] {
+        font-size: 20px !important;
+        font-weight: 800 !important;
+        color: #0F2C59 !important;
+        letter-spacing: -0.01em !important;
+    }
+
+    /* Expanders & DataFrames */
+    [data-testid="stExpander"] {
+        background: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+        margin-bottom: 12px !important;
+    }
+
+    [data-testid="stDataFrame"], [data-testid="stDataEditor"] {
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 10px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+        background: #FFFFFF !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -203,7 +537,24 @@ def format_vnd(amount: float) -> str:
     return f"{fmt_num(amount)} VNĐ"
 
 def plot_chart(fig, **kw):
-    fig.update_layout(separators=plot_separators())
+    fig.update_layout(
+        template="plotly_white",
+        separators=plot_separators(),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif", size=12, color="#334155"),
+        hoverlabel=dict(
+            bgcolor="#0F2C59",
+            font_size=12,
+            font_family="Inter, sans-serif",
+            font_color="#FFFFFF"
+        )
+    )
+    try:
+        fig.update_xaxes(gridcolor="rgba(226, 232, 240, 0.7)", zerolinecolor="rgba(203, 213, 225, 0.8)")
+        fig.update_yaxes(gridcolor="rgba(226, 232, 240, 0.7)", zerolinecolor="rgba(203, 213, 225, 0.8)")
+    except Exception:
+        pass
     st.plotly_chart(fig, **kw)
 
 
@@ -357,11 +708,23 @@ with st.sidebar:
     st.image("https://daidung.com/wp-content/uploads/2023/07/logo-dai-dung.png", width=180)
 
     # Thông tin người dùng
+    user_initials = "".join([p[0].upper() for p in (current_user.name or "U").split() if p])[:2] or "U"
+    role_key = current_user.role
+    role_badge_class = {
+        db.ROLE_ADMIN: "role-badge-admin",
+        db.ROLE_SITE_IT: "role-badge-it",
+        db.ROLE_DEPT: "role-badge-dept",
+        db.ROLE_VIEWER: "role-badge-viewer"
+    }.get(role_key, "role-badge-viewer")
+
     st.markdown(f"""
-    <div style="background:#F1F5F9;border-radius:10px;padding:10px 12px;margin-bottom:8px;">
-        <div style="font-weight:700;color:#0F2C59;">👤 {_html.escape(current_user.name)}</div>
-        <div style="font-size:12px;color:#475569;">{_html.escape(current_user.email)}</div>
-        <div style="font-size:12px;margin-top:4px;"><span class="badge-code">{db.ROLE_LABELS.get(current_user.role, current_user.role)}</span></div>
+    <div class="user-profile-card">
+        <div class="user-avatar-circle">{user_initials}</div>
+        <div class="user-info-text">
+            <div class="user-name">{_html.escape(current_user.name)}</div>
+            <div class="user-email">{_html.escape(current_user.email)}</div>
+            <div><span class="role-badge {role_badge_class}">{db.ROLE_LABELS.get(current_user.role, current_user.role)}</span></div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
     if current_user.is_admin:
@@ -463,10 +826,45 @@ with st.sidebar:
 df_curr = df_site[dept_mask(df_site, selected_dept)].reset_index(drop=True)
 
 # MAIN HEADER BANNER
+if selected_site == ALL_SITES:
+    status_pill_html = '<span class="header-status-pill status-pill-all">🌐 Toàn tập đoàn (Tổng hợp)</span>'
+else:
+    status_code = site_status["status"] if site_status else db.STATUS_DRAFT
+    status_lbl = db.STATUS_LABELS.get(status_code, status_code)
+    pill_cls = {
+        db.STATUS_DRAFT: "status-pill-draft",
+        db.STATUS_SUBMITTED: "status-pill-submitted",
+        db.STATUS_APPROVED: "status-pill-approved",
+        db.STATUS_RETURNED: "status-pill-returned",
+    }.get(status_code, "status-pill-draft")
+    dot_icon = {
+        db.STATUS_DRAFT: "🟢",
+        db.STATUS_SUBMITTED: "🟡",
+        db.STATUS_APPROVED: "🔵",
+        db.STATUS_RETURNED: "🔴",
+    }.get(status_code, "⚪")
+    status_pill_html = f'<span class="header-status-pill {pill_cls}">{dot_icon} {status_lbl}</span>'
+
 st.markdown(f"""
 <div class="main-header">
-    <h1>HỆ THỐNG QUẢN LÝ & TÍNH TOÁN NGÂN SÁCH ĐẦU TƯ CAPEX {budget_year}</h1>
-    <p>CÔNG TY CỔ PHẦN CƠ KHÍ XÂY DỰNG THƯƠNG MẠI ĐẠI DŨNG | Site: <b>{site_label(selected_site)}</b> | Đơn vị đề xuất: <b>{_html.escape(dept_prop)}</b> | Người lập: <b>{_html.escape(creator_name or 'Chưa nhập')}</b></p>
+    <div class="header-top-row">
+        <div class="header-brand-title">
+            <div class="brand-icon-box">🏢</div>
+            <div class="header-title-text">
+                <div class="sub-corp">TẬP ĐOÀN CƠ KHÍ XÂY DỰNG ĐẠI DŨNG (DDC)</div>
+                <h1>HỆ THỐNG QUẢN LÝ & TÍNH TOÁN CAPEX {budget_year}</h1>
+            </div>
+        </div>
+        <div>
+            {status_pill_html}
+        </div>
+    </div>
+    <div class="header-meta-chips">
+        <span class="meta-chip">📍 Site: <strong>{site_label(selected_site)}</strong></span>
+        <span class="meta-chip">🏛️ Đơn vị đề xuất: <strong>{_html.escape(dept_prop)}</strong></span>
+        <span class="meta-chip">👤 Người lập: <strong>{_html.escape(creator_name or 'Chưa nhập')}</strong></span>
+        <span class="meta-chip">📅 Ngày: <strong>{meta.get('date', '')}</strong></span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -476,45 +874,59 @@ if "flash" in st.session_state:
 # THANH TRẠNG THÁI NỘP / DUYỆT NGÂN SÁCH SITE
 if selected_site != ALL_SITES:
     status = site_status["status"]
-    sc1, sc2 = st.columns([3, 2])
-    with sc1:
-        st.markdown(f"**Trạng thái ngân sách {budget_year} – {site_label(selected_site)}:** {db.STATUS_LABELS.get(status, status)}"
-                    + (f"  ·  cập nhật bởi {site_status['updated_by']} lúc {site_status['updated_at']}" if site_status.get("updated_at") else ""))
-        if not can_edit and status not in db.EDITABLE_STATUSES and not current_user.is_admin:
-            st.caption("🔒 Ngân sách đã nộp/duyệt nên đang khóa chỉnh sửa. Liên hệ Admin nếu cần mở lại.")
-        elif current_user.role == db.ROLE_VIEWER:
-            st.caption("👁️ Tài khoản chỉ có quyền xem.")
-    with sc2:
-        invalid_rows = int((~df_site["pct_valid"].fillna(False).astype(bool)).sum()) if "pct_valid" in df_site.columns else 0
-        if current_user.is_dept_user and status in db.EDITABLE_STATUSES:
-            st.caption("Lập xong, báo IT site / admin nộp ngân sách của site.")
-        if status in db.EDITABLE_STATUSES and can_edit and not current_user.is_dept_user:
-            if st.button("📨 Nộp ngân sách site để duyệt", use_container_width=True, disabled=df_site.empty,
-                         help="Nộp toàn bộ ngân sách của site (tất cả phòng ban)"):
-                missing_reason = 0
-                if "need_type" in df_site.columns:
-                    reason = df_site["need_reason"] if "need_reason" in df_site.columns else pd.Series("", index=df_site.index)
-                    missing_reason = int((df_site["need_type"].isin(qt.NEED_WITH_REASON) & (reason.fillna("").astype(str).str.strip() == "")).sum())
-                if invalid_rows:
-                    st.error(f"Còn {invalid_rows} dòng có tổng phân kỳ khác 100%. Vui lòng chỉnh trước khi nộp.")
-                elif missing_reason:
-                    st.error(f"Còn {missing_reason} dòng 'Phát sinh mới' / 'Hạ tầng dùng chung' chưa ghi lý do / căn cứ. Vui lòng bổ sung trước khi nộp.")
-                else:
-                    db.set_status(budget_year, selected_site, db.STATUS_SUBMITTED, current_user.email)
-                    st.rerun()
-        if current_user.is_admin and status == db.STATUS_SUBMITTED:
-            note = st.text_input("Ghi chú duyệt / trả lại", key="approve_note")
-            ac1, ac2 = st.columns(2)
-            if ac1.button("✅ Duyệt", use_container_width=True):
-                db.set_status(budget_year, selected_site, db.STATUS_APPROVED, current_user.email, note)
+    ribbon_cls = {
+        db.STATUS_DRAFT: "status-ribbon-draft",
+        db.STATUS_SUBMITTED: "status-ribbon-submitted",
+        db.STATUS_APPROVED: "status-ribbon-approved",
+        db.STATUS_RETURNED: "status-ribbon-returned",
+    }.get(status, "status-ribbon-draft")
+
+    st.markdown(f"""
+    <div class="status-ribbon-card {ribbon_cls}">
+        <div>
+            <div style="font-size:13px;font-weight:700;color:#0F2C59;">
+                Trạng thái ngân sách {budget_year} – {site_label(selected_site)}:
+                <span style="color:#1D4ED8;margin-left:4px;">{db.STATUS_LABELS.get(status, status)}</span>
+            </div>
+            <div style="font-size:12px;color:#64748B;margin-top:2px;">
+                {("Cập nhật bởi " + str(site_status['updated_by']) + " lúc " + str(site_status['updated_at'])) if site_status.get("updated_at") else "Chưa ghi nhận cập nhật"}
+                {("  |  🔒 Đang khóa chỉnh sửa" if not can_edit and status not in db.EDITABLE_STATUSES and not current_user.is_admin else "")}
+                {("  |  👁️ Tài khoản chỉ có quyền xem" if current_user.role == db.ROLE_VIEWER else "")}
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    invalid_rows = int((~df_site["pct_valid"].fillna(False).astype(bool)).sum()) if "pct_valid" in df_site.columns else 0
+    if current_user.is_dept_user and status in db.EDITABLE_STATUSES:
+        st.caption("ℹ️ Lập xong, vui lòng báo IT site hoặc quản trị viên nộp duyệt ngân sách của site.")
+    if status in db.EDITABLE_STATUSES and can_edit and not current_user.is_dept_user:
+        if st.button("📨 Nộp ngân sách site để duyệt", use_container_width=True, disabled=df_site.empty,
+                     help="Nộp toàn bộ ngân sách của site (tất cả phòng ban)"):
+            missing_reason = 0
+            if "need_type" in df_site.columns:
+                reason = df_site["need_reason"] if "need_reason" in df_site.columns else pd.Series("", index=df_site.index)
+                missing_reason = int((df_site["need_type"].isin(qt.NEED_WITH_REASON) & (reason.fillna("").astype(str).str.strip() == "")).sum())
+            if invalid_rows:
+                st.error(f"Còn {invalid_rows} dòng có tổng phân kỳ khác 100%. Vui lòng chỉnh trước khi nộp.")
+            elif missing_reason:
+                st.error(f"Còn {missing_reason} dòng 'Phát sinh mới' / 'Hạ tầng dùng chung' chưa ghi lý do / căn cứ. Vui lòng bổ sung trước khi nộp.")
+            else:
+                db.set_status(budget_year, selected_site, db.STATUS_SUBMITTED, current_user.email)
                 st.rerun()
-            if ac2.button("↩️ Trả lại", use_container_width=True):
-                db.set_status(budget_year, selected_site, db.STATUS_RETURNED, current_user.email, note)
-                st.rerun()
-        if current_user.is_admin and status == db.STATUS_APPROVED:
-            if st.button("🔓 Mở lại để chỉnh sửa", use_container_width=True):
-                db.set_status(budget_year, selected_site, db.STATUS_DRAFT, current_user.email, "Mở lại")
-                st.rerun()
+    if current_user.is_admin and status == db.STATUS_SUBMITTED:
+        note = st.text_input("Ghi chú duyệt / trả lại", key="approve_note")
+        ac1, ac2 = st.columns(2)
+        if ac1.button("✅ Phê duyệt ngân sách", use_container_width=True, type="primary"):
+            db.set_status(budget_year, selected_site, db.STATUS_APPROVED, current_user.email, note)
+            st.rerun()
+        if ac2.button("↩️ Trả lại yêu cầu chỉnh sửa", use_container_width=True):
+            db.set_status(budget_year, selected_site, db.STATUS_RETURNED, current_user.email, note)
+            st.rerun()
+    if current_user.is_admin and status == db.STATUS_APPROVED:
+        if st.button("🔓 Mở lại để chỉnh sửa ngân sách", use_container_width=True):
+            db.set_status(budget_year, selected_site, db.STATUS_DRAFT, current_user.email, "Mở lại")
+            st.rerun()
 
 # TABS NAVIGATION
 tab_names = [
@@ -738,40 +1150,53 @@ with tab_dash:
         with k1:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="kpi-title">Tổng Ngân sách CapEx</div>
-                <div class="kpi-value">{fmt_num(total_capex / 1e9, 2)} <span style="font-size:16px;font-weight:500;">tỷ VNĐ</span></div>
-                <div class="kpi-sub">{fmt_num(total_capex)} VNĐ</div>
+                <div class="kpi-card-header">
+                    <span class="kpi-title">Tổng Ngân sách CapEx</span>
+                    <span class="kpi-icon-badge kpi-icon-blue">💰</span>
+                </div>
+                <div class="kpi-value">{fmt_num(total_capex / 1e9, 2)} <span class="kpi-unit">tỷ VNĐ</span></div>
+                <div class="kpi-sub"><span class="kpi-pill kpi-pill-blue">Chi tiết: {fmt_num(total_capex)} VNĐ</span></div>
             </div>
             """, unsafe_allow_html=True)
 
         with k2:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="kpi-title">Tổng Hạng mục Đầu tư</div>
-                <div class="kpi-value">{total_items} <span style="font-size:16px;font-weight:500;">mục</span></div>
-                <div class="kpi-sub">Tổng số lượng tài sản: {int(total_qty):,} cái/bộ</div>
+                <div class="kpi-card-header">
+                    <span class="kpi-title">Tổng Hạng mục Đầu tư</span>
+                    <span class="kpi-icon-badge kpi-icon-emerald">📦</span>
+                </div>
+                <div class="kpi-value">{total_items} <span class="kpi-unit">mục</span></div>
+                <div class="kpi-sub"><span class="kpi-pill kpi-pill-emerald">Tổng số lượng: {int(total_qty):,} cái/bộ</span></div>
             </div>
             """, unsafe_allow_html=True)
 
         with k3:
+            pct_top = (top_cat_val / total_capex * 100) if total_capex > 0 else 0
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="kpi-title">Nhóm Chiếm Tỷ trọng Cao Nhất</div>
-                <div class="kpi-value" style="font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_html.escape(str(top_cat))}</div>
-                <div class="kpi-sub">{fmt_num(top_cat_val / 1e9, 2)} tỷ VNĐ ({fmt_num(top_cat_val / total_capex * 100 if total_capex > 0 else 0, 1)}%)</div>
+                <div class="kpi-card-header">
+                    <span class="kpi-title">Nhóm Tỷ trọng Cao Nhất</span>
+                    <span class="kpi-icon-badge kpi-icon-amber">📊</span>
+                </div>
+                <div class="kpi-value" style="font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{_html.escape(str(top_cat))}">{_html.escape(str(top_cat))}</div>
+                <div class="kpi-sub"><span class="kpi-pill kpi-pill-amber">{fmt_num(top_cat_val / 1e9, 2)} tỷ VNĐ ({fmt_num(pct_top, 1)}%)</span></div>
             </div>
             """, unsafe_allow_html=True)
 
         with k4:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="kpi-title">Phạm vi Pháp nhân</div>
-                <div class="kpi-value">{num_entities} <span style="font-size:16px;font-weight:500;">đơn vị</span></div>
-                <div class="kpi-sub">DDC, DD2, DD3, DMT, DNS, DVT...</div>
+                <div class="kpi-card-header">
+                    <span class="kpi-title">Phạm vi Pháp nhân</span>
+                    <span class="kpi-icon-badge kpi-icon-purple">🏢</span>
+                </div>
+                <div class="kpi-value">{num_entities} <span class="kpi-unit">đơn vị</span></div>
+                <div class="kpi-sub"><span class="kpi-pill kpi-pill-purple">DDC, DD2, DD3, DMT, DNS, DVT...</span></div>
             </div>
             """, unsafe_allow_html=True)
 
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
         # Filters Row
         with st.expander("🔍 Bộ lọc Phân tích Trực quan", expanded=False):
@@ -1023,14 +1448,19 @@ with tab_input:
 
     with col_d2:
         st.markdown(f"""
-        <div style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:10px; padding:10px 16px; margin-top:2px;">
-            <div style="font-size:13px; font-weight:700; color:#0F2C59;">
-                🏢 Phòng ban: <span style="color:#1D4ED8; font-size:14px;">{_html.escape(active_dept)}</span>
-                <span style="font-weight:400; color:#64748B; margin-left:8px;">({site_label(selected_site)})</span>
+        <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:12px 18px; box-shadow:0 1px 3px rgba(0,0,0,0.03); display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <div style="font-size:11.5px; font-weight:700; color:#64748B; text-transform:uppercase; letter-spacing:0.05em;">Tiến độ lập ngân sách phòng ban</div>
+                <div style="font-size:15px; font-weight:800; color:#0F2C59; margin-top:2px;">
+                    🏢 {_html.escape(active_dept)}
+                    <span style="font-size:12px; font-weight:500; color:#64748B; margin-left:6px;">({site_label(selected_site)})</span>
+                </div>
             </div>
-            <div style="font-size:12px; color:#475569; margin-top:4px;">
-                Đã lập: <b>{dept_cnt}</b> hạng mục · Tổng ngân sách: <b style="color:#0F2C59; font-size:13px;">{format_vnd(dept_sum)}</b>
-                <span style="margin-left:8px; color:#64748B;">(TSCĐ: {format_vnd_short(dept_cx)} | CCDC: {format_vnd_short(dept_cc)} | OPEX: {format_vnd_short(dept_op)})</span>
+            <div style="text-align:right;">
+                <div style="font-size:17px; font-weight:800; color:#1E40AF;">{format_vnd(dept_sum)}</div>
+                <div style="font-size:12px; color:#475569; margin-top:2px;">
+                    <b>{dept_cnt}</b> hạng mục · <span style="color:#059669; font-weight:600;">TSCĐ: {format_vnd_short(dept_cx)}</span> | <span style="color:#2563EB; font-weight:600;">CCDC: {format_vnd_short(dept_cc)}</span> | <span style="color:#7C3AED; font-weight:600;">OPEX: {format_vnd_short(dept_op)}</span>
+                </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1128,7 +1558,15 @@ with tab_input:
 
                 b_sub1, b_sub2 = st.columns([2, 1.2])
                 with b_sub1:
-                    st.markdown(f"Đã chọn: **{num_sel}** thiết bị | Tổng thành tiền dự tính: <b style='color:#0F2C59; font-size:16px;'>{format_vnd(total_batch_cost)}</b>", unsafe_allow_html=True)
+                    st.markdown(f"""
+                    <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:8px 14px; display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:20px;">🛒</span>
+                        <div>
+                            <div style="font-size:11px; color:#1E40AF; font-weight:700; text-transform:uppercase;">Đã chọn cho {_html.escape(active_dept)}</div>
+                            <div style="font-size:14px; font-weight:700; color:#0F2C59;">{num_sel} thiết bị · Dự toán: {format_vnd(total_batch_cost)}</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 with b_sub2:
                     if st.button(f"➕ Thêm {num_sel} mục vào {active_dept}", type="primary", use_container_width=True, disabled=num_sel == 0):
                         if b_need_type == qt.NEED_NEW and not b_reason.strip():
@@ -1629,6 +2067,10 @@ with tab_quota:
                             new_lines = []
                             for dp, g in site_grp.groupby("dept"):
                                 hc_rows_dp = g.drop(columns=["site_code", "dept"]).to_dict("records")
+                                old_kit_items = {r["kit_code"]: r.get("kit_items")
+                                                 for r in db.load_dept_rows("dept_headcount", budget_year, [sc], dp)}
+                                for r in hc_rows_dp:  # giữ trang bị phòng ban đã tự chọn cho vị trí
+                                    r["kit_items"] = old_kit_items.get(r.get("kit_code"))
                                 db.replace_dept_rows("dept_headcount", budget_year, sc, dp, hc_rows_dp, current_user.email)
                                 inv_now = db.load_dept_rows("dept_inventory", budget_year, [sc], dp)
                                 if use_est:
@@ -1707,10 +2149,122 @@ with tab_quota:
                                         "Số lượng / người": i["qty_per_person"]} for k in kits_cfg for i in k["items"]]),
                          use_container_width=True, hide_index=True)
 
+        # Bước 1b: chọn trang bị (phần cứng + phần mềm) cho từng vị trí – bộ tiêu chuẩn chỉ là cấu hình gợi ý ban đầu
+        kits_by_code = {k["code"]: k for k in kits_cfg}
+        kit_store = st.session_state.setdefault(f"kitcfg_{q_key}", {
+            h["kit_code"]: qt.parse_kit_items(h.get("kit_items")) for h in headcount})
+
+        def _item_cat(it):
+            kind = str(it.get("kind") or "")
+            if kind.startswith("software"):
+                return "Phần mềm cơ bản" if it.get("group") in ("IT04", "IT05", "IT09") else "Phần mềm chuyên dụng"
+            return "Dịch vụ" if kind == "service" else "Phần cứng"
+
+        def _kit_key(items):
+            return sorted((i["catalog_code"], round(qt._num(i.get("qty_per_person")), 4), round(qt._num(i.get("fixed_qty")), 4))
+                          for i in items)
+
+        def _kit_items_json(kit_code):
+            items = kit_store.get(kit_code)
+            return None if items is None else json.dumps(items, ensure_ascii=False)
+
+        st.markdown("#### 🧩 Chọn trang bị cho từng vị trí (phần cứng & phần mềm)")
+        st.caption("Bộ trang bị tiêu chuẩn chỉ là gợi ý ban đầu. Chọn vị trí rồi: bỏ tích 'Dùng' để bỏ hạng mục, bấm ô Hạng mục "
+                   "để đổi model / phiên bản, thêm phần cứng / phần mềm cơ bản / phần mềm chuyên dụng bằng ô 'Thêm nhanh'. "
+                   "'Số lượng / người' nhân với định biên; 'Số lượng cố định' dùng khi chỉ một số người "
+                   "cần (vd. 3 bản quyền Tekla cho 10 kỹ sư). Lựa chọn được lưu cùng định biên ở nút Lưu bên dưới.")
+        pos_codes = [c for c in dict.fromkeys(next((c for c, l in kit_label.items() if l == r["kit"]), None)
+                                              for _, r in ed_hc.iterrows() if r.get("kit")) if c]
+        if not pos_codes:
+            st.info("Khai báo vị trí & định biên nhân sự ở bảng trên trước, sau đó chọn trang bị cho từng vị trí.")
+        else:
+            plan_by_code = {next((c for c, l in kit_label.items() if l == r["kit"]), None): qt._num(pd.to_numeric(r.get("hc_plan"), errors="coerce"))
+                            for _, r in ed_hc.iterrows() if r.get("kit")}
+            # nhãn phải cố định (không đổi theo định biên / trạng thái tự chọn) để ô chọn không bị đặt lại
+            sel_pos = st.selectbox("Vị trí", pos_codes, key=f"kitpos_{q_key}", format_func=lambda c: kit_label.get(c, c))
+            st.caption(f"Định biên {fmt_num(plan_by_code.get(sel_pos, 0))} người · "
+                       + ("✏️ trang bị tự chọn" if kit_store.get(sel_pos) is not None else "theo bộ tiêu chuẩn")
+                       + " · Vị trí đã tự chọn: "
+                       + (", ".join(c for c in pos_codes if kit_store.get(c) is not None) or "chưa có"))
+            std_items = [dict(i, fixed_qty=0, note="") for i in kits_by_code.get(sel_pos, {}).get("items", [])]
+            ver = st.session_state.get(f"kitver_{q_key}", 0)
+            kit_ed_key = f"kited_{q_key}_{sel_pos}_{ver}"
+            # Bảng sửa phải dựng từ ảnh chụp cố định: Streamlit áp các thay đổi của người dùng lên dữ liệu gốc mỗi lần chạy lại
+            kit_base = st.session_state.setdefault(f"kitbase_{q_key}", {})
+            if kit_ed_key not in kit_base:
+                kit_base[kit_ed_key] = std_items if kit_store.get(sel_pos) is None else list(kit_store[sel_pos])
+            cur_items = kit_base[kit_ed_key]
+            df_k = pd.DataFrame([{
+                "use": True,
+                "cat": _item_cat(cat_by_code.get(i["catalog_code"], {})),
+                "item": item_label.get(i["catalog_code"], i["catalog_code"]),
+                "price": qt._num(cat_by_code.get(i["catalog_code"], {}).get("price")),
+                "qty_per_person": qt._num(i.get("qty_per_person")) or None,
+                "fixed_qty": qt._num(i.get("fixed_qty")) or None,
+                "note": i.get("note") or "",
+            } for i in cur_items], columns=["use", "cat", "item", "price", "qty_per_person", "fixed_qty", "note"])
+            cat_order = {"Phần cứng": 0, "Phần mềm cơ bản": 1, "Phần mềm chuyên dụng": 2, "Dịch vụ": 3}
+            df_k = df_k.sort_values("cat", key=lambda x: x.map(cat_order), kind="stable").reset_index(drop=True)
+            ed_k = st.data_editor(
+                df_k, key=kit_ed_key, num_rows="fixed", disabled=not can_edit,
+                use_container_width=True, hide_index=True,
+                column_config={
+                    "use": st.column_config.CheckboxColumn("Dùng", help="Bỏ tích để bỏ hạng mục khỏi vị trí"),
+                    "cat": st.column_config.TextColumn("Loại", disabled=True),
+                    "item": st.column_config.SelectboxColumn("Hạng mục (bấm để đổi model / phiên bản)", options=list(item_label.values()), required=True, width="large"),
+                    "price": st.column_config.NumberColumn("Đơn giá (VNĐ)", disabled=True, format=MONEY_FMT),
+                    "qty_per_person": st.column_config.NumberColumn("Số lượng / người", min_value=0.0, step=0.1, format="%.2f"),
+                    "fixed_qty": st.column_config.NumberColumn("Số lượng cố định (cả vị trí)", min_value=0, step=1, format=MONEY_FMT,
+                                                               help="Điền khi chỉ một số người dùng; khi có số này sẽ không nhân theo định biên"),
+                    "note": st.column_config.TextColumn("Ghi chú / người dùng"),
+                })
+            new_items = []
+            for _, r in ed_k.iterrows():
+                code = label_to_code.get(r.get("item"))
+                if not code or not bool(r.get("use")):
+                    continue
+                qpp = qt._num(pd.to_numeric(r.get("qty_per_person"), errors="coerce"))
+                fx = qt._num(pd.to_numeric(r.get("fixed_qty"), errors="coerce"))
+                if qpp <= 0 and fx <= 0:
+                    qpp = 1.0  # dòng mới chưa nhập số lượng: mặc định 1 / người
+                new_items.append({"catalog_code": code, "qty_per_person": qpp, "fixed_qty": fx, "note": str(r.get("note") or "")})
+            if can_edit:
+                kit_store[sel_pos] = None if _kit_key(new_items) == _kit_key(std_items) else new_items
+
+                ac1, ac2, ac3 = st.columns([1.2, 3, 1.3])
+                add_cat = ac1.selectbox("Thêm nhanh", ["Phần mềm chuyên dụng", "Phần mềm cơ bản", "Phần cứng", "Dịch vụ"],
+                                        key=f"kitaddcat_{q_key}")
+                have = {i["catalog_code"] for i in new_items}
+                add_opts = [item_label[c] for c, it in cat_by_code.items()
+                            if _item_cat(it) == add_cat and c not in have and item_scope(it, master) != SCOPE_SHARED]
+                add_sel = ac2.multiselect(f"Chọn {add_cat.lower()} ({len(add_opts)} hạng mục)", add_opts, key=f"kitaddsel_{q_key}_{sel_pos}_{ver}",
+                                          placeholder="Gõ tên để tìm, chọn được nhiều...")
+                ac3.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+                if ac3.button("➕ Thêm vào vị trí", disabled=not add_sel, use_container_width=True, key=f"kitaddbtn_{q_key}"):
+                    kit_store[sel_pos] = new_items + [{"catalog_code": label_to_code[l], "qty_per_person": 1.0, "fixed_qty": 0.0, "note": ""}
+                                                      for l in add_sel]
+                    st.session_state[f"kitver_{q_key}"] = ver + 1
+                    st.rerun()
+                if kit_store.get(sel_pos) is not None:
+                    rc1, rc2 = st.columns([3, 1])
+                    rc1.caption("✏️ Vị trí này đang dùng trang bị tự chọn (khác bộ tiêu chuẩn). Nhớ bấm Lưu ở cuối trang.")
+                    if rc2.button("↩️ Về bộ tiêu chuẩn", use_container_width=True, key=f"kitreset_{q_key}"):
+                        kit_store[sel_pos] = None
+                        st.session_state[f"kitver_{q_key}"] = ver + 1
+                        st.rerun()
+            per_head = sum(qt._num(cat_by_code.get(i["catalog_code"], {}).get("price")) * i["qty_per_person"]
+                           for i in new_items if i["fixed_qty"] <= 0)
+            fixed_val = sum(qt._num(cat_by_code.get(i["catalog_code"], {}).get("price")) * i["fixed_qty"] for i in new_items)
+            st.caption(f"Chi phí trang bị đầy đủ: {format_vnd(per_head)} / người"
+                       + (f" + {format_vnd(fixed_val)} cố định cho vị trí" if fixed_val else "")
+                       + " (chưa trừ thiết bị / bản quyền đang có).")
+
         # Bước 2: hiện có & thay thế
         needs = qt.compute_needs(
             [{"kit_code": next((c for c, l in kit_label.items() if l == r["kit"]), None),
-              "hc_current": r["hc_current"], "hc_plan": r["hc_plan"]} for _, r in ed_hc.iterrows() if r.get("kit")],
+              "hc_current": r["hc_current"], "hc_plan": r["hc_plan"],
+              "kit_items": _kit_items_json(next((c for c, l in kit_label.items() if l == r["kit"]), None))}
+             for _, r in ed_hc.iterrows() if r.get("kit")],
             inventory, master)
         st.markdown("#### 2️⃣ Thiết bị / phần mềm hiện có & cần thay thế")
         st.caption("Nhập số đang có của phòng ban và số thiết bị cần thay (hỏng, hết khấu hao). "
@@ -1750,6 +2304,7 @@ with tab_quota:
                    for _, r in ed_hc.iterrows() if r.get("kit")]
         for h in hc_rows:
             h["hc_months"] = months_by_kit.get(h["kit_code"])
+            h["kit_items"] = _kit_items_json(h["kit_code"])
         needs = qt.compute_needs(hc_rows, inv_rows, master)
 
         # Bước 3: nhu cầu đề xuất
@@ -1785,7 +2340,7 @@ with tab_quota:
                 db.replace_dept_rows("dept_headcount", budget_year, selected_site, selected_dept, hc_rows, current_user.email)
                 db.replace_dept_rows("dept_inventory", budget_year, selected_site, selected_dept, inv_rows, current_user.email)
                 st.session_state["quota_version"] = st.session_state.get("quota_version", 0) + 1
-                st.session_state["flash"] = f"Đã lưu định biên của {selected_dept}."
+                st.session_state["flash"] = f"Đã lưu định biên & trang bị theo vị trí của {selected_dept}."
                 st.rerun()
             if b2.button("⚡ Lưu & tạo dòng ngân sách theo định biên", use_container_width=True, type="primary",
                          help="Thay các dòng 'Định biên' tự sinh trước đó của phòng ban này; giữ nguyên dòng 'Phát sinh mới' và phân kỳ đã chỉnh"):

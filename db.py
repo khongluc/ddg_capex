@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS dept_headcount (
     hc_current  REAL NOT NULL DEFAULT 0,
     hc_plan     REAL NOT NULL DEFAULT 0,
     hc_months   TEXT,
+    kit_items   TEXT,
     updated_by  TEXT,
     updated_at  TEXT,
     PRIMARY KEY (year, site_code, dept, kit_code)
@@ -135,7 +136,7 @@ TABLE_COLUMNS = {
     "users": ["email", "name", "role", "provider", "created_at", "last_login"],
     "budget_lines": ["id", "year", "site_code", "seq", "data", "updated_by", "updated_at"],
     "site_status": ["year", "site_code", "status", "note", "updated_by", "updated_at"],
-    "dept_headcount": ["year", "site_code", "dept", "kit_code", "hc_current", "hc_plan", "hc_months", "updated_by", "updated_at"],
+    "dept_headcount": ["year", "site_code", "dept", "kit_code", "hc_current", "hc_plan", "hc_months", "kit_items", "updated_by", "updated_at"],
     "dept_inventory": ["year", "site_code", "dept", "catalog_code", "current_qty", "replace_qty", "quota_override", "note",
                        "updated_by", "updated_at"],
     "audit_log": ["id", "ts", "email", "action", "detail"],
@@ -269,6 +270,7 @@ def init_db():
             for stmt in _pg_schema():
                 conn.execute(stmt)
             conn.execute("ALTER TABLE dept_headcount ADD COLUMN IF NOT EXISTS hc_months TEXT")
+            conn.execute("ALTER TABLE dept_headcount ADD COLUMN IF NOT EXISTS kit_items TEXT")
         _pg_state["ready"].add(url)
         return
     with connect() as conn:
@@ -277,6 +279,8 @@ def init_db():
         cols = {r[1] for r in conn.raw.execute("PRAGMA table_info(dept_headcount)")}
         if "hc_months" not in cols:  # nâng cấp CSDL tạo trước khi có nhân sự theo tháng
             conn.raw.execute("ALTER TABLE dept_headcount ADD COLUMN hc_months TEXT")
+        if "kit_items" not in cols:  # trang bị phòng ban tự chọn theo vị trí
+            conn.raw.execute("ALTER TABLE dept_headcount ADD COLUMN kit_items TEXT")
 
 
 def get_setting(key: str) -> Optional[str]:
@@ -450,7 +454,7 @@ def set_status(year: str, site_code: str, status: str, actor: str, note: str = "
 # Định biên nhân sự & thiết bị hiện có theo phòng ban
 # ---------------------------------------------------------------------
 _DEPT_TABLES = {
-    "dept_headcount": ("kit_code", "hc_current", "hc_plan", "hc_months"),
+    "dept_headcount": ("kit_code", "hc_current", "hc_plan", "hc_months", "kit_items"),
     "dept_inventory": ("catalog_code", "current_qty", "replace_qty", "quota_override", "note"),
 }
 
