@@ -8,7 +8,7 @@ import pandas as pd
 from tests import fixtures as fx
 
 APP = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "app.py")
-WANTED_FUNCS = {"dept_key", "dept_mask", "filter_values", "save_view"}
+WANTED_FUNCS = {"dept_key", "dept_mask", "filter_values", "save_view", "_commit_checklist_items"}
 WANTED_NAMES = {"ITEM_FILTERS", "FILTER_BLANK"}
 
 
@@ -55,6 +55,59 @@ class FilteredSaveTest(unittest.TestCase):
         other_before = self.df_site[self.df_site["dept_proposing"] != fx.KD]["item_code"].tolist()
         self.assertEqual(out[out["dept_proposing"] != fx.KD]["item_code"].tolist(), other_before)
         self.assertEqual(out.iloc[-1]["item_name"], "Dòng thêm")  # dòng mới ở cuối
+
+
+class _Rerun(Exception):
+    pass
+
+
+class PopupCommitTest(unittest.TestCase):
+    """Popup thêm hạng mục: hạng mục trong danh mục / ngoài danh mục được phân loại & hạch toán đúng."""
+
+    def setUp(self):
+        import types
+        import quota as qt
+        from master_data import apply_it_catalog, classify_item, find_catalog_item, division_of
+        from capex_engine import calculate_row
+        self.saved = {}
+        st = types.SimpleNamespace(session_state={}, rerun=lambda: (_ for _ in ()).throw(_Rerun()))
+        db = types.SimpleNamespace(load_lines=lambda year, sites: [])
+        self.ns = load_app_funcs(
+            st=st, db=db, qt=qt, master=fx.master(), months=fx.MONTHS, year_code="A27", budget_year=fx.YEAR,
+            SITE_NAME={fx.SITE: fx.SITE_NAME}, apply_it_catalog=apply_it_catalog, classify_item=classify_item,
+            find_catalog_item=find_catalog_item, division_of=division_of, calculate_row=calculate_row,
+            format_vnd=lambda v: f"{v:,.0f}", save_site=lambda df, site: self.saved.update(df=df, site=site))
+        self.st = st
+
+    def commit(self, rows, need="Phát sinh mới", reason="Dự án mới"):
+        with self.assertRaises(_Rerun):
+            self.ns["_commit_checklist_items"](pd.DataFrame(rows), fx.KD, fx.SITE, fx.MONTHS[2], need, reason)
+        return self.saved["df"].to_dict("records")
+
+    def test_off_catalog_items_classified_by_group_and_kind(self):
+        out = self.commit([
+            {"Mã": "", "Tên thiết bị / Hạng mục": "Máy đo laser Leica DISTO", "Nhóm": "IT13. x", "Loại": None,
+             "Hình thức": "Mua mới", "ĐVT": "Cái", "Số lượng": 2, "Đơn giá (VNĐ)": 12_000_000, "Ghi chú": "đo hiện trường"},
+            {"Mã": "", "Tên thiết bị / Hạng mục": "Phần mềm dự toán GXD", "Nhóm": "IT10. x", "Loại": "software_perpetual",
+             "Hình thức": "Mua mới", "ĐVT": "License", "Số lượng": 1, "Đơn giá (VNĐ)": 45_000_000, "Ghi chú": ""},
+            {"Mã": "", "Tên thiết bị / Hạng mục": "Thuê bao bản đồ số", "Nhóm": "IT12. x", "Loại": "software_subscription",
+             "Hình thức": "Gia hạn, bảo trì", "ĐVT": "Năm", "Số lượng": 1, "Đơn giá (VNĐ)": 8_000_000, "Ghi chú": ""},
+        ])
+        a, b, c = out
+        for r in out:
+            self.assertEqual((r["it_group"], r["catalog_code"], r["dept_proposing"], r["need_type"]), ("(Ngoài danh mục)", "", fx.KD, "Phát sinh mới"))
+            self.assertEqual(r["need_reason"], "Dự án mới")
+            self.assertEqual(r[f"val_{fx.MONTHS[2]}"], r["total_budget"])
+        self.assertEqual((a["capex_type"], a["unit"], a["total_budget"]), ("CCDC", "Cái", 24_000_000))   # thiết bị < 30 tr
+        self.assertEqual(b["capex_type"], "CAPEX")                                                          # bản quyền vĩnh viễn >= 30 tr
+        self.assertTrue(b["asset_cat1"].startswith("E"))
+        self.assertEqual((c["capex_type"], c["invest_type"]), ("OPEX", "Gia hạn, bảo trì"))                 # thuê bao
+        self.assertEqual(self.st.session_state["pending_dept"], fx.KD)
+
+    def test_name_in_catalog_uses_catalog(self):
+        out = self.commit([{"Mã": "", "Tên thiết bị / Hạng mục": "zwCAD", "Nhóm": "IT13. x", "Loại": None, "Hình thức": "Mua mới",
+                            "ĐVT": "", "Số lượng": 3, "Đơn giá (VNĐ)": 27_000_000, "Ghi chú": ""}])
+        self.assertEqual((out[0]["catalog_code"], out[0]["item_name"]), (fx.ZWCAD, "ZWCAD"))
 
 
 if __name__ == "__main__":

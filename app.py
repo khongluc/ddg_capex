@@ -26,6 +26,7 @@ from master_data import (
     fiscal_months,
     it_groups,
     it_kinds,
+    find_catalog_item,
     apply_it_catalog,
     classify_item,
     item_scope,
@@ -1888,7 +1889,7 @@ def _commit_checklist_items(selected_items_df: pd.DataFrame, target_dept: str, t
     for _, r_it in selected_items_df.iterrows():
         it_code = str(r_it.get("Mã", "")).strip()
         it_name = str(r_it.get("Tên thiết bị / Hạng mục", "")).strip()
-        cat_it = next((x for x in cat_all if x.get("code") == it_code or x.get("name") == it_name), None)
+        cat_it = next((x for x in cat_all if it_code and x.get("code") == it_code), None) or find_catalog_item(it_name, master)
         q = int(r_it.get("Số lượng", 1))
         p = float(r_it.get("Đơn giá (VNĐ)", 0))
         note_txt = str(r_it.get("Ghi chú", "")).strip()
@@ -1913,10 +1914,19 @@ def _commit_checklist_items(selected_items_df: pd.DataFrame, target_dept: str, t
         for m in months:
             row_dict[f"pct_{m}"] = 1.0 if m == target_month else 0.0
 
+        inv = str(r_it.get("Hình thức") or "").strip() or None
         if cat_it:
-            apply_it_catalog(row_dict, master, item=cat_it, invest_type="Mua mới")
-        else:
-            row_dict.update({"it_group": "(Ngoài danh mục)", "invest_type": "Mua mới"})
+            apply_it_catalog(row_dict, master, item=cat_it, invest_type=inv or "Mua mới")
+        else:  # ngoài danh mục: hạch toán theo Nhóm CNTT + Loại người lập chọn (cùng quy tắc với danh mục)
+            grp = str(r_it.get("Nhóm") or "").split(".")[0].strip()
+            kind = str(r_it.get("Loại") or "").strip() or None
+            cls = classify_item({"group": grp, "kind": kind}, master, inv) if grp else {}
+            row_dict.update({k: v for k, v in cls.items() if k != "useful_months" and v})
+            if cls:
+                row_dict["useful_life"] = max(cls["useful_months"] / 12.0, 1.0)
+            row_dict.update({"it_group": "(Ngoài danh mục)", "catalog_code": "",
+                             "invest_type": inv or cls.get("invest_type") or "Mua mới",
+                             "unit": str(r_it.get("ĐVT") or "").strip()})
 
         calc_row = calculate_row(row_dict, months=months, year_code=year_code, master=master)
         new_items_list.append(calc_row)
@@ -1968,9 +1978,10 @@ def render_item_picker_dialog(target_dept: str, target_site: str):
     </div>
     """, unsafe_allow_html=True)
 
-    dlg_tab1, dlg_tab2 = st.tabs([
+    dlg_tab1, dlg_tab2, dlg_tab3 = st.tabs([
         "📦 GÓI TRANG BỊ THEO CHỨC DANH (1-Click Presets)",
-        "🔍 CHECKLIST TÌM KIẾM TOÀN DANH MỤC"
+        "🔍 CHECKLIST TÌM KIẾM TOÀN DANH MỤC",
+        "✍️ HẠNG MỤC NGOÀI DANH MỤC",
     ])
 
     standard_kits = qt.standard_kits(master)
@@ -2139,6 +2150,64 @@ def render_item_picker_dialog(target_dept: str, target_site: str):
                     st.error("Vui lòng nhập lý do / căn cứ phát sinh trước khi thêm!")
                 else:
                     _commit_checklist_items(sel_cat_df, target_dept, target_site, c_month, c_need, c_reason)
+
+    # Tab 3: hạng mục chưa có trong danh mục (nhập tay)
+    with dlg_tab3:
+        st.caption("Nhập hạng mục chưa có trong danh mục CNTT (mỗi dòng 1 hạng mục). Hạch toán TSCĐ / CCDC / OPEX, loại tài sản "
+                   "và mã chi phí tự gán theo Nhóm CNTT + Loại. Tên trùng hạng mục trong danh mục sẽ lấy theo danh mục.")
+        groups_cfg = it_groups(master)
+        grp_labels = [f"{g['code']}. {g['name']}" for g in groups_cfg]
+        kinds_cfg = it_kinds(master)
+        df_new = pd.DataFrame([{"Tên thiết bị / Hạng mục": "", "Nhóm": None, "Loại": None, "Hình thức": "Mua mới", "ĐVT": "",
+                                "Số lượng": 1, "Đơn giá (VNĐ)": 0.0, "Ghi chú": ""}])
+        ed_new = st.data_editor(
+            df_new, key=f"ed_dlg_new_{dept_key(target_dept)}", num_rows="dynamic", use_container_width=True, hide_index=True,
+            column_config={
+                "Tên thiết bị / Hạng mục": st.column_config.TextColumn("Tên hạng mục", width="large", required=True),
+                "Nhóm": st.column_config.SelectboxColumn("Nhóm CNTT", options=grp_labels, required=True, width="medium"),
+                "Loại": st.column_config.SelectboxColumn("Loại", options=list(kinds_cfg), width="small",
+                                                         help="Trống = theo nhóm. " + " | ".join(f"{k}: {v}" for k, v in kinds_cfg.items())),
+                "Hình thức": st.column_config.SelectboxColumn("Hình thức", options=INVEST_TYPES, width="small"),
+                "ĐVT": st.column_config.TextColumn("ĐVT", width="small"),
+                "Số lượng": st.column_config.NumberColumn("Số lượng", min_value=1, step=1, format=MONEY_FMT),
+                "Đơn giá (VNĐ)": st.column_config.NumberColumn("Đơn giá (VNĐ, chưa VAT)", min_value=0, format=MONEY_FMT),
+                "Ghi chú": st.column_config.TextColumn("Ghi chú", width="medium"),
+            })
+        names = ed_new["Tên thiết bị / Hạng mục"].fillna("").astype(str).str.strip()
+        sel_new = ed_new[names != ""].copy()
+        sel_new["Số lượng"] = pd.to_numeric(sel_new["Số lượng"], errors="coerce").fillna(0)
+        sel_new["Đơn giá (VNĐ)"] = pd.to_numeric(sel_new["Đơn giá (VNĐ)"], errors="coerce").fillna(0)
+        in_cat = [n for n in sel_new["Tên thiết bị / Hạng mục"] if find_catalog_item(n, master)]
+        if in_cat:
+            st.info("Có trong danh mục, sẽ lấy theo danh mục (mã, nhóm, hạch toán): " + ", ".join(in_cat))
+        cost_new = (sel_new["Số lượng"] * sel_new["Đơn giá (VNĐ)"]).sum() if not sel_new.empty else 0.0
+        st.markdown("---")
+        nb1, nb2, nb3 = st.columns([1.2, 1.2, 1.6])
+        with nb1:
+            n_month = st.selectbox("Tháng sử dụng:", months, index=0, key="dlg_n_month")
+        with nb2:
+            n_need = st.radio("Nhu cầu:", qt.NEED_TYPES, index=qt.NEED_TYPES.index(qt.NEED_NEW), horizontal=True, key="dlg_n_need")
+        with nb3:
+            st.markdown(f"""
+            <div style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:8px; padding:8px 12px; text-align:right;">
+                <div style="font-size:11px; color:#64748B;">Đã nhập: <b>{len(sel_new)}</b> hạng mục</div>
+                <div style="font-size:15px; font-weight:800; color:#1E40AF;">{format_vnd(cost_new)}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        n_reason = st.text_input("Lý do phát sinh / căn cứ trang bị:", key="dlg_n_reason",
+                                 placeholder="VD: Dự án mới cần thiết bị đo đạc, phần mềm chuyên dụng...") if n_need in qt.NEED_WITH_REASON else ""
+        if st.button(f"💾 XÁC NHẬN THÊM {len(sel_new)} HẠNG MỤC VÀO {target_dept}", type="primary", use_container_width=True,
+                     disabled=sel_new.empty, key="btn_apply_dlg_new"):
+            missing_grp = [n for n, g in zip(sel_new["Tên thiết bị / Hạng mục"], sel_new["Nhóm"])
+                           if not find_catalog_item(n, master) and not str(g or "").strip()]
+            if missing_grp:
+                st.error("Chọn Nhóm CNTT cho: " + ", ".join(missing_grp))
+            elif (sel_new["Đơn giá (VNĐ)"] <= 0).any():
+                st.error("Nhập đơn giá lớn hơn 0 cho mọi hạng mục.")
+            elif n_need in qt.NEED_WITH_REASON and not n_reason.strip():
+                st.error("Vui lòng nhập lý do / căn cứ phát sinh trước khi thêm!")
+            else:
+                _commit_checklist_items(sel_new, target_dept, target_site, n_month, n_need, n_reason)
 
 
 @st.dialog("📋 Checklist Rà Soát & Điều Chỉnh Nhanh Phòng Ban", width="large")
