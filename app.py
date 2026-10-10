@@ -1,6 +1,5 @@
 """
 HỆ THỐNG QUẢN LÝ & TÍNH TOÁN NGÂN SÁCH ĐẦU TƯ CAPEX
-CÔNG TY CỔ PHẦN CƠ KHÍ XÂY DỰNG THƯƠNG MẠI ĐẠI DŨNG
 """
 import os
 import html as _html
@@ -840,7 +839,7 @@ df_curr = df_site[dept_mask(df_site, selected_dept)].reset_index(drop=True)
 
 # MAIN HEADER BANNER
 if selected_site == ALL_SITES:
-    status_pill_html = '<span class="header-status-pill status-pill-all">🌐 Toàn tập đoàn (Tổng hợp)</span>'
+    status_pill_html = '<span class="header-status-pill status-pill-all">🌐 Tổng hợp tất cả site</span>'
 else:
     status_code = site_status["status"] if site_status else db.STATUS_DRAFT
     status_lbl = db.STATUS_LABELS.get(status_code, status_code)
@@ -2541,7 +2540,7 @@ SW_KINDS = (KIND_SW_PERPETUAL, KIND_SW_SUBSCRIPTION)
 
 with tab_software:
     st.markdown("### 💿 Đầu tư Phần mềm & Bản quyền")
-    st.caption("Danh mục phần mềm chuẩn của Tập đoàn và tổng hợp ngân sách phần mềm trong phạm vi đang chọn. "
+    st.caption("Danh mục phần mềm chuẩn và tổng hợp ngân sách phần mềm trong phạm vi đang chọn. "
                "Bản quyền vĩnh viễn: TSCĐ vô hình nếu ≥ 30 triệu/đơn vị, thấp hơn là CCDC; "
                "thuê bao theo năm: chi phí trả trước phân bổ theo thời hạn.")
     sw_catalog = [it for it in master.get("standard_items", []) if it.get("kind") in SW_KINDS]
@@ -2722,7 +2721,7 @@ with tab_excel:
         <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:20px;">
             <h4 style="color:#166534; margin-top:0;">📤 Xuất File Excel CAPEX</h4>
             <p style="color:#15803D; font-size:13px;">
-                Xuất toàn bộ bảng ngân sách hiện hành thành file Excel (.xlsx) chuẩn biểu mẫu <b>CA.01_CAPEX</b> của Công ty Đại Dũng.
+                Xuất toàn bộ bảng ngân sách hiện hành thành file Excel (.xlsx) chuẩn biểu mẫu <b>CA.01_CAPEX</b>.
                 Đầy đủ công thức tính toán, định dạng màu sắc doanh nghiệp, tỷ lệ phân kỳ 12 tháng và mã ngân sách kế toán.
             </p>
         </div>
@@ -2917,7 +2916,7 @@ with tab_depreciation:
 # =====================================================================
 with tab_master:
     st.markdown("### ⚙️ Danh mục Tham chiếu Master Data & Bảng giá Chuẩn")
-    st.caption("Các danh mục chuẩn được đồng bộ với hệ thống ERP / Biểu mẫu quản lý tài sản Tập đoàn Đại Dũng.")
+    st.caption("Các danh mục chuẩn dùng chung cho biểu mẫu quản lý tài sản và lập ngân sách.")
 
     m_sub1, m_sub2, m_sub3 = st.tabs(["💻 Danh mục CNTT & Giá chuẩn", "🏢 Pháp nhân & Nhà máy", "🏷️ Loại Tài sản & Chi phí"])
 
@@ -3109,6 +3108,6 @@ with tab_master:
 st.markdown("---")
 st.markdown("""
 <div style="text-align:center; color:#94A3B8; font-size:12px;">
-    Hệ thống Quản lý & Tính toán Ngân sách Đầu tư CAPEX © 2026 - Công ty Cổ phần Cơ khí Xây dựng Thương mại Đại Dũng (DDC)
+    Hệ thống lập ngân sách đầu tư CAPEX – sử dụng nội bộ
 </div>
 """, unsafe_allow_html=True)

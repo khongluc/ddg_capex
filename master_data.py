@@ -11,12 +11,12 @@ MASTER_DATA_FILE = os.environ.get("ICOST_MASTER_PATH", os.path.join(BASE_DIR, "m
 
 # Default entities
 DEFAULT_ENTITIES = [
-    {"code": "A01", "name": "DDC", "full_name": "Công ty Cổ phần Cơ khí Xây dựng Thương mại Đại Dũng"},
-    {"code": "A04", "name": "DD2", "full_name": "Đại Dũng 2"},
-    {"code": "A05", "name": "DD3", "full_name": "Đại Dũng 3"},
-    {"code": "A02", "name": "DMT", "full_name": "Đại Dũng Miền Trung"},
-    {"code": "A06", "name": "DNS", "full_name": "Đại Dũng Nghi Sơn"},
-    {"code": "A07", "name": "DVT", "full_name": "Đại Dũng Vũng Tàu"}
+    {"code": "A01", "name": "DDC"},
+    {"code": "A04", "name": "DD2"},
+    {"code": "A05", "name": "DD3"},
+    {"code": "A02", "name": "DMT"},
+    {"code": "A06", "name": "DNS"},
+    {"code": "A07", "name": "DVT"}
 ]
 
 # Default sites / locations

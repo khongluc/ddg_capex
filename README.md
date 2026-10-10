@@ -1,5 +1,4 @@
 # HỆ THỐNG QUẢN LÝ & TÍNH TOÁN NGÂN SÁCH ĐẦU TƯ CAPEX KHỐI CNTT
-**CÔNG TY CỔ PHẦN CƠ KHÍ XÂY DỰNG THƯƠNG MẠI ĐẠI DŨNG (DDC)**
 
 ---
 
@@ -7,7 +6,7 @@
 
 Web App được xây dựng chuyên biệt để giải quyết bài toán **Lập kế hoạch, Phân loại, Tính toán chi phí, Phân kỳ giải ngân và Thẩm định Ngân sách Đầu tư CAPEX cho Khối / Phòng Công nghệ Thông tin (CNTT)** theo từng phòng ban và toàn công ty. 
 
-Toàn bộ hệ thống được đồng bộ 100% với file biểu mẫu kế toán **`2. Form file nhập liệu CAPEX 2026.xlsx`** của Tập đoàn Đại Dũng.
+Toàn bộ hệ thống được đồng bộ 100% với file biểu mẫu kế toán **`2. Form file nhập liệu CAPEX 2026.xlsx`**.
 
 ---
 
@@ -29,7 +28,7 @@ python -m streamlit run app.py
 Hệ thống đã nâng cấp toàn diện Tab **"📝 Lập & Nhập liệu CapEx"** thành trung tâm lập ngân sách theo phòng ban với 2 hình thức nhập liệu cực kỳ thuận tiện:
 
 ### 1. 🏢 Thẻ Thiết lập & Thống kê Phòng ban Mục tiêu
-- **Bộ chọn phòng ban trực quan**: Chọn nhanh phòng ban cần lập (trong 64 phòng ban của DDC hoặc phòng ban mới).
+- **Bộ chọn phòng ban trực quan**: Chọn nhanh phòng ban cần lập (trong 64 phòng ban hoặc phòng ban mới).
 - **Thẻ KPI phòng ban tức thì**:
   - Tên phòng ban & Vị trí / Site.
   - Số lượng hạng mục đã lập.
@@ -40,7 +39,7 @@ Hệ thống đã nâng cấp toàn diện Tab **"📝 Lập & Nhập liệu Cap
 ### 2. 🛒 Chế độ 1: Chọn Nhanh theo Danh mục CNTT (Multi-Item Batch Picker - Tiện lợi nhất)
 - **Thao tác trong 10 giây**:
   1. Chọn **Nhóm CNTT** (vd: `IT01. Thiết bị người dùng cuối` - PC/Laptop, `IT09. Phần mềm M365`, `IT02. Máy in/Scan`...).
-  2. Bảng các thiết bị của nhóm hiện ra với: Mã, Tên thiết bị chuẩn, Đơn giá tham chiếu DDC, Đơn vị tính, Phân loại kế toán.
+  2. Bảng các thiết bị của nhóm hiện ra với: Mã, Tên thiết bị chuẩn, Đơn giá tham chiếu, Đơn vị tính, Phân loại kế toán.
   3. Người dùng chỉ cần gõ số lượng cần mua vào cột **"Số lượng cần mua"** (những món không mua để 0). Có thể nhập thêm ghi chú / đối tượng sử dụng.
   4. Chọn **Tháng đưa vào sử dụng** (vd: `T1 2026`).
   5. Chọn **Loại nhu cầu** (Định biên / Phát sinh mới).
@@ -72,7 +71,7 @@ Hệ thống đã nâng cấp toàn diện Tab **"📝 Lập & Nhập liệu Cap
 7. **IT07. Phòng họp & thiết bị nghe nhìn**: Phòng họp thông minh (Lầu 2, Lầu 7, Lầu 8), Thiết bị họp trực tuyến lớn/vừa, Smart TV 85"/65"/55", Máy chiếu, Âm thanh...
 8. **IT08. Phòng server & nguồn điện dự phòng**: UPS chuyên dụng Server/Mạng, Tủ Rack 42U/12U/9U/6U, Sàn nâng kỹ thuật, Máy hút ẩm...
 9. **IT09. Phần mềm hệ thống & văn phòng**: Windows Server, SQL Enterprise/Std, Microsoft 365 (Basic, Std, E3, E5), Power BI Pro, Kaspersky, Anydesk, SSL...
-10. **IT10. Phần mềm kỹ thuật – thiết kế (DDC)**: Tekla Structures, Tekla Model Sharing, Trimble Connect, AutoCAD, Revit, Navisworks, SketchUp, SAP2000, ETABS, IDEA StatiCa, BIM, EnjiCAD, ZWCAD, Primavera P6...
+10. **IT10. Phần mềm kỹ thuật – thiết kế**: Tekla Structures, Tekla Model Sharing, Trimble Connect, AutoCAD, Revit, Navisworks, SketchUp, SAP2000, ETABS, IDEA StatiCa, BIM, EnjiCAD, ZWCAD, Primavera P6...
 11. **IT11. Phần mềm quản trị doanh nghiệp**: Dự án ERP, Hệ thống Văn phòng số E-Office / BPM...
 12. **IT12. Dịch vụ CNTT, Cloud & đường truyền**: Dịch vụ Cloud Viettel (ERP/E-Office), Cloud Wasabi (Backup), License VMware, Leased-line...
 13. **IT13. Linh kiện, vật tư & ngoại vi**: Nâng cấp RAM, SSD/HDD, Card VGA rời, Nguồn PC, Webcam, Chuột phím, USB...
