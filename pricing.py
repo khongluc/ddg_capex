@@ -144,7 +144,7 @@ def match_quotes(quotes: pd.DataFrame, master: Dict[str, Any]) -> Tuple[List[Dic
 
 
 def line_impact(changes: List[Dict[str, Any]], lines_by_site: Dict[str, List[Dict[str, Any]]],
-                editable_sites: set, include_manual: bool = False) -> pd.DataFrame:
+                editable_sites: set, include_manual: bool = False, locked_depts: Dict[str, set] = None) -> pd.DataFrame:
     """Các dòng ngân sách chịu ảnh hưởng: mỗi dòng 1 hàng, cột action = 'đổi' / lý do giữ nguyên."""
     ch = {c["code"]: c for c in changes if c["new_price"] != c["old_price"]}
     rows = []
@@ -157,6 +157,8 @@ def line_impact(changes: List[Dict[str, Any]], lines_by_site: Dict[str, List[Dic
             manual = abs(price - c["old_price"]) > 0.5
             if site not in editable_sites:
                 action = "Giữ: site đã nộp/duyệt"
+            elif _norm(l.get("dept_proposing")) in (locked_depts or {}).get(site, set()):
+                action = "Giữ: phòng ban đã nộp/duyệt"
             elif manual and not include_manual:
                 action = "Giữ: giá đã sửa tay"
             else:

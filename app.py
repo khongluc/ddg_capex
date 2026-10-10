@@ -44,6 +44,7 @@ from master_data import (
 import quota as qt
 import pricing
 import reports
+import workflow as wf
 import headcount_import as hi
 import unicodedata
 from capex_engine import (
@@ -632,7 +633,7 @@ def rows_for_site(df: pd.DataFrame, site_code: str, months, year_code: str):
     return rows
 
 
-def save_site(df: pd.DataFrame, site_code: str):
+def save_site(df: pd.DataFrame, site_code: str, allow_locked: bool = False):
     if current_user.is_dept_user:
         allowed = {dept_key(d) for d in current_user.allowed_depts(site_code)}
         mine = df[df["dept_proposing"].map(dept_key).isin(allowed)] if "dept_proposing" in df.columns else df.iloc[0:0]
@@ -642,6 +643,14 @@ def save_site(df: pd.DataFrame, site_code: str):
             stored = stored[~stored["dept_proposing"].map(dept_key).isin(allowed)] if "dept_proposing" in stored.columns else stored
         df = pd.concat([stored, mine], ignore_index=True)
     rows = rows_for_site(df, site_code, months, year_code)
+    if not allow_locked:
+        locked = {k for k, v in db.dept_statuses(budget_year, site_code).items() if v["status"] in db.DEPT_LOCKED_STATUSES}
+        if locked:
+            stored_rows = [{k: v for k, v in l.items() if k != "site_code"} for l in db.load_lines(budget_year, [site_code])]
+            rows, ignored = wf.keep_locked_rows(rows, stored_rows, locked)
+            if ignored:
+                st.session_state["flash_warn"] = ("Giữ nguyên dòng của phòng ban đã nộp/duyệt (IT site trả lại hoặc mở lại mới sửa được): "
+                                                  + ", ".join(sorted(ignored)))
     db.replace_lines(budget_year, site_code, rows, actor=current_user.email)
     st.session_state["editor_version"] = st.session_state.get("editor_version", 0) + 1
     return rows
@@ -725,6 +734,11 @@ def item_filter_widgets(df: pd.DataFrame, key_prefix: str, cols=None) -> pd.Seri
     return mask
 
 
+def dept_state(dept: str) -> dict:
+    """Trạng thái duyệt của 1 phòng ban ở site đang chọn (mặc định Đang lập)."""
+    return dept_status_map.get(dept_key(dept)) or {"status": db.STATUS_DRAFT, "note": None, "updated_by": None, "updated_at": None}
+
+
 def save_view(view_df: pd.DataFrame):
     """Lưu bảng đang xem (đã lọc theo phòng ban) vào site: giữ nguyên dòng của phòng ban khác và thứ tự dòng."""
     view = view_df.copy()
@@ -735,6 +749,118 @@ def save_view(view_df: pd.DataFrame):
     if "_order" in view.columns:
         view = view.assign(_order=view["_order"].fillna(float("inf"))).sort_values("_order", kind="stable")
     save_site(view.reset_index(drop=True), selected_site)
+
+
+def render_dept_workflow(dept: str, rows: pd.DataFrame):
+    """Nộp & duyệt 1 phòng ban: phòng ban nộp; IT site / Admin duyệt, trả lại (ghi chú), mở lại, ghi chú từng dòng."""
+    ds = dept_state(dept)
+    status = ds["status"]
+    site_open = site_status["status"] in db.EDITABLE_STATUSES
+    is_owner = current_user.is_dept_user and dept_key(dept) in {dept_key(d) for d in current_user.allowed_depts(selected_site)}
+    problems = wf.dept_problems(rows)
+    with st.container(border=True):
+        c1, c2 = st.columns([1.3, 2.7])
+        c1.markdown(f"**Duyệt phòng ban:** {db.DEPT_STATUS_LABELS.get(status, status)}")
+        if ds.get("updated_at"):
+            c1.caption(f"{ds.get('updated_by') or ''} · {ds['updated_at']}")
+        if ds.get("note"):
+            c2.info(f"Ghi chú: {ds['note']}")
+        if not site_open:
+            c2.caption("Site đã nộp / đã duyệt - không đổi trạng thái phòng ban.")
+            return
+        if status in db.DEPT_LOCKED_STATUSES:
+            c2.caption("🔒 Dòng của phòng ban đang khóa sửa." + ("" if can_review else " IT site trả lại hoặc mở lại nếu cần chỉnh."))
+        note = ""
+        if can_review and status != db.STATUS_APPROVED:
+            note = c2.text_input("Ghi chú duyệt / lý do trả lại", key=f"dept_note_{selected_site}_{dept_key(dept)}")
+        b = c2.columns(3)
+        if is_owner and status in db.EDITABLE_STATUSES:
+            if b[0].button("📨 Nộp phòng ban", type="primary", use_container_width=True, disabled=rows.empty):
+                if problems:
+                    st.error("Chưa nộp được: " + "; ".join(problems))
+                else:
+                    db.set_dept_status(budget_year, selected_site, dept, db.STATUS_SUBMITTED, current_user.email)
+                    st.session_state["flash"] = f"Đã nộp ngân sách {dept} - chờ IT site duyệt."
+                    st.rerun()
+        if can_review and status != db.STATUS_APPROVED:
+            if b[0].button("✅ Duyệt phòng ban", type="primary", use_container_width=True, disabled=rows.empty,
+                           help=None if status == db.STATUS_SUBMITTED else "Duyệt cả khi phòng chưa nộp (phòng không có tài khoản lập)"):
+                if problems:
+                    st.error("Chưa duyệt được: " + "; ".join(problems))
+                else:
+                    db.set_dept_status(budget_year, selected_site, dept, db.STATUS_APPROVED, current_user.email, note.strip())
+                    st.session_state["flash"] = f"Đã duyệt ngân sách {dept}."
+                    st.rerun()
+            if status == db.STATUS_SUBMITTED and b[1].button("↩️ Trả lại", use_container_width=True):
+                if not note.strip():
+                    st.error("Ghi lý do trả lại để phòng ban biết cần chỉnh gì.")
+                else:
+                    db.set_dept_status(budget_year, selected_site, dept, db.STATUS_RETURNED, current_user.email, note.strip())
+                    st.session_state["flash"] = f"Đã trả lại {dept}."
+                    st.rerun()
+        if can_review and status == db.STATUS_APPROVED:
+            if b[0].button("🔓 Mở lại để chỉnh sửa", use_container_width=True):
+                db.set_dept_status(budget_year, selected_site, dept, db.STATUS_DRAFT, current_user.email, "Mở lại")
+                st.rerun()
+        if can_review and status == db.STATUS_SUBMITTED and not rows.empty:
+            with st.expander("📝 Ghi chú duyệt từng dòng"):
+                blank = pd.Series("", index=rows.index)
+                view = pd.DataFrame({
+                    "item_code": rows["item_code"], "item_name": rows["item_name"], "quantity": rows["quantity"],
+                    "unit_price": rows["unit_price"], "total_budget": rows["total_budget"],
+                    "need_reason": rows["need_reason"] if "need_reason" in rows.columns else blank,
+                    "review_note": (rows["review_note"] if "review_note" in rows.columns else blank).fillna(""),
+                })
+                ed = st.data_editor(view, key=f"review_{budget_year}_{selected_site}_{dept_key(dept)}", hide_index=True,
+                                    use_container_width=True, disabled=[c for c in view.columns if c != "review_note"],
+                                    column_config={"item_code": "Mã hạng mục", "item_name": "Hạng mục", "quantity": "SL",
+                                                   "unit_price": st.column_config.NumberColumn("Đơn giá", format=MONEY_FMT),
+                                                   "total_budget": st.column_config.NumberColumn("Thành tiền", format=MONEY_FMT),
+                                                   "need_reason": "Căn cứ",
+                                                   "review_note": st.column_config.TextColumn("Ghi chú duyệt", width="large")})
+                if st.button("💾 Lưu ghi chú duyệt", key=f"review_save_{dept_key(dept)}"):
+                    notes = dict(zip(ed["item_code"], ed["review_note"].fillna("").astype(str).str.strip()))
+                    upd = df_site.copy()
+                    if "review_note" not in upd.columns:
+                        upd["review_note"] = ""
+                    m = upd["item_code"].isin(notes)
+                    upd.loc[m, "review_note"] = upd.loc[m, "item_code"].map(notes)
+                    save_site(upd, selected_site, allow_locked=True)
+                    st.session_state["flash"] = f"Đã lưu ghi chú duyệt cho {sum(1 for v in notes.values() if v)} dòng của {dept}."
+                    st.rerun()
+
+
+def render_dept_overview():
+    """Tiến độ nộp & duyệt các phòng ban của site; IT site duyệt nhiều phòng cùng lúc."""
+    ov = wf.dept_overview(df_site, dept_status_map)
+    if ov.empty:
+        return
+    with st.container(border=True):
+        cnt = ov["status"].value_counts()
+        st.markdown(f"**Tiến độ phòng ban:** ✅ {cnt.get(db.STATUS_APPROVED, 0)} đã duyệt · 📨 {cnt.get(db.STATUS_SUBMITTED, 0)} chờ duyệt · "
+                    f"↩️ {cnt.get(db.STATUS_RETURNED, 0)} trả lại · 📝 {cnt.get(db.STATUS_DRAFT, 0)} đang lập / {len(ov)} phòng có ngân sách")
+        with st.expander("Xem bảng tiến độ" + (" và duyệt nhiều phòng" if can_review else ""), expanded=False):
+            st.dataframe(ov.drop(columns=["status"]), use_container_width=True, hide_index=True,
+                         column_config={"Tổng ngân sách": st.column_config.NumberColumn(format=MONEY_FMT)})
+            if can_review:
+                todo = ov.loc[ov["status"] != db.STATUS_APPROVED, "Phòng ban"].tolist()
+                pick = st.multiselect("Chọn phòng ban để duyệt", todo,
+                                      default=ov.loc[ov["status"] == db.STATUS_SUBMITTED, "Phòng ban"].tolist(),
+                                      key=f"bulk_pick_{budget_year}_{selected_site}",
+                                      help="Mặc định chọn các phòng đã nộp. Phòng không có tài khoản lập có thể duyệt trực tiếp.")
+                if st.button(f"✅ Duyệt {len(pick)} phòng ban đã chọn", disabled=not pick, key="bulk_approve"):
+                    ok, bad = [], []
+                    for d in pick:
+                        probs = wf.dept_problems(df_site[df_site["dept_proposing"].map(dept_key) == dept_key(d)])
+                        if probs:
+                            bad.append(f"{d}: {'; '.join(probs)}")
+                        else:
+                            db.set_dept_status(budget_year, selected_site, d, db.STATUS_APPROVED, current_user.email, "Duyệt hàng loạt")
+                            ok.append(d)
+                    st.session_state["flash"] = f"Đã duyệt {len(ok)} phòng ban."
+                    if bad:
+                        st.session_state["flash_warn"] = "Chưa duyệt được: " + " | ".join(bad)
+                    st.rerun()
 
 
 def render_price_update():
@@ -772,12 +898,14 @@ def render_price_update():
         all_codes = [s["code"] for s in SITES]
         statuses = db.all_statuses(budget_year)
         editable = {sc for sc in all_codes if statuses.get(sc, {}).get("status", db.STATUS_DRAFT) in db.EDITABLE_STATUSES}
+        locked_depts = {sc: {k for k, v in db.dept_statuses(budget_year, sc).items() if v["status"] in db.DEPT_LOCKED_STATUSES}
+                        for sc in editable}
         lines_by_site = {}
         for l in db.load_lines(budget_year, all_codes):
             lines_by_site.setdefault(l.pop("site_code"), []).append(l)
         include_manual = st.checkbox("Đổi cả dòng người lập đã sửa giá tay", value=False, key="quote_manual",
                                      help="Mặc định chỉ đổi dòng đang dùng đúng giá danh mục cũ")
-        imp = pricing.line_impact(changes, lines_by_site, editable, include_manual)
+        imp = pricing.line_impact(changes, lines_by_site, editable, include_manual, locked_depts)
         if imp.empty:
             st.caption(f"Không có dòng ngân sách năm {budget_year} nào dùng các hạng mục này - chỉ cập nhật danh mục.")
         else:
@@ -928,6 +1056,19 @@ with st.sidebar:
                                  help="Lọc bảng & báo cáo theo phòng ban đề xuất. Dòng thêm mới được gán cho phòng ban này.")
     dept_prop = selected_dept if selected_dept != ALL_DEPTS else "Tất cả phòng ban"
 
+    # Nộp & duyệt theo phòng ban
+    site_can_edit = can_edit
+    dept_status_map = db.dept_statuses(budget_year, selected_site) if selected_site != ALL_SITES else {}
+    can_review = (selected_site != ALL_SITES and site_status["status"] in db.EDITABLE_STATUSES
+                  and (current_user.is_admin or (current_user.role == db.ROLE_SITE_IT and selected_site in current_user.sites)))
+    if selected_dept != ALL_DEPTS and selected_site != ALL_SITES:
+        _ds = dept_state(selected_dept)
+        st.markdown(f"**Phòng ban:** {db.DEPT_STATUS_LABELS.get(_ds['status'], _ds['status'])}")
+        if _ds.get("note"):
+            st.caption(f"Ghi chú duyệt: {_ds['note']}")
+        if _ds["status"] in db.DEPT_LOCKED_STATUSES:
+            can_edit = False  # phòng đã nộp / đã duyệt: khóa sửa
+
     st.markdown("---")
     st.markdown("#### 🏢 Thông tin Đề xuất")
     meta = st.session_state["metadata"]
@@ -945,11 +1086,11 @@ with st.sidebar:
     st.markdown("#### 🔄 Hành động Nhanh")
     if st.button("🔄 Làm mới", use_container_width=True):
         st.rerun()
-    if can_edit and not current_user.is_dept_user:
+    if site_can_edit and not current_user.is_dept_user:
         with st.popover("🗑️ Xóa toàn bộ dòng của site", use_container_width=True):
             st.warning(f"Xóa toàn bộ hạng mục năm {budget_year} của {site_label(selected_site)}?")
             if st.button("Xác nhận xóa", type="primary"):
-                db.replace_lines(budget_year, selected_site, [], actor=current_user.email)
+                save_site(pd.DataFrame(), selected_site)  # dòng của phòng ban đã nộp/duyệt được giữ lại
                 st.session_state["editor_version"] = st.session_state.get("editor_version", 0) + 1
                 st.rerun()
 
@@ -1030,6 +1171,8 @@ st.markdown(f"""
 
 if "flash" in st.session_state:
     st.success(st.session_state.pop("flash"))
+if "flash_warn" in st.session_state:
+    st.warning(st.session_state.pop("flash_warn"))
 
 # THANH TRẠNG THÁI NỘP / DUYỆT NGÂN SÁCH SITE
 if selected_site != ALL_SITES:
@@ -1059,10 +1202,14 @@ if selected_site != ALL_SITES:
 
     invalid_rows = int((~df_site["pct_valid"].fillna(False).astype(bool)).sum()) if "pct_valid" in df_site.columns else 0
     if current_user.is_dept_user and status in db.EDITABLE_STATUSES:
-        st.caption("ℹ️ Lập xong, vui lòng báo IT site hoặc quản trị viên nộp duyệt ngân sách của site.")
-    if status in db.EDITABLE_STATUSES and can_edit and not current_user.is_dept_user:
-        if st.button("📨 Nộp ngân sách site để duyệt", use_container_width=True, disabled=df_site.empty,
-                     help="Nộp toàn bộ ngân sách của site (tất cả phòng ban)"):
+        st.caption("ℹ️ Lập xong, bấm **📨 Nộp phòng ban** ở tab Lập & Nhập liệu để IT site duyệt.")
+    site_pending = wf.pending_depts(wf.dept_overview(df_site, dept_status_map)) if selected_site != ALL_SITES else []
+    if status in db.EDITABLE_STATUSES and site_can_edit and not current_user.is_dept_user:
+        if site_pending:
+            st.caption(f"⏳ Còn {len(site_pending)} phòng ban chưa duyệt - duyệt đủ mới nộp được site "
+                       "(xem bảng Tiến độ phòng ban ở tab Lập & Nhập liệu, chọn Tất cả phòng ban).")
+        if st.button("📨 Nộp ngân sách site để duyệt", use_container_width=True, disabled=df_site.empty or bool(site_pending),
+                     help="Nộp toàn bộ ngân sách của site (tất cả phòng ban đã được IT site duyệt)"):
             missing_reason = 0
             if "need_type" in df_site.columns:
                 reason = df_site["need_reason"] if "need_reason" in df_site.columns else pd.Series("", index=df_site.index)
@@ -1599,7 +1746,10 @@ with tab_input:
     if selected_site == ALL_SITES:
         st.info("🌐 Đang xem tổng hợp nhiều site (chỉ đọc). Chọn một site cụ thể ở thanh bên trái để nhập liệu.")
     elif not can_edit:
-        st.info("🔒 Bạn không có quyền chỉnh sửa ngân sách site này ở trạng thái hiện tại (chỉ xem).")
+        if site_can_edit and selected_dept != ALL_DEPTS and dept_state(selected_dept)["status"] in db.DEPT_LOCKED_STATUSES:
+            st.info(f"🔒 {selected_dept} đã nộp / đã duyệt - chỉ xem. IT site trả lại hoặc mở lại phòng ban nếu cần chỉnh sửa.")
+        else:
+            st.info("🔒 Bạn không có quyền chỉnh sửa ngân sách site này ở trạng thái hiện tại (chỉ xem).")
 
     # 1. Bộ chọn Phòng ban & Thẻ thông tin tiến độ
     col_d1, col_d2 = st.columns([1.6, 2.4])
@@ -1650,6 +1800,13 @@ with tab_input:
         </div>
         """, unsafe_allow_html=True)
 
+    # Nộp & duyệt theo phòng ban
+    if selected_site != ALL_SITES:
+        if selected_dept == ALL_DEPTS:
+            render_dept_overview()
+        else:
+            render_dept_workflow(selected_dept, dept_rows_now)
+
     # Bảng chi tiết của phòng ban đang chọn (đặt ngay dưới ô chọn phòng ban)
     grid_title = f"📋 Bảng Ngân sách Hiện hành – {active_dept}" if selected_dept != ALL_DEPTS else f"📋 Bảng Ngân sách Hiện hành – {site_label(selected_site)} (Tất cả phòng ban)"
     st.markdown(f"#### {grid_title}")
@@ -1695,7 +1852,7 @@ with tab_input:
 
         # Setup columns for interactive editor
         core_cols = [
-            "stt", "need_type", "need_reason", "it_group", "catalog_code", "item_name", "detail_work", "unit", "quantity", "unit_price",
+            "stt", "review_note", "need_type", "need_reason", "it_group", "catalog_code", "item_name", "detail_work", "unit", "quantity", "unit_price",
             "total_budget", "invest_type", "item_kind_label", "capex_type", "accounting_class", "total_pct",
             "entity", "dept_using", "location", "asset_cat1", "asset_cat2", "cost_lv1", "cost_lv2",
             "handover_date", "project_code", "item_code", "budget_code"
@@ -1748,6 +1905,7 @@ with tab_input:
                     "item_seq": None,
                     "item_code_base": None,
                     "handover_auto": None,
+                    "review_note": st.column_config.TextColumn("Ghi chú duyệt", disabled=True, help="Ghi chú của IT site khi duyệt / trả lại"),
                     "handover_date": st.column_config.TextColumn("Ngày bàn giao", help="YYYY-MM-DD. Để trống = cuối tháng giải ngân cuối"),
                     **{c: st.column_config.NumberColumn(format=MONEY_FMT, disabled=True) for c in df_curr.columns if c.startswith("val_") or c == "total_val"},
                 }
@@ -1764,7 +1922,9 @@ with tab_input:
             save_view(pd.concat([df_curr[~grid_mask], edited_df], ignore_index=True) if grid_filtered else edited_df)
             st.rerun()
 
-    if can_edit:
+    if can_edit and dept_state(active_dept)["status"] in db.DEPT_LOCKED_STATUSES:
+        st.info(f"🔒 {active_dept} đã nộp / đã duyệt - không thêm hạng mục. IT site trả lại hoặc mở lại phòng ban nếu cần bổ sung.")
+    elif can_edit:
         st.markdown(f"#### ➕ Thêm hạng mục cho {active_dept}")
         # Form nhập liệu thuận tiện: 2 phương thức nhập
         in_mode_tab1, in_mode_tab2 = st.tabs([

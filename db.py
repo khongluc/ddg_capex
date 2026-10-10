@@ -49,6 +49,14 @@ STATUS_LABELS = {
     STATUS_RETURNED: "↩️ Trả lại - cần chỉnh sửa",
 }
 EDITABLE_STATUSES = (STATUS_DRAFT, STATUS_RETURNED)
+# Phòng ban đã nộp / đã duyệt: khóa sửa dòng của phòng (IT site trả lại hoặc mở lại mới sửa được)
+DEPT_LOCKED_STATUSES = (STATUS_SUBMITTED, STATUS_APPROVED)
+DEPT_STATUS_LABELS = {
+    STATUS_DRAFT: "📝 Đang lập",
+    STATUS_SUBMITTED: "📨 Đã nộp - chờ IT site duyệt",
+    STATUS_APPROVED: "✅ Đã duyệt",
+    STATUS_RETURNED: "↩️ Trả lại - cần chỉnh sửa",
+}
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -88,6 +96,16 @@ CREATE TABLE IF NOT EXISTS site_status (
     updated_by  TEXT,
     updated_at  TEXT,
     PRIMARY KEY (year, site_code)
+);
+CREATE TABLE IF NOT EXISTS dept_status (
+    year        TEXT NOT NULL,
+    site_code   TEXT NOT NULL,
+    dept        TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'draft',
+    note        TEXT,
+    updated_by  TEXT,
+    updated_at  TEXT,
+    PRIMARY KEY (year, site_code, dept)
 );
 CREATE TABLE IF NOT EXISTS dept_headcount (
     year        TEXT NOT NULL,
@@ -136,6 +154,7 @@ TABLE_COLUMNS = {
     "users": ["email", "name", "role", "provider", "created_at", "last_login"],
     "budget_lines": ["id", "year", "site_code", "seq", "data", "updated_by", "updated_at"],
     "site_status": ["year", "site_code", "status", "note", "updated_by", "updated_at"],
+    "dept_status": ["year", "site_code", "dept", "status", "note", "updated_by", "updated_at"],
     "dept_headcount": ["year", "site_code", "dept", "kit_code", "hc_current", "hc_plan", "hc_months", "kit_items", "updated_by", "updated_at"],
     "dept_inventory": ["year", "site_code", "dept", "catalog_code", "current_qty", "replace_qty", "quota_override", "note",
                        "updated_by", "updated_at"],
@@ -460,6 +479,37 @@ def set_status(year: str, site_code: str, status: str, actor: str, note: str = "
             "updated_by = excluded.updated_by, updated_at = excluded.updated_at",
             (year, site_code, status, note, actor, _now()))
     log(actor, "set_status", f"{year}/{site_code} -> {status} {note}".strip())
+
+
+def _dept_key(name) -> str:
+    return " ".join(str(name or "").lower().split())
+
+
+def dept_statuses(year: str, site_code: str) -> Dict[str, Dict[str, Any]]:
+    """Trạng thái duyệt của các phòng ban 1 site, khóa = tên phòng chuẩn hóa (không phân biệt hoa/thường)."""
+    init_db()
+    with connect() as conn:
+        rows = conn.execute("SELECT * FROM dept_status WHERE year = ? AND site_code = ?", (year, site_code)).fetchall()
+    return {_dept_key(r["dept"]): dict(r) for r in rows}
+
+
+def get_dept_status(year: str, site_code: str, dept: str) -> Dict[str, Any]:
+    return dept_statuses(year, site_code).get(_dept_key(dept)) or {
+        "year": year, "site_code": site_code, "dept": dept, "status": STATUS_DRAFT, "note": None,
+        "updated_by": None, "updated_at": None}
+
+
+def set_dept_status(year: str, site_code: str, dept: str, status: str, actor: str, note: str = ""):
+    init_db()
+    existing = dept_statuses(year, site_code).get(_dept_key(dept))
+    name = existing["dept"] if existing else str(dept).strip()  # giữ đúng tên đã lưu (khóa chính)
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO dept_status(year, site_code, dept, status, note, updated_by, updated_at) VALUES (?,?,?,?,?,?,?) "
+            "ON CONFLICT(year, site_code, dept) DO UPDATE SET status = excluded.status, note = excluded.note, "
+            "updated_by = excluded.updated_by, updated_at = excluded.updated_at",
+            (year, site_code, name, status, note, actor, _now()))
+    log(actor, "set_dept_status", f"{year}/{site_code}/{name} -> {status} {note}".strip())
 
 
 # ---------------------------------------------------------------------
