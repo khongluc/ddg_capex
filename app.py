@@ -1186,21 +1186,19 @@ if selected_site != ALL_SITES:
         db.STATUS_RETURNED: "status-ribbon-returned",
     }.get(status, "status-ribbon-draft")
 
-    st.markdown(f"""
-    <div class="status-ribbon-card {ribbon_cls}">
-        <div>
-            <div style="font-size:13px;font-weight:700;color:#0F2C59;">
-                Trạng thái ngân sách {budget_year} – {site_label(selected_site)}:
-                <span style="color:#1D4ED8;margin-left:4px;">{db.STATUS_LABELS.get(status, status)}</span>
-            </div>
-            <div style="font-size:12px;color:#64748B;margin-top:2px;">
-                {("Cập nhật bởi " + str(site_status['updated_by']) + " lúc " + str(site_status['updated_at'])) if site_status.get("updated_at") else "Chưa ghi nhận cập nhật"}
-                {("  |  🔒 Đang khóa chỉnh sửa" if not can_edit and status not in db.EDITABLE_STATUSES and not current_user.is_admin else "")}
-                {("  |  👁️ Tài khoản chỉ có quyền xem" if current_user.role == db.ROLE_VIEWER else "")}
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # HTML 1 dòng, không thụt lề: dòng trắng / thụt lề trong st.markdown làm phần còn lại hiện thành khung code
+    _upd = (f"Cập nhật bởi {_html.escape(str(site_status['updated_by']))} lúc {_html.escape(str(site_status['updated_at']))}"
+            if site_status.get("updated_at") else "Chưa ghi nhận cập nhật")
+    if not site_can_edit and status not in db.EDITABLE_STATUSES and not current_user.is_admin:
+        _upd += "  |  🔒 Đang khóa chỉnh sửa"
+    if current_user.role == db.ROLE_VIEWER:
+        _upd += "  |  👁️ Tài khoản chỉ có quyền xem"
+    st.markdown(
+        f'<div class="status-ribbon-card {ribbon_cls}"><div>'
+        f'<div style="font-size:13px;font-weight:700;color:#0F2C59;">Trạng thái ngân sách {budget_year} – {_html.escape(site_label(selected_site))}:'
+        f'<span style="color:#1D4ED8;margin-left:4px;">{db.STATUS_LABELS.get(status, status)}</span></div>'
+        f'<div style="font-size:12px;color:#64748B;margin-top:2px;">{_upd}</div>'
+        f'</div></div>', unsafe_allow_html=True)
 
     invalid_rows = int((~df_site["pct_valid"].fillna(False).astype(bool)).sum()) if "pct_valid" in df_site.columns else 0
     if current_user.is_dept_user and status in db.EDITABLE_STATUSES:
