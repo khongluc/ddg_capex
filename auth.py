@@ -93,7 +93,7 @@ def _render_login_page(providers: List[str], dev_login: bool):
         <p style="color:#64748B;">Hệ thống nội bộ – chỉ dành cho người được cấp quyền.</p>
     </div>
     """, unsafe_allow_html=True)
-    _, mid, _ = st.columns([1, 1.2, 1])
+    _, mid, _ = st.columns([1, 1.6, 1])
     with mid:
         for p in providers:
             st.button(PROVIDERS[p], key=f"login_{p}", use_container_width=True,

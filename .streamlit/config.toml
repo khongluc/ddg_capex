@@ -5,3 +5,12 @@ showErrorDetails = false
 
 [browser]
 gatherUsageStats = false
+
+[theme]
+# Giao diện được thiết kế cho nền sáng: cố định để máy đặt chế độ tối không bị chữ trắng trên nền sáng
+base = "light"
+primaryColor = "#1E40AF"
+backgroundColor = "#F8FAFC"
+secondaryBackgroundColor = "#EEF2F6"
+textColor = "#0F172A"
+font = "sans serif"

@@ -65,15 +65,21 @@ st.set_page_config(
 # Custom CSS for executive corporate look
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
     /* Ẩn thanh công cụ của Streamlit / Streamlit Cloud (Fork, GitHub, menu ⋮, Deploy) - không gợi ý mã nguồn */
     [data-testid="stToolbar"], [data-testid="stToolbarActions"], [data-testid="stMainMenu"],
     [data-testid="stAppDeployButton"], .stDeployButton, #MainMenu,
     [data-testid="stDecoration"] { display: none !important; visibility: hidden !important; }
     a[href*="github.com"] { display: none !important; }
 
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    /* Bỏ dải trắng phía trên trang, luôn hiện nút thu / mở thanh bên */
+    [data-testid="stHeader"] { background: transparent !important; }
+    [data-testid="stMainBlockContainer"], .block-container { padding-top: 2.4rem !important; padding-bottom: 3rem !important; }
+    [data-testid="stSidebarCollapseButton"] { display: flex !important; }
+    [data-testid="stSidebarUserContent"] { padding-top: 0.5rem !important; }
 
-    html, body, [class*="css"], [data-testid="stAppViewContainer"] {
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebar"] {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
         -webkit-font-smoothing: antialiased;
     }
@@ -170,10 +176,10 @@ st.markdown("""
     /* Main Executive Header Banner */
     .main-header {
         background: linear-gradient(135deg, #0A192F 0%, #0F2C59 55%, #173B75 100%);
-        padding: 22px 28px;
+        padding: 16px 22px;
         border-radius: 14px;
         color: white;
-        margin-bottom: 20px;
+        margin-bottom: 14px;
         border: 1px solid rgba(255, 255, 255, 0.12);
         box-shadow: 0 10px 25px -5px rgba(15, 44, 89, 0.22), 0 8px 10px -6px rgba(15, 44, 89, 0.1);
         position: relative;
@@ -207,8 +213,8 @@ st.markdown("""
     }
 
     .brand-icon-box {
-        width: 44px;
-        height: 44px;
+        width: 40px;
+        height: 40px;
         border-radius: 10px;
         background: rgba(255, 255, 255, 0.12);
         backdrop-filter: blur(8px);
@@ -221,7 +227,7 @@ st.markdown("""
 
     .header-title-text h1 {
         color: #FFFFFF !important;
-        font-size: 22px !important;
+        font-size: 20px !important;
         font-weight: 800 !important;
         letter-spacing: -0.01em;
         margin: 0 !important;
@@ -242,8 +248,8 @@ st.markdown("""
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
-        margin-top: 14px;
-        padding-top: 12px;
+        margin-top: 10px;
+        padding-top: 10px;
         border-top: 1px solid rgba(255, 255, 255, 0.12);
     }
 
@@ -286,7 +292,8 @@ st.markdown("""
         background: #FFFFFF;
         border: 1px solid #E2E8F0;
         border-radius: 14px;
-        padding: 18px 20px;
+        padding: 16px 18px;
+        min-height: 150px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
@@ -302,7 +309,8 @@ st.markdown("""
     .kpi-card-header {
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
+        gap: 8px;
         margin-bottom: 10px;
     }
 
@@ -311,8 +319,10 @@ st.markdown("""
         font-size: 11.5px;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.04em;
+        line-height: 1.35;
         margin: 0;
+        min-width: 0;
     }
 
     .kpi-icon-badge {
@@ -353,6 +363,9 @@ st.markdown("""
 
     .kpi-pill {
         display: inline-block;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        line-height: 1.4;
         padding: 2px 8px;
         border-radius: 6px;
         font-size: 11.5px;
@@ -382,11 +395,13 @@ st.markdown("""
         border-bottom: none !important;
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
         margin-bottom: 16px !important;
+        flex-wrap: wrap !important;
     }
+    .stTabs [data-baseweb="tab-highlight"] { display: none !important; }
 
     .stTabs [data-baseweb="tab"] {
-        height: 42px !important;
-        padding: 0 16px !important;
+        height: 38px !important;
+        padding: 0 14px !important;
         font-size: 13.5px !important;
         font-weight: 600 !important;
         color: #475569 !important;
@@ -705,8 +720,6 @@ if "metadata" not in st.session_state:
 
 # SIDEBAR CONTROLS
 with st.sidebar:
-    st.image("https://daidung.com/wp-content/uploads/2023/07/logo-dai-dung.png", width=180)
-
     # Thông tin người dùng
     user_initials = "".join([p[0].upper() for p in (current_user.name or "U").split() if p])[:2] or "U"
     role_key = current_user.role
@@ -849,10 +862,10 @@ st.markdown(f"""
 <div class="main-header">
     <div class="header-top-row">
         <div class="header-brand-title">
-            <div class="brand-icon-box">🏢</div>
+            <div class="brand-icon-box">💼</div>
             <div class="header-title-text">
-                <div class="sub-corp">TẬP ĐOÀN CƠ KHÍ XÂY DỰNG ĐẠI DŨNG (DDC)</div>
-                <h1>HỆ THỐNG QUẢN LÝ & TÍNH TOÁN CAPEX {budget_year}</h1>
+                <div class="sub-corp">Ngân sách đầu tư CNTT · Năm tài chính T10/{int(budget_year) - 1} – T9/{budget_year}</div>
+                <h1>HỆ THỐNG LẬP NGÂN SÁCH CAPEX {budget_year}</h1>
             </div>
         </div>
         <div>
@@ -1146,6 +1159,7 @@ with tab_dash:
         top_cat_val = df_curr.groupby("asset_cat1")["total_budget"].sum().max() if "asset_cat1" in df_curr.columns and not df_curr.empty else 0
 
         # KPI Row
+        entity_list = ", ".join(sorted(df_curr["entity"].dropna().astype(str).unique())) if "entity" in df_curr.columns else ""
         k1, k2, k3, k4 = st.columns(4)
         with k1:
             st.markdown(f"""
@@ -1167,7 +1181,7 @@ with tab_dash:
                     <span class="kpi-icon-badge kpi-icon-emerald">📦</span>
                 </div>
                 <div class="kpi-value">{total_items} <span class="kpi-unit">mục</span></div>
-                <div class="kpi-sub"><span class="kpi-pill kpi-pill-emerald">Tổng số lượng: {int(total_qty):,} cái/bộ</span></div>
+                <div class="kpi-sub"><span class="kpi-pill kpi-pill-emerald">Tổng số lượng: {fmt_num(total_qty)} cái/bộ</span></div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -1179,7 +1193,7 @@ with tab_dash:
                     <span class="kpi-title">Nhóm Tỷ trọng Cao Nhất</span>
                     <span class="kpi-icon-badge kpi-icon-amber">📊</span>
                 </div>
-                <div class="kpi-value" style="font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{_html.escape(str(top_cat))}">{_html.escape(str(top_cat))}</div>
+                <div class="kpi-value" style="font-size:16px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;" title="{_html.escape(str(top_cat))}">{_html.escape(str(top_cat))}</div>
                 <div class="kpi-sub"><span class="kpi-pill kpi-pill-amber">{fmt_num(top_cat_val / 1e9, 2)} tỷ VNĐ ({fmt_num(pct_top, 1)}%)</span></div>
             </div>
             """, unsafe_allow_html=True)
@@ -1192,7 +1206,7 @@ with tab_dash:
                     <span class="kpi-icon-badge kpi-icon-purple">🏢</span>
                 </div>
                 <div class="kpi-value">{num_entities} <span class="kpi-unit">đơn vị</span></div>
-                <div class="kpi-sub"><span class="kpi-pill kpi-pill-purple">DDC, DD2, DD3, DMT, DNS, DVT...</span></div>
+                <div class="kpi-sub"><span class="kpi-pill kpi-pill-purple" title="{_html.escape(entity_list)}">{_html.escape(entity_list or 'Chưa có')}</span></div>
             </div>
             """, unsafe_allow_html=True)
 
