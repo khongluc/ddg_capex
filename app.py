@@ -1776,7 +1776,6 @@ with tab_input:
                             target_ent = ent_names[0] if ent_names else "DDC"
                             target_div = division_of(active_dept, master)
                             target_loc = SITE_NAME.get(selected_site, selected_site)
-                            d_now = datetime.date.today().strftime("%Y-%m-%d")
 
                             new_items_list = []
                             for _, r_it in selected_batch.iterrows():
@@ -1794,11 +1793,11 @@ with tab_input:
                                     "location": target_loc,
                                     "item_name": it_name,
                                     "detail_work": note_txt,
-                                    "supplier": "Thạch Anh",
+                                    "supplier": "",  # chưa chọn nhà cung cấp khi lập ngân sách
                                     "quantity": q,
                                     "unit_price": p,
-                                    "contract_date": d_now,
-                                    "completion_date": d_now,
+                                    "contract_date": "",  # chưa ký hợp đồng: người lập điền khi có
+                                    "completion_date": "",
                                     "handover_date": "",  # trống -> tự lấy cuối tháng giải ngân cuối
                                     "need_type": b_need_type,
                                     "need_reason": b_reason if b_need_type == qt.NEED_NEW else "",
@@ -1888,7 +1887,7 @@ with tab_input:
                                            index=2 if cat_item and item_scope(cat_item, master) == SCOPE_SHARED else 1)
                     f_need_reason = st.text_input("Lý do phát sinh / căn cứ", value="",
                                                   placeholder="VD: Dự án mới X cần thêm 3 license Tekla; tuyển mới 2 kỹ sư...")
-                    f_supplier = st.text_input("Nhà cung cấp (Nếu có)", value="Thạch Anh")
+                    f_supplier = st.text_input("Nhà cung cấp (Nếu có)", value="")
 
                 with f_col3:
                     st.markdown("##### 3. Số lượng & Đơn giá")
