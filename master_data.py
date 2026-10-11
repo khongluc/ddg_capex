@@ -274,6 +274,13 @@ def _merge_catalog_seed(data: Dict[str, Any]) -> bool:
     applied = int(data.get("catalog_seed") or 0)
     if file_seed <= applied:
         return False
+    # Nhóm CNTT mới trong file (vd. IT16 AI) -> thêm vào danh mục CSDL (không sửa nhóm admin đã chỉnh)
+    groups = data.setdefault("it_groups", [])
+    have_groups = {g.get("code") for g in groups if isinstance(g, dict)}
+    for g in file_data.get("it_groups", []):
+        if isinstance(g, dict) and g.get("code") not in have_groups:
+            groups.append(dict(g))
+            have_groups.add(g.get("code"))
     items = data.setdefault("standard_items", [])
     by_code = {it.get("code"): it for it in items}
     names = {str(it.get("name", "")).strip().lower() for it in items}

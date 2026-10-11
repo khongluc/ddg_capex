@@ -3447,6 +3447,195 @@
       "price": 0,
       "aliases": [],
       "note": "Chưa có giá - cần báo giá"
+    },
+    {
+      "code": "IT16-001",
+      "group": "IT16",
+      "name": "Claude Team – Standard seat (Anthropic)",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 6360000,
+      "aliases": [
+        "Claude Team",
+        "Claude Team Standard",
+        "Claude"
+      ],
+      "vendor": "Anthropic",
+      "note": "US$20/user/tháng trả năm (US$25 trả tháng); tối thiểu 2 seat; gồm Claude Code, SSO, quản trị tập trung. giá niêm yết tra 12/10/2026, tỷ giá 26.500 VNĐ/USD",
+      "seed": 4
+    },
+    {
+      "code": "IT16-002",
+      "group": "IT16",
+      "name": "Claude Team – Premium seat (Anthropic)",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 31800000,
+      "aliases": [
+        "Claude Team Premium"
+      ],
+      "vendor": "Anthropic",
+      "note": "US$100/user/tháng trả năm (US$125 trả tháng); mức sử dụng gấp 5 lần Standard - cho người dùng nhiều / lập trình. giá niêm yết tra 12/10/2026, tỷ giá 26.500 VNĐ/USD",
+      "seed": 4
+    },
+    {
+      "code": "IT16-003",
+      "group": "IT16",
+      "name": "Claude Enterprise – seat (Anthropic)",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 6360000,
+      "aliases": [
+        "Claude Enterprise"
+      ],
+      "vendor": "Anthropic",
+      "note": "US$20/seat/tháng trả năm, CHƯA gồm phí sử dụng tính theo giá API - lập thêm hạng mục 'Ngân sách sử dụng Claude API'; gồm SCIM, nhật ký kiểm toán, lưu trữ dữ liệu tùy chỉnh. giá niêm yết tra 12/10/2026, tỷ giá 26.500 VNĐ/USD",
+      "seed": 4
+    },
+    {
+      "code": "IT16-004",
+      "group": "IT16",
+      "name": "Claude Pro – cá nhân (Anthropic)",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 5300000,
+      "aliases": [
+        "Claude Pro"
+      ],
+      "vendor": "Anthropic",
+      "note": "US$200/năm (US$20 trả tháng); gói cá nhân, không có quản trị tập trung - ưu tiên gói Team cho doanh nghiệp. giá niêm yết tra 12/10/2026, tỷ giá 26.500 VNĐ/USD",
+      "seed": 4
+    },
+    {
+      "code": "IT16-005",
+      "group": "IT16",
+      "name": "Claude Max 5x – cá nhân (Anthropic)",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 31800000,
+      "aliases": [
+        "Claude Max"
+      ],
+      "vendor": "Anthropic",
+      "note": "Từ US$100/user/tháng; gấp 5 lần mức dùng Pro, kèm tín dụng API. giá niêm yết tra 12/10/2026, tỷ giá 26.500 VNĐ/USD",
+      "seed": 4
+    },
+    {
+      "code": "IT16-006",
+      "group": "IT16",
+      "name": "Ngân sách sử dụng Claude API (Anthropic, gói 1.000 USD)",
+      "unit": "Gói/năm",
+      "kind": "service",
+      "price": 26500000,
+      "aliases": [
+        "Claude API",
+        "Anthropic API"
+      ],
+      "vendor": "Anthropic",
+      "note": "Tính theo token: Opus 5.5 US$4/US$20, Sonnet 5.5 US$2/US$10, Haiku 5.5 US$0,10/US$0,50 mỗi triệu token vào/ra; dùng cho tích hợp, tự động hóa, Claude Enterprise. giá niêm yết tra 12/10/2026, tỷ giá 26.500 VNĐ/USD",
+      "seed": 4
+    },
+    {
+      "code": "IT16-007",
+      "group": "IT16",
+      "name": "ChatGPT Business (OpenAI)",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 6360000,
+      "aliases": [
+        "ChatGPT Team",
+        "ChatGPT",
+        "ChatGPT for Business"
+      ],
+      "vendor": "OpenAI",
+      "note": "US$20/user/tháng trả năm (US$25 trả tháng) từ 04/2026; tối thiểu 2 seat; SSO, kết nối SharePoint/Google Drive. giá niêm yết tra 12/10/2026, tỷ giá 26.500 VNĐ/USD",
+      "seed": 4
+    },
+    {
+      "code": "IT16-008",
+      "group": "IT16",
+      "name": "Ngân sách sử dụng OpenAI API (gói 1.000 USD)",
+      "unit": "Gói/năm",
+      "kind": "service",
+      "price": 26500000,
+      "aliases": [
+        "OpenAI API"
+      ],
+      "vendor": "OpenAI",
+      "note": "Tính theo token theo bảng giá OpenAI. giá niêm yết tra 12/10/2026, tỷ giá 26.500 VNĐ/USD",
+      "seed": 4
+    },
+    {
+      "code": "IT16-009",
+      "group": "IT16",
+      "name": "Gemini Enterprise – Business edition (Google)",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 6678000,
+      "aliases": [
+        "Gemini Enterprise",
+        "Google Gemini"
+      ],
+      "vendor": "Google",
+      "note": "Khoảng US$21/user/tháng cam kết năm (nguồn bên thứ ba, cần báo giá); Gemini trong Google Workspace đã gồm trong gói Workspace. giá niêm yết tra 12/10/2026, tỷ giá 26.500 VNĐ/USD",
+      "seed": 4
+    },
+    {
+      "code": "IT16-010",
+      "group": "IT16",
+      "name": "GitHub Copilot Business",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 6042000,
+      "aliases": [
+        "Copilot Business",
+        "GitHub Copilot"
+      ],
+      "vendor": "GitHub (Microsoft)",
+      "note": "US$19/user/tháng; từ 06/2026 dùng vượt tín dụng đi kèm tính thêm theo mức dùng. giá niêm yết tra 12/10/2026, tỷ giá 26.500 VNĐ/USD",
+      "seed": 4
+    },
+    {
+      "code": "IT16-011",
+      "group": "IT16",
+      "name": "GitHub Copilot Enterprise",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 12402000,
+      "aliases": [
+        "Copilot Enterprise"
+      ],
+      "vendor": "GitHub (Microsoft)",
+      "note": "US$39/user/tháng; cần GitHub Enterprise Cloud; dùng vượt tín dụng tính thêm. giá niêm yết tra 12/10/2026, tỷ giá 26.500 VNĐ/USD",
+      "seed": 4
+    },
+    {
+      "code": "IT16-012",
+      "group": "IT16",
+      "name": "Cursor Teams (trình soạn mã AI)",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 12720000,
+      "aliases": [
+        "Cursor"
+      ],
+      "vendor": "Anysphere",
+      "note": "US$40/user/tháng (nguồn bên thứ ba, cần báo giá); dùng vượt tín dụng tính thêm. giá niêm yết tra 12/10/2026, tỷ giá 26.500 VNĐ/USD",
+      "seed": 4
+    },
+    {
+      "code": "IT16-013",
+      "group": "IT16",
+      "name": "Perplexity Enterprise Pro (tìm kiếm AI)",
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "price": 10600000,
+      "aliases": [
+        "Perplexity"
+      ],
+      "vendor": "Perplexity",
+      "note": "US$400/seat/năm (US$40 trả tháng). giá niêm yết tra 12/10/2026, tỷ giá 26.500 VNĐ/USD",
+      "seed": 4
     }
   ],
   "it_groups": [
@@ -3593,6 +3782,15 @@
       "asset_cat1": "E. Bản quyền, Phần mềm",
       "cost_lv2": "07.06. Hạ tầng, trang thiết bị",
       "useful_months": 12
+    },
+    {
+      "code": "IT16",
+      "name": "Phần mềm & dịch vụ AI (trí tuệ nhân tạo)",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_months": 12,
+      "scope": "per_user"
     }
   ],
   "it_kinds": {
@@ -6749,6 +6947,175 @@
       "cost_lv1": "07. Chi phí QLDA",
       "cost_lv2": "07.06. Hạ tầng, trang thiết bị",
       "useful_life": 1.0
+    },
+    {
+      "code": "IT16-001",
+      "name": "Claude Team – Standard seat (Anthropic)",
+      "group": "IT16. Phần mềm & dịch vụ AI (trí tuệ nhân tạo)",
+      "price": 6360000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT16-002",
+      "name": "Claude Team – Premium seat (Anthropic)",
+      "group": "IT16. Phần mềm & dịch vụ AI (trí tuệ nhân tạo)",
+      "price": 31800000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT16-003",
+      "name": "Claude Enterprise – seat (Anthropic)",
+      "group": "IT16. Phần mềm & dịch vụ AI (trí tuệ nhân tạo)",
+      "price": 6360000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT16-004",
+      "name": "Claude Pro – cá nhân (Anthropic)",
+      "group": "IT16. Phần mềm & dịch vụ AI (trí tuệ nhân tạo)",
+      "price": 5300000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT16-005",
+      "name": "Claude Max 5x – cá nhân (Anthropic)",
+      "group": "IT16. Phần mềm & dịch vụ AI (trí tuệ nhân tạo)",
+      "price": 31800000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT16-006",
+      "name": "Ngân sách sử dụng Claude API (Anthropic, gói 1.000 USD)",
+      "group": "IT16. Phần mềm & dịch vụ AI (trí tuệ nhân tạo)",
+      "price": 26500000,
+      "unit": "Gói/năm",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT16-007",
+      "name": "ChatGPT Business (OpenAI)",
+      "group": "IT16. Phần mềm & dịch vụ AI (trí tuệ nhân tạo)",
+      "price": 6360000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT16-008",
+      "name": "Ngân sách sử dụng OpenAI API (gói 1.000 USD)",
+      "group": "IT16. Phần mềm & dịch vụ AI (trí tuệ nhân tạo)",
+      "price": 26500000,
+      "unit": "Gói/năm",
+      "kind": "service",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT16-009",
+      "name": "Gemini Enterprise – Business edition (Google)",
+      "group": "IT16. Phần mềm & dịch vụ AI (trí tuệ nhân tạo)",
+      "price": 6678000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT16-010",
+      "name": "GitHub Copilot Business",
+      "group": "IT16. Phần mềm & dịch vụ AI (trí tuệ nhân tạo)",
+      "price": 6042000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT16-011",
+      "name": "GitHub Copilot Enterprise",
+      "group": "IT16. Phần mềm & dịch vụ AI (trí tuệ nhân tạo)",
+      "price": 12402000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT16-012",
+      "name": "Cursor Teams (trình soạn mã AI)",
+      "group": "IT16. Phần mềm & dịch vụ AI (trí tuệ nhân tạo)",
+      "price": 12720000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
+    },
+    {
+      "code": "IT16-013",
+      "name": "Perplexity Enterprise Pro (tìm kiếm AI)",
+      "group": "IT16. Phần mềm & dịch vụ AI (trí tuệ nhân tạo)",
+      "price": 10600000,
+      "unit": "User/năm",
+      "kind": "software_subscription",
+      "asset_cat1": "E. Bản quyền, Phần mềm",
+      "asset_cat2": "E2. BQPM: Gia hạn, nâng cấp",
+      "cost_lv1": "04. Chi phí MMTB",
+      "cost_lv2": "04.04. Thiết bị quản lý - Phần mềm/bản quyền",
+      "useful_life": 1.0
     }
   ],
   "hc_site_overrides": {},
@@ -6758,7 +7125,7 @@
   },
   "infra_owner": "PHÒNG CNTT",
   "fx_usd_vnd": 26500,
-  "catalog_seed": 3,
+  "catalog_seed": 4,
   "dept_divisions": {
     "BAN CHUYỂN ĐỔI SỐ": "VĂN PHÒNG CHUYỂN ĐỔI SỐ",
     "BAN KIỂM SOÁT NỘI BỘ": "BAN KIỂM SOÁT NỘI BỘ",
