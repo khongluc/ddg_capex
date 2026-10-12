@@ -46,6 +46,7 @@ from master_data import (
 import quota as qt
 import pricing
 import reports
+import renewals
 import workflow as wf
 import execution as ex
 import versions as vs
@@ -1203,6 +1204,11 @@ def prev_year_lines() -> pd.DataFrame:
 @st.cache_data(max_entries=8, show_spinner="Đang tạo báo cáo theo Khối...")
 def _cached_division_report(df: pd.DataFrame, prev: pd.DataFrame, meta_items: tuple) -> bytes:
     return reports.report_xlsx(df, prev, master, dict(meta_items))
+
+
+@st.cache_data(max_entries=8, show_spinner="Đang tạo Kế hoạch Mua sắm theo Tháng / Quý...")
+def _cached_purchasing_plan_report(df: pd.DataFrame, months_tuple: tuple, meta_items: tuple) -> bytes:
+    return reports.purchasing_plan_xlsx(df, list(months_tuple), dict(meta_items))
 
 # MAIN HEADER BANNER
 if selected_site == ALL_SITES:
@@ -3628,7 +3634,7 @@ with tab_software:
                "thuê bao theo năm: chi phí trả trước phân bổ theo thời hạn.")
     sw_catalog = [it for it in master.get("standard_items", []) if it.get("kind") in SW_KINDS]
     sw_by_code = {it["code"]: it for it in sw_catalog}
-    sw_sum_tab, sw_cat_tab = st.tabs(["📊 Ngân sách phần mềm", "📚 Danh mục phần mềm & giá"])
+    sw_sum_tab, sw_renew_tab, sw_cat_tab = st.tabs(["📊 Ngân sách phần mềm", "🔔 Nhắc gia hạn", "📚 Danh mục phần mềm & giá"])
 
     with sw_sum_tab:
         kinds_s = df_curr["item_kind"] if "item_kind" in df_curr.columns else pd.Series(index=df_curr.index, dtype=object)
@@ -3686,6 +3692,39 @@ with tab_software:
                 fig_sw.update_layout(margin=dict(t=10, b=10, l=10, r=10), height=300, showlegend=False)
                 plot_chart(fig_sw, use_container_width=True)
             st.caption("Phạm vi theo năm / site / phòng ban đang chọn ở thanh bên trái. Muốn sửa số lượng, vào tab nơi hạng mục được lập.")
+
+    with sw_renew_tab:
+        prev_y = int(budget_year) - 1
+        st.caption(f"Thuê bao phần mềm, dịch vụ theo năm / tháng (cloud, đường truyền, thuê thiết bị) và dòng 'Gia hạn, bảo trì' "
+                   f"có trong ngân sách {prev_y} nhưng {budget_year} chưa có hoặc ít số lượng hơn. So theo site + mã danh mục, "
+                   "không phân biệt phòng ban. Tiền ước tính = SL thiếu × đơn giá bình quân năm trước.")
+        cur_rn = df_curr if "site_code" in df_curr.columns else df_curr.assign(site_code=selected_site)
+        gaps = renewals.renewal_gaps(prev_year_lines(), cur_rn, master)
+        if gaps.empty:
+            st.success(f"✅ Không thiếu hạng mục định kỳ nào so với {prev_y} trong phạm vi đang chọn.")
+        else:
+            n_miss = int((gaps["status"] == renewals.STATUS_MISSING).sum())
+            r1, r2, r3 = st.columns(3)
+            r1.metric("Hạng mục cần xem lại", f"{len(gaps)}")
+            r2.metric("Chưa có trong năm nay", f"{n_miss}")
+            r3.metric("Tiền ước tính còn thiếu", format_vnd_short(gaps["est_amount"].sum()) + " VNĐ")
+            show = gaps.assign(site=gaps["site_code"].map(site_label))
+            st.dataframe(show, use_container_width=True, hide_index=True,
+                         column_order=["status", "site", "catalog_code", "item_name", "unit", "depts", "prev_qty", "cur_qty",
+                                       "missing_qty", "prev_amount", "est_amount"],
+                         column_config={"status": "Tình trạng", "site": "Site", "catalog_code": "Mã danh mục",
+                                        "item_name": st.column_config.TextColumn("Hạng mục", width="large"), "unit": "ĐVT",
+                                        "depts": f"Phòng ban năm {prev_y}",
+                                        "prev_qty": st.column_config.NumberColumn(f"SL {prev_y}", format=MONEY_FMT),
+                                        "cur_qty": st.column_config.NumberColumn(f"SL {budget_year}", format=MONEY_FMT),
+                                        "missing_qty": st.column_config.NumberColumn("SL thiếu", format=MONEY_FMT),
+                                        "prev_amount": st.column_config.NumberColumn(f"Tiền {prev_y} (VNĐ)", format=MONEY_FMT),
+                                        "est_amount": st.column_config.NumberColumn("Tiền ước tính thiếu (VNĐ)", format=MONEY_FMT)})
+            st.download_button("📥 Tải danh sách nhắc gia hạn (CSV)",
+                               show.drop(columns=["site_code"]).to_csv(index=False).encode("utf-8-sig"),
+                               file_name=f"NhacGiaHan_{budget_year}.csv", mime="text/csv", key="renew_csv")
+            st.caption("Thêm các hạng mục cần gia hạn ở tab Lập CapEx (popup checklist) hoặc tab Hạ tầng; "
+                       "hạng mục không gia hạn nữa thì bỏ qua.")
 
     with sw_cat_tab:
         groups_cfg = it_groups(master)
@@ -3829,6 +3868,11 @@ with tab_excel:
                                file_name=f"BaoCao_Khoi_{budget_year}_{scope_tag}_{datetime.date.today():%Y%m%d}.xlsx",
                                mime=XLSX_MIME, use_container_width=True, key=f"div_rep_{budget_year}_{selected_site}_{selected_dept}",
                                help=f"Sheet 'Theo Khối' (so sánh năm {int(budget_year) - 1}) và 'Khối - Phòng - Hạng mục' (thu gọn được)")
+            st.download_button("📅 Tải Kế hoạch Mua sắm & Phân kỳ (.xlsx)",
+                               _cached_purchasing_plan_report(df_curr.drop(columns=["_order"], errors="ignore"), tuple(months), rep_meta),
+                               file_name=f"KeHoach_MuaSam_{budget_year}_{scope_tag}_{datetime.date.today():%Y%m%d}.xlsx",
+                               mime=XLSX_MIME, use_container_width=True, key=f"plan_rep_{budget_year}_{selected_site}_{selected_dept}",
+                               help="Báo cáo 3 sheet: Kế hoạch theo Tháng (12 tháng), Kế hoạch theo Quý (4 quý), và Tổng hợp theo Nhóm CNTT")
 
     with ex_c2:
         st.markdown("""
@@ -3884,6 +3928,113 @@ with tab_excel:
                         st.rerun()
             except Exception as e:
                 st.error(f"Lỗi khi đọc file Excel: {e}")
+
+    if not df_curr.empty:
+        st.divider()
+        st.markdown("### 📅 Kế hoạch Mua sắm & Phân kỳ (Tháng / Quý)")
+        st.caption("Xem trước và lọc chi tiết số lượng và số tiền theo 12 tháng (T10 → T9) hoặc 4 quý. Số lượng nguyên chuẩn xác theo phân kỳ.")
+
+        kp_c1, kp_c2, kp_c3 = st.columns([1.5, 1, 1])
+        with kp_c1:
+            view_mode = st.radio("Chế độ hiển thị:", ["Theo Quý (4 quý)", "Theo Tháng (12 tháng)", "Tổng hợp theo Nhóm CNTT"],
+                                 horizontal=True, key="plan_view_mode")
+        with kp_c2:
+            grp_opts = sorted(list({str(x).strip() for x in df_curr.get("it_group", pd.Series(dtype=object)).dropna() if str(x).strip()}))
+            sel_plan_grps = st.multiselect("Lọc nhóm CNTT:", grp_opts, default=[], key="plan_filter_grp", help="Trống = tất cả nhóm")
+        with kp_c3:
+            dept_opts = sorted(list({str(x).strip() for x in df_curr.get("dept_proposing", pd.Series(dtype=object)).dropna() if str(x).strip()}))
+            sel_plan_depts = st.multiselect("Lọc phòng ban:", dept_opts, default=[], key="plan_filter_dept", help="Trống = tất cả phòng")
+
+        df_plan_src = df_curr.copy()
+        if sel_plan_grps:
+            df_plan_src = df_plan_src[df_plan_src.get("it_group").isin(sel_plan_grps)]
+        if sel_plan_depts:
+            df_plan_src = df_plan_src[df_plan_src.get("dept_proposing").isin(sel_plan_depts)]
+
+        if view_mode == "Tổng hợp theo Nhóm CNTT":
+            summ_tbl = reports.purchasing_plan_summary(df_plan_src, months, "it_group")
+            if not summ_tbl.empty:
+                st.dataframe(
+                    summ_tbl,
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        "Số hạng mục": st.column_config.NumberColumn(format=MONEY_FMT),
+                        "Tổng SL": st.column_config.NumberColumn(format=MONEY_FMT),
+                        "Tổng ngân sách": st.column_config.NumberColumn(format=MONEY_FMT),
+                        "SL Q1": st.column_config.NumberColumn(format=MONEY_FMT),
+                        "Tiền Q1": st.column_config.NumberColumn(format=MONEY_FMT),
+                        "SL Q2": st.column_config.NumberColumn(format=MONEY_FMT),
+                        "Tiền Q2": st.column_config.NumberColumn(format=MONEY_FMT),
+                        "SL Q3": st.column_config.NumberColumn(format=MONEY_FMT),
+                        "Tiền Q3": st.column_config.NumberColumn(format=MONEY_FMT),
+                        "SL Q4": st.column_config.NumberColumn(format=MONEY_FMT),
+                        "Tiền Q4": st.column_config.NumberColumn(format=MONEY_FMT),
+                    }
+                )
+            else:
+                st.info("Không có dữ liệu phù hợp với bộ lọc.")
+        elif view_mode == "Theo Quý (4 quý)":
+            plan_df = reports.purchasing_plan_df(df_plan_src, months)
+            if not plan_df.empty:
+                q_cols = [
+                    "item_code", "item_name", "location", "dept_proposing", "it_group", "unit",
+                    "unit_price", "quantity", "total_budget",
+                    "qty_Q1", "amt_Q1", "qty_Q2", "amt_Q2", "qty_Q3", "amt_Q3", "qty_Q4", "amt_Q4"
+                ]
+                st.dataframe(
+                    plan_df[q_cols],
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        "item_code": "Mã",
+                        "item_name": "Tên hạng mục",
+                        "location": "Site",
+                        "dept_proposing": "Phòng ban",
+                        "it_group": "Nhóm CNTT",
+                        "unit": "ĐVT",
+                        "unit_price": st.column_config.NumberColumn("Đơn giá", format=MONEY_FMT),
+                        "quantity": st.column_config.NumberColumn("Tổng SL", format=MONEY_FMT),
+                        "total_budget": st.column_config.NumberColumn("Thành tiền", format=MONEY_FMT),
+                        "qty_Q1": st.column_config.NumberColumn("SL Q1", format=MONEY_FMT),
+                        "amt_Q1": st.column_config.NumberColumn("Tiền Q1", format=MONEY_FMT),
+                        "qty_Q2": st.column_config.NumberColumn("SL Q2", format=MONEY_FMT),
+                        "amt_Q2": st.column_config.NumberColumn("Tiền Q2", format=MONEY_FMT),
+                        "qty_Q3": st.column_config.NumberColumn("SL Q3", format=MONEY_FMT),
+                        "amt_Q3": st.column_config.NumberColumn("Tiền Q3", format=MONEY_FMT),
+                        "qty_Q4": st.column_config.NumberColumn("SL Q4", format=MONEY_FMT),
+                        "amt_Q4": st.column_config.NumberColumn("Tiền Q4", format=MONEY_FMT),
+                    }
+                )
+            else:
+                st.info("Không có dữ liệu phù hợp với bộ lọc.")
+        else:
+            plan_df = reports.purchasing_plan_df(df_plan_src, months)
+            if not plan_df.empty:
+                m_cfg = {
+                    "item_code": "Mã",
+                    "item_name": "Tên hạng mục",
+                    "location": "Site",
+                    "dept_proposing": "Phòng ban",
+                    "it_group": "Nhóm CNTT",
+                    "unit": "ĐVT",
+                    "unit_price": st.column_config.NumberColumn("Đơn giá", format=MONEY_FMT),
+                    "quantity": st.column_config.NumberColumn("Tổng SL", format=MONEY_FMT),
+                    "total_budget": st.column_config.NumberColumn("Thành tiền", format=MONEY_FMT),
+                }
+                for m in months:
+                    m_cfg[f"qty_{m}"] = st.column_config.NumberColumn(f"SL {m}", format=MONEY_FMT)
+                    m_cfg[f"amt_{m}"] = st.column_config.NumberColumn(f"Tiền {m}", format=MONEY_FMT)
+                disp_cols = ["item_code", "item_name", "location", "dept_proposing", "it_group", "unit",
+                             "unit_price", "quantity", "total_budget"] + [c for m in months for c in (f"qty_{m}", f"amt_{m}")]
+                st.dataframe(
+                    plan_df[disp_cols],
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config=m_cfg
+                )
+            else:
+                st.info("Không có dữ liệu phù hợp với bộ lọc.")
 
 
 # =====================================================================

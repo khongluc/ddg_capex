@@ -3,14 +3,16 @@ Báo cáo tổng hợp theo Khối: bảng Khối (so sánh năm trước) và f
 Khối lấy từ cột division của dòng ngân sách; trống -> theo bảng phòng ban -> khối (dept_divisions).
 """
 import io
-from typing import Dict, Any, Optional
+import datetime
+from typing import Dict, Any, Optional, List
 
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-from master_data import division_of
+from master_data import division_of, DEFAULT_MONTHS
+from capex_engine import clean_number, snap_units, split_units, current_units
 
 NO_DIVISION = "(Chưa có khối)"
 NO_DEPT = "(Chưa ghi phòng ban)"
@@ -198,3 +200,379 @@ def report_xlsx(df: pd.DataFrame, prev_df: Optional[pd.DataFrame], master: Dict[
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()
+
+
+# ---------------------------------------------------------------- Kế hoạch Mua sắm theo Tháng / Quý
+
+def purchasing_plan_df(df: Optional[pd.DataFrame], months: Optional[List[str]] = None) -> pd.DataFrame:
+    """
+    Sinh bảng kế hoạch mua sắm và giải ngân theo 12 tháng và 4 quý cho từng hạng mục.
+    Số lượng theo tháng được tính từ quantity × pct_<tháng> sử dụng snap_units để đảm bảo số nguyên nếu có thể.
+    Tiền theo tháng tính từ val_<tháng> hoặc total_budget × pct_<tháng>.
+    """
+    if months is None:
+        months = DEFAULT_MONTHS
+
+    base_cols = [
+        "item_code", "item_name", "location", "dept_proposing",
+        "it_group", "capex_type", "unit", "unit_price", "quantity", "total_budget"
+    ]
+    quarter_qty_cols = ["qty_Q1", "qty_Q2", "qty_Q3", "qty_Q4"]
+    quarter_amt_cols = ["amt_Q1", "amt_Q2", "amt_Q3", "amt_Q4"]
+    month_qty_cols = [f"qty_{m}" for m in months]
+    month_amt_cols = [f"amt_{m}" for m in months]
+    all_cols = base_cols + quarter_qty_cols + quarter_amt_cols + month_qty_cols + month_amt_cols
+
+    if df is None or df.empty:
+        return pd.DataFrame(columns=all_cols)
+
+    rows_out = []
+    for _, r in df.iterrows():
+        qty = clean_number(r.get("quantity", 0), 0.0)
+        price = clean_number(r.get("unit_price", 0), 0.0)
+        tot = clean_number(r.get("total_budget", 0), 0.0)
+        if tot == 0.0 and qty > 0 and price > 0:
+            tot = qty * price
+
+        pcts = [clean_number(r.get(f"pct_{m}", 0.0), 0.0) for m in months]
+        sum_pct = sum(pcts)
+        # Nếu chưa phân kỳ nhưng có số lượng -> dồn vào tháng đầu tiên
+        if sum_pct == 0.0 and qty > 0:
+            pcts = [1.0] + [0.0] * (len(months) - 1)
+
+        # Tính số lượng từng tháng
+        is_int_qty = abs(qty - round(qty)) < 1e-9 and qty > 0
+        if is_int_qty:
+            units = current_units(pcts, qty)
+        else:
+            units = snap_units(pcts, qty) or split_units(qty, pcts)
+            if units is None:
+                if qty > 0 and sum(pcts) > 0:
+                    units = [round(p * qty, 2) for p in pcts]
+                else:
+                    units = [0.0] * len(months)
+
+        # Tính tiền từng tháng: khi có SL nguyên và đơn giá -> tiền = SL × đơn giá
+        amts = []
+        for i, m in enumerate(months):
+            if is_int_qty and price > 0:
+                amts.append(units[i] * price)
+            else:
+                val_col = f"val_{m}"
+                if val_col in r and clean_number(r.get(val_col), 0.0) > 0:
+                    amts.append(clean_number(r.get(val_col), 0.0))
+                else:
+                    amts.append(round(pcts[i] * tot, 0))
+
+        # Gom 4 quý: Q1(0..2), Q2(3..5), Q3(6..8), Q4(9..11)
+        q_qty = [
+            sum(units[0:3]),
+            sum(units[3:6]),
+            sum(units[6:9]),
+            sum(units[9:12])
+        ]
+        q_amt = [
+            sum(amts[0:3]),
+            sum(amts[3:6]),
+            sum(amts[6:9]),
+            sum(amts[9:12])
+        ]
+
+        row_dict = {
+            "item_code": str(r.get("item_code") or "").strip(),
+            "item_name": str(r.get("item_name") or "").strip(),
+            "location": str(r.get("location") or "").strip(),
+            "dept_proposing": str(r.get("dept_proposing") or "").strip(),
+            "it_group": str(r.get("it_group") or "").strip(),
+            "capex_type": str(r.get("capex_type") or "").strip(),
+            "unit": str(r.get("unit") or "").strip(),
+            "unit_price": price,
+            "quantity": qty,
+            "total_budget": tot,
+            "qty_Q1": q_qty[0], "qty_Q2": q_qty[1], "qty_Q3": q_qty[2], "qty_Q4": q_qty[3],
+            "amt_Q1": q_amt[0], "amt_Q2": q_amt[1], "amt_Q3": q_amt[2], "amt_Q4": q_amt[3],
+        }
+        for i, m in enumerate(months):
+            row_dict[f"qty_{m}"] = units[i]
+            row_dict[f"amt_{m}"] = amts[i]
+        rows_out.append(row_dict)
+
+    return pd.DataFrame(rows_out, columns=all_cols)
+
+
+def purchasing_plan_summary(
+    df: Optional[pd.DataFrame],
+    months: Optional[List[str]] = None,
+    group_by: str = "it_group"
+) -> pd.DataFrame:
+    """
+    Bảng tổng hợp Kế hoạch mua sắm theo nhóm (Nhóm CNTT, Vị trí/Site, hoặc Phòng ban).
+    """
+    if months is None:
+        months = DEFAULT_MONTHS
+    plan = purchasing_plan_df(df, months)
+    cols = [
+        group_by, "Số hạng mục", "Tổng SL", "Tổng ngân sách",
+        "SL Q1", "Tiền Q1", "SL Q2", "Tiền Q2", "SL Q3", "Tiền Q3", "SL Q4", "Tiền Q4"
+    ]
+    if plan.empty:
+        return pd.DataFrame(columns=cols)
+
+    grp = plan.groupby(group_by, dropna=False)
+    summary = pd.DataFrame({
+        "Số hạng mục": grp.size(),
+        "Tổng SL": grp["quantity"].sum(),
+        "Tổng ngân sách": grp["total_budget"].sum(),
+        "SL Q1": grp["qty_Q1"].sum(),
+        "Tiền Q1": grp["amt_Q1"].sum(),
+        "SL Q2": grp["qty_Q2"].sum(),
+        "Tiền Q2": grp["amt_Q2"].sum(),
+        "SL Q3": grp["qty_Q3"].sum(),
+        "Tiền Q3": grp["amt_Q3"].sum(),
+        "SL Q4": grp["qty_Q4"].sum(),
+        "Tiền Q4": grp["amt_Q4"].sum(),
+    }).reset_index()
+
+    summary = summary.sort_values("Tổng ngân sách", ascending=False)
+    return summary[cols]
+
+
+def purchasing_plan_xlsx(
+    df: Optional[pd.DataFrame],
+    months: Optional[List[str]] = None,
+    meta: Optional[Dict[str, Any]] = None
+) -> bytes:
+    """
+    Tạo file Excel kế hoạch mua sắm & giải ngân (3 sheet: Theo Tháng, Theo Quý, Tổng hợp Nhóm CNTT).
+    """
+    if months is None:
+        months = DEFAULT_MONTHS
+    meta = meta or {}
+    year = meta.get("budget_year", "2026")
+    scope = meta.get("scope", "Toàn bộ")
+    today_str = meta.get("date", datetime.date.today().strftime("%d/%m/%Y"))
+    sub_title = f"Phạm vi: {scope} · Đơn vị: VNĐ, chưa VAT · Lập ngày {today_str}"
+
+    plan = purchasing_plan_df(df, months)
+    wb = Workbook()
+
+    # --- Sheet 1: Theo Tháng ---
+    ws1 = wb.active
+    ws1.title = "Theo Tháng"
+    _title(ws1, f"KẾ HOẠCH MUA SẮM & GIẢI NGÂN CNTT THEO THÁNG NĂM {year}", sub_title)
+
+    base_headers = ["STT", "Mã hạng mục", "Tên hạng mục", "Site", "Phòng ban", "Nhóm CNTT", "Phân loại", "ĐVT", "Đơn giá", "Tổng SL", "Thành tiền"]
+    base_widths = [6, 15, 36, 12, 22, 22, 12, 10, 16, 12, 20]
+
+    # Row 4 & 5: Header
+    ws1.row_dimensions[4].height = 24
+    ws1.row_dimensions[5].height = 24
+
+    for c_idx, (th, w) in enumerate(zip(base_headers, base_widths), 1):
+        for r_h in (4, 5):
+            c = ws1.cell(row=r_h, column=c_idx)
+            c.font = Font(bold=True, color="FFFFFF")
+            c.fill = _HEAD
+            c.border = _BORDER
+            c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        ws1.merge_cells(start_row=4, start_column=c_idx, end_row=5, end_column=c_idx)
+        ws1.cell(row=4, column=c_idx, value=th)
+        ws1.column_dimensions[get_column_letter(c_idx)].width = w
+
+    for i, m in enumerate(months):
+        start_c = 12 + i * 2
+        for r_h in (4, 5):
+            for c_offset in (0, 1):
+                c = ws1.cell(row=r_h, column=start_c + c_offset)
+                c.font = Font(bold=True, color="FFFFFF")
+                c.fill = _HEAD
+                c.border = _BORDER
+                c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        ws1.merge_cells(start_row=4, start_column=start_c, end_row=4, end_column=start_c + 1)
+        ws1.cell(row=4, column=start_c, value=m)
+        ws1.cell(row=5, column=start_c, value="SL")
+        ws1.cell(row=5, column=start_c + 1, value="Tiền")
+        ws1.column_dimensions[get_column_letter(start_c)].width = 9
+        ws1.column_dimensions[get_column_letter(start_c + 1)].width = 16
+
+    # Fill data
+    r = 6
+    if not plan.empty:
+        for idx, row in enumerate(plan.to_dict("records"), 1):
+            ws1.cell(row=r, column=1, value=idx).alignment = Alignment(horizontal="center")
+            ws1.cell(row=r, column=2, value=row["item_code"])
+            ws1.cell(row=r, column=3, value=row["item_name"])
+            ws1.cell(row=r, column=4, value=row["location"])
+            ws1.cell(row=r, column=5, value=row["dept_proposing"])
+            ws1.cell(row=r, column=6, value=row["it_group"])
+            ws1.cell(row=r, column=7, value=row["capex_type"]).alignment = Alignment(horizontal="center")
+            ws1.cell(row=r, column=8, value=row["unit"]).alignment = Alignment(horizontal="center")
+            c_p = ws1.cell(row=r, column=9, value=row["unit_price"])
+            c_p.number_format = _MONEY
+            c_q = ws1.cell(row=r, column=10, value=row["quantity"])
+            c_q.number_format = '#,##0' if row["quantity"] == int(row["quantity"]) else '#,##0.0'
+            c_t = ws1.cell(row=r, column=11, value=row["total_budget"])
+            c_t.number_format = _MONEY
+
+            for i, m in enumerate(months):
+                start_c = 12 + i * 2
+                u = row.get(f"qty_{m}", 0.0)
+                amt = row.get(f"amt_{m}", 0.0)
+                cu = ws1.cell(row=r, column=start_c, value=u if u != 0 else None)
+                cu.number_format = '#,##0' if u == int(u) else '#,##0.0'
+                ca = ws1.cell(row=r, column=start_c + 1, value=amt if amt != 0 else None)
+                ca.number_format = _MONEY
+
+            for col_i in range(1, 12 + len(months) * 2):
+                ws1.cell(row=r, column=col_i).border = _BORDER
+            r += 1
+
+        # Dòng TỔNG CỘNG
+        ws1.cell(row=r, column=1, value="TỔNG CỘNG")
+        ws1.merge_cells(start_row=r, start_column=1, end_row=r, end_column=8)
+        ws1.cell(row=r, column=10, value=f"=SUM(J6:J{r-1})").number_format = '#,##0'
+        ws1.cell(row=r, column=11, value=f"=SUM(K6:K{r-1})").number_format = _MONEY
+        for i in range(len(months)):
+            start_c = 12 + i * 2
+            col_u = get_column_letter(start_c)
+            col_a = get_column_letter(start_c + 1)
+            ws1.cell(row=r, column=start_c, value=f"=SUM({col_u}6:{col_u}{r-1})").number_format = '#,##0'
+            ws1.cell(row=r, column=start_c + 1, value=f"=SUM({col_a}6:{col_a}{r-1})").number_format = _MONEY
+
+        for col_i in range(1, 12 + len(months) * 2):
+            cell = ws1.cell(row=r, column=col_i)
+            cell.font = Font(bold=True)
+            cell.fill = _FILL_K
+            cell.border = _BORDER
+
+    ws1.freeze_panes = "D6"
+
+    # --- Sheet 2: Theo Quý ---
+    ws2 = wb.create_sheet("Theo Quý")
+    _title(ws2, f"KẾ HOẠCH MUA SẮM & GIẢI NGÂN CNTT THEO QUÝ NĂM {year}", sub_title)
+
+    ws2.row_dimensions[4].height = 24
+    ws2.row_dimensions[5].height = 24
+    for c_idx, (th, w) in enumerate(zip(base_headers, base_widths), 1):
+        for r_h in (4, 5):
+            c = ws2.cell(row=r_h, column=c_idx)
+            c.font = Font(bold=True, color="FFFFFF")
+            c.fill = _HEAD
+            c.border = _BORDER
+            c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        ws2.merge_cells(start_row=4, start_column=c_idx, end_row=5, end_column=c_idx)
+        ws2.cell(row=4, column=c_idx, value=th)
+        ws2.column_dimensions[get_column_letter(c_idx)].width = w
+
+    q_labels = ["QUÝ 1 (T10-T12)", "QUÝ 2 (T1-T3)", "QUÝ 3 (T4-T6)", "QUÝ 4 (T7-T9)"]
+    for i, q_lbl in enumerate(q_labels):
+        start_c = 12 + i * 2
+        for r_h in (4, 5):
+            for c_offset in (0, 1):
+                c = ws2.cell(row=r_h, column=start_c + c_offset)
+                c.font = Font(bold=True, color="FFFFFF")
+                c.fill = _HEAD
+                c.border = _BORDER
+                c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        ws2.merge_cells(start_row=4, start_column=start_c, end_row=4, end_column=start_c + 1)
+        ws2.cell(row=4, column=start_c, value=q_lbl)
+        ws2.cell(row=5, column=start_c, value="SL")
+        ws2.cell(row=5, column=start_c + 1, value="Tiền")
+        ws2.column_dimensions[get_column_letter(start_c)].width = 11
+        ws2.column_dimensions[get_column_letter(start_c + 1)].width = 18
+
+    r = 6
+    if not plan.empty:
+        for idx, row in enumerate(plan.to_dict("records"), 1):
+            ws2.cell(row=r, column=1, value=idx).alignment = Alignment(horizontal="center")
+            ws2.cell(row=r, column=2, value=row["item_code"])
+            ws2.cell(row=r, column=3, value=row["item_name"])
+            ws2.cell(row=r, column=4, value=row["location"])
+            ws2.cell(row=r, column=5, value=row["dept_proposing"])
+            ws2.cell(row=r, column=6, value=row["it_group"])
+            ws2.cell(row=r, column=7, value=row["capex_type"]).alignment = Alignment(horizontal="center")
+            ws2.cell(row=r, column=8, value=row["unit"]).alignment = Alignment(horizontal="center")
+            ws2.cell(row=r, column=9, value=row["unit_price"]).number_format = _MONEY
+            ws2.cell(row=r, column=10, value=row["quantity"]).number_format = '#,##0' if row["quantity"] == int(row["quantity"]) else '#,##0.0'
+            ws2.cell(row=r, column=11, value=row["total_budget"]).number_format = _MONEY
+
+            for i, q_num in enumerate(["Q1", "Q2", "Q3", "Q4"]):
+                start_c = 12 + i * 2
+                u = row.get(f"qty_{q_num}", 0.0)
+                amt = row.get(f"amt_{q_num}", 0.0)
+                cu = ws2.cell(row=r, column=start_c, value=u if u != 0 else None)
+                cu.number_format = '#,##0' if u == int(u) else '#,##0.0'
+                ca = ws2.cell(row=r, column=start_c + 1, value=amt if amt != 0 else None)
+                ca.number_format = _MONEY
+
+            for col_i in range(1, 12 + 8):
+                ws2.cell(row=r, column=col_i).border = _BORDER
+            r += 1
+
+        # Dòng TỔNG CỘNG
+        ws2.cell(row=r, column=1, value="TỔNG CỘNG")
+        ws2.merge_cells(start_row=r, start_column=1, end_row=r, end_column=8)
+        ws2.cell(row=r, column=10, value=f"=SUM(J6:J{r-1})").number_format = '#,##0'
+        ws2.cell(row=r, column=11, value=f"=SUM(K6:K{r-1})").number_format = _MONEY
+        for i in range(4):
+            start_c = 12 + i * 2
+            col_u = get_column_letter(start_c)
+            col_a = get_column_letter(start_c + 1)
+            ws2.cell(row=r, column=start_c, value=f"=SUM({col_u}6:{col_u}{r-1})").number_format = '#,##0'
+            ws2.cell(row=r, column=start_c + 1, value=f"=SUM({col_a}6:{col_a}{r-1})").number_format = _MONEY
+
+        for col_i in range(1, 12 + 8):
+            cell = ws2.cell(row=r, column=col_i)
+            cell.font = Font(bold=True)
+            cell.fill = _FILL_K
+            cell.border = _BORDER
+
+    ws2.freeze_panes = "D6"
+
+    # --- Sheet 3: Tổng hợp Nhóm CNTT ---
+    ws3 = wb.create_sheet("Tổng hợp Nhóm CNTT")
+    _title(ws3, f"TỔNG HỢP KẾ HOẠCH MUA SẮM THEO NHÓM CNTT NĂM {year}", sub_title)
+
+    s3_headers = ["Nhóm CNTT", "Số hạng mục", "Tổng SL", "Tổng ngân sách",
+                  "SL Q1", "Tiền Q1", "SL Q2", "Tiền Q2", "SL Q3", "Tiền Q3", "SL Q4", "Tiền Q4"]
+    s3_widths = [30, 12, 12, 20, 11, 18, 11, 18, 11, 18, 11, 18]
+    _header(ws3, 4, s3_headers, s3_widths)
+
+    summ = purchasing_plan_summary(df, months, "it_group")
+    r = 5
+    if not summ.empty:
+        for row in summ.to_dict("records"):
+            ws3.cell(row=r, column=1, value=row.get("it_group", "(Chưa phân nhóm)"))
+            ws3.cell(row=r, column=2, value=row.get("Số hạng mục", 0)).alignment = Alignment(horizontal="center")
+            ws3.cell(row=r, column=3, value=row.get("Tổng SL", 0)).number_format = '#,##0'
+            ws3.cell(row=r, column=4, value=row.get("Tổng ngân sách", 0)).number_format = _MONEY
+            ws3.cell(row=r, column=5, value=row.get("SL Q1", 0)).number_format = '#,##0'
+            ws3.cell(row=r, column=6, value=row.get("Tiền Q1", 0)).number_format = _MONEY
+            ws3.cell(row=r, column=7, value=row.get("SL Q2", 0)).number_format = '#,##0'
+            ws3.cell(row=r, column=8, value=row.get("Tiền Q2", 0)).number_format = _MONEY
+            ws3.cell(row=r, column=9, value=row.get("SL Q3", 0)).number_format = '#,##0'
+            ws3.cell(row=r, column=10, value=row.get("Tiền Q3", 0)).number_format = _MONEY
+            ws3.cell(row=r, column=11, value=row.get("SL Q4", 0)).number_format = '#,##0'
+            ws3.cell(row=r, column=12, value=row.get("Tiền Q4", 0)).number_format = _MONEY
+            for col_i in range(1, 13):
+                ws3.cell(row=r, column=col_i).border = _BORDER
+            r += 1
+
+        # Dòng TỔNG CỘNG
+        ws3.cell(row=r, column=1, value="TỔNG CỘNG")
+        ws3.cell(row=r, column=2, value=f"=SUM(B5:B{r-1})").alignment = Alignment(horizontal="center")
+        for col_i in range(3, 13):
+            col_letter = get_column_letter(col_i)
+            c = ws3.cell(row=r, column=col_i, value=f"=SUM({col_letter}5:{col_letter}{r-1})")
+            c.number_format = _MONEY if col_i in (4, 6, 8, 10, 12) else '#,##0'
+
+        for col_i in range(1, 13):
+            cell = ws3.cell(row=r, column=col_i)
+            cell.font = Font(bold=True)
+            cell.fill = _FILL_K
+            cell.border = _BORDER
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
