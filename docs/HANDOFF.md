@@ -29,7 +29,7 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 ## Đã xong
 | Ngày | Agent | Việc | Commit |
 | :--- | :--- | :--- | :--- |
-| 2026-10-12 | Antigravity | (5) Báo cáo kế hoạch mua theo tháng / quý: bảng SL + tiền 12 tháng & 4 quý, lọc multiselect nhóm CNTT/phòng ban, xuất Excel 3 sheet, kiểm thử | _(commit này)_ |
+| 2026-10-12 | Antigravity | (5) Báo cáo kế hoạch mua theo tháng / quý: bảng SL + tiền 12 tháng & 4 quý, lọc multiselect nhóm CNTT/phòng ban, xuất Excel 3 sheet, kiểm thử | `c7da5bd` |
 | 2026-10-12 | Claude | (7) Nhắc gia hạn: module renewals.py + test_renewals.py (so sánh năm trước theo site + mã danh mục/tên) | `d2e7275` |
 | 2026-10-12 | Antigravity | Đồng bộ IT16 vào smart_advisor; khử ResourceWarning unclosed file trong test suite | `3bec610` |
 | 2026-10-12 | Claude | Phân kỳ nhiều tháng khi thêm hạng mục (popup + tab Chọn nhanh), chọn nhiều nhóm CNTT | `eb6fbcf` |
