@@ -43,7 +43,7 @@ d:\DATA\dev\I_Cost/
 ├── app.py                    # Presentation Layer: 11 Tabs giao diện Streamlit
 ├── auth.py                   # Xác thực & phân quyền 4 vai trò (RBAC)
 ├── capex_engine.py           # Core Engine: Khấu hao, phân kỳ, hạch toán TSCĐ/CCDC
-├── master_data.py            # Master Catalog: 15 nhóm CNTT & 222 hạng mục chuẩn
+├── master_data.py            # Master Catalog: 16 nhóm CNTT & ~255 hạng mục chuẩn
 ├── smart_advisor.py          # AI Rule Engine & Cố vấn tối ưu ngân sách
 ├── quota.py                  # Module phân tích định biên nhân sự & tự động dự toán
 ├── pricing.py                # Quản lý đơn giá & lịch sử báo giá nhà cung cấp
@@ -52,10 +52,16 @@ d:\DATA\dev\I_Cost/
 ├── versions.py               # Quản lý phiên bản ngân sách & so sánh chênh lệch
 ├── reports.py                # Xuất báo cáo tài chính & biểu mẫu Excel DDC
 ├── requirements.txt          # Thư viện phụ thuộc
-└── run_app.bat               # File thực thi 1-click
+├── run_app.bat               # File thực thi 1-click
+├── AGENTS.md                 # Quy chuẩn phát triển chuyên biệt cho Antigravity
+└── CLAUDE.md                 # Quy chuẩn phát triển chuyên biệt cho Claude Code
 ```
 
-> 📖 **Xem chi tiết tài liệu kiến trúc hệ thống tại:** [docs/ARCHITECTURE.md](file:///d:/DATA/dev/I_Cost/docs/ARCHITECTURE.md)
+> 📖 **Tài liệu Kỹ thuật & Phối hợp Đa Agent:**
+> - [docs/ARCHITECTURE.md](file:///d:/DATA/dev/I_Cost/docs/ARCHITECTURE.md) — Kiến trúc hệ thống chi tiết
+> - [docs/COLLABORATION.md](file:///d:/DATA/dev/I_Cost/docs/COLLABORATION.md) — Sổ tay phối hợp đa Agent (Claude 🤝 Antigravity)
+> - [CLAUDE.md](file:///d:/DATA/dev/I_Cost/CLAUDE.md) — Chỉ dẫn tự động nạp cho Claude Code
+> - [AGENTS.md](file:///d:/DATA/dev/I_Cost/AGENTS.md) — Chỉ dẫn tự động nạp cho Antigravity
 
 ---
 
@@ -63,7 +69,7 @@ d:\DATA\dev\I_Cost/
 
 1. **📊 Tổng quan**: KPI tổng hợp, cơ cấu CAPEX / CCDC / OPEX, phân kỳ theo tháng/quý và phân bổ theo Khối.
 2. **📝 Lập CapEx**:
-   - **✨ Smart Modal Popup Checklist**: Bật cửa sổ Popup chọn nhanh theo Gói Chức danh mẫu (1-Click Presets: Kỹ sư Thiết kế, Chuyên viên, Lãnh đạo...) hoặc Tìm kiếm nhanh toàn bộ 222 hạng mục với checklist tương tác và tính tiền tức thì.
+   - **✨ Smart Modal Popup Checklist**: Bật cửa sổ Popup chọn nhanh theo Gói Chức danh mẫu (1-Click Presets: Kỹ sư Thiết kế, Chuyên viên, Lãnh đạo...) hoặc Tìm kiếm nhanh toàn bộ danh mục hạng mục với checklist tương tác và tính tiền tức thì.
    - **📋 Checklist Rà soát & Sửa nhanh**: Popup rà soát danh sách hiện có, hỗ trợ đổi tháng giải ngân hàng loạt hoặc xóa nhanh nhiều mục cùng lúc.
    - **Multi-Item Batch Picker & Single Item Form**: Chế độ nhập nhanh trên trang và form chi tiết từng hạng mục.
 3. **👥 Định biên**: Phân tích bảng định biên nhân sự, tự động phát hiện số lượng vị trí để đề xuất bộ trang bị chuẩn (PC/Laptop, bản quyền).
@@ -74,11 +80,11 @@ d:\DATA\dev\I_Cost/
 8. **💳 Giải ngân**: Đối soát kế hoạch ngân sách với PO thực tế ký kết, nghiệm thu và hóa đơn tài chính.
 9. **🗂️ Phiên bản**: Mỗi lần Admin duyệt site chốt 1 phiên bản (Bản duyệt, Điều chỉnh lần N, kèm lý do); so sánh 2 phiên bản theo hạng mục / phòng ban.
 10. **📈 Thẩm định**: Dự phóng khấu hao TSCĐ / phân bổ CCDC (thời gian sử dụng mặc định theo loại tài sản) và thẩm định hiệu quả đầu tư dự án (NPV / IRR / ROI).
-11. **⚙️ Danh mục**: Quản lý 15 nhóm CNTT với 222 hạng mục chuẩn, đơn giá tham chiếu (cập nhật từ file báo giá), đơn vị tính, bộ trang bị theo vị trí, pháp nhân và site.
+11. **⚙️ Danh mục**: Quản lý 16 nhóm CNTT với ~255 hạng mục chuẩn, đơn giá tham chiếu (cập nhật từ file báo giá), đơn vị tính, bộ trang bị theo vị trí, pháp nhân và site.
 
 ---
 
-## 💻 Danh mục Thiết bị & Bản quyền CNTT Chuẩn Hóa (13 Nhóm)
+## 💻 Danh mục Thiết bị & Bản quyền CNTT Chuẩn Hóa (16 Nhóm)
 
 - **IT01. Thiết bị người dùng cuối**: PC văn phòng, PC thiết kế CAD/BIM, Laptop Core i5/i7, Màn hình 24"/27"...
 - **IT02. Máy in, scan & thiết bị VP số**: Máy in laser A4/A3, Máy scan 2 mặt số hóa, Photocopy đa năng...
@@ -93,6 +99,9 @@ d:\DATA\dev\I_Cost/
 - **IT11. Phần mềm quản trị doanh nghiệp**: Hệ thống ERP, Phần mềm Văn phòng số E-Office / BPM...
 - **IT12. Dịch vụ CNTT, Cloud & đường truyền**: Dịch vụ Cloud Viettel, Backup Cloud Wasabi, License VMware, Internet Leased-line...
 - **IT13. Linh kiện, vật tư & ngoại vi**: Nâng cấp RAM/SSD, VGA rời, Bộ phím chuột công thái học, USB Token...
+- **IT14. Dịch vụ tư vấn & đào tạo CNTT**: Tư vấn chuyển đổi số, triển khai ERP, đánh giá an ninh mạng, ISO 27001, đào tạo...
+- **IT15. Dịch vụ thuê thiết bị, hạ tầng & nhân sự CNTT**: Thuê laptop, colocation, VPS / Cloud server, thiết bị mạng & 4G/5G công trường...
+- **IT16. Phần mềm & dịch vụ AI**: Claude Team / Enterprise / API, ChatGPT Business, Gemini Enterprise, GitHub Copilot, Cursor, Perplexity...
 
 ---
 
