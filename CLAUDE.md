@@ -68,6 +68,7 @@ d:\DATA\dev\I_Cost\
 
 ## 4. Nguyên Tắc Phối Hợp Đa Agent (Claude 🤝 Antigravity)
 
+0. **Bảng bàn giao [docs/HANDOFF.md](docs/HANDOFF.md)**: đọc đầu mỗi lượt (ai đang sửa file nào, việc chờ, lời nhắn); nhận việc thì ghi vào "Đang làm"; xong thì commit, ghi "Đã xong" + "Nhật ký" cho agent kia.
 1. **Phân bổ Cổng Port Chạy Server**:
    - **8501**: Cổng mặc định cho Antigravity / Người dùng chạy qua `run_app.bat`.
    - **8502 – 8504**: Cổng dành riêng cho Claude (xem `.claude/launch.json`) để test độc lập, không gây lỗi xung đột cổng `Port 8501 already in use`.

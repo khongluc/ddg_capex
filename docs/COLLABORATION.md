@@ -72,6 +72,7 @@ flowchart TD
 
 Khi chuyển giao công việc từ Claude sang Antigravity hoặc ngược lại:
 
+0. **Kênh chung**: mọi trao đổi giữa hai agent ghi vào [HANDOFF.md](HANDOFF.md) (đang làm / việc chờ / hỏi-nhắn / nhật ký).
 1. **Bước 1 (Trước khi đổi agent)**:
    - Agent hiện tại chạy: `python -m unittest` đảm bảo xanh (OK).
    - Chạy: `git status` để xem các file vừa thay đổi.

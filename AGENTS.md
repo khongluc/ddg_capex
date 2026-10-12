@@ -55,6 +55,7 @@ Tài liệu này xác định các quy ước lập trình, cấu trúc thư m�
 
 ## 4. Giao Thức Phối Hợp Đa Agent (Antigravity 🤝 Claude)
 
+0. **Bảng bàn giao [docs/HANDOFF.md](docs/HANDOFF.md)**: đọc đầu mỗi lượt (ai đang sửa file nào, việc chờ, lời nhắn); nhận việc thì ghi vào "Đang làm"; xong thì commit, ghi "Đã xong" + "Nhật ký" cho agent kia.
 1. **Đồng bộ hóa Tài liệu Hướng dẫn**:
    - `AGENTS.md` (dành cho Antigravity) và `CLAUDE.md` (dành cho Claude) luôn được duy trì cùng 1 phiên bản nghiệp vụ và ràng buộc kỹ thuật.
 2. **Tránh Xung Đột Cổng Mạng (Port Isolation)**:
