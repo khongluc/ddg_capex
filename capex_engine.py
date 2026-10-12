@@ -124,6 +124,18 @@ def phase_text(pcts: List[float], qty: float, months: List[str]) -> str:
     return " · ".join(f"{m}: {p:.0%}" for m, p in zip(months, pcts) if p > 0)
 
 
+def current_units(pcts: List[float], qty: float) -> List[int]:
+    """SL nguyên từng tháng của 1 dòng để sửa tay: theo phân kỳ hiện có (làm tròn giữ đúng tổng SL);
+    phân kỳ trống -> cả SL vào tháng đầu."""
+    n = max(int(round(qty)), 0)
+    units = snap_units(pcts, qty) or split_units(n, pcts)
+    if units is None:
+        units = [0] * len(pcts)
+        if units:
+            units[0] = n
+    return units
+
+
 def regrid_pcts(old_pcts: Optional[List[float]], month: str, months: List[str]) -> List[float]:
     """Bảng chỉ có 1 cột "tháng" (tháng đầu): giữ phân kỳ nhiều tháng cũ nếu tháng đầu không đổi;
     dòng mới / đổi tháng -> 100% vào tháng đó."""

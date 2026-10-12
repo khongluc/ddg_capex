@@ -1,7 +1,7 @@
 """Hạ tầng dùng chung: bảng chỉ có 1 cột tháng - lưu lại không được làm mất phân kỳ nhiều tháng; hiện phân kỳ dạng chữ."""
 import unittest
 
-from capex_engine import calculate_row, even_units, phase_text, regrid_pcts
+from capex_engine import calculate_row, current_units, even_units, phase_text, regrid_pcts
 from tests import fixtures as fx
 
 M = fx.MONTHS
@@ -31,6 +31,21 @@ class RegridPctsTest(unittest.TestCase):
             row[f"pct_{m}"] = pc
         out = calculate_row(row, months=M, master={})
         self.assertEqual((out[f"val_{M[1]}"], out[f"val_{M[7]}"]), (20_000_000, 10_000_000))
+
+
+class CurrentUnitsTest(unittest.TestCase):
+    """Popup rà soát, "Tự nhập SL từng tháng": bảng điền sẵn SL nguyên theo phân kỳ đang có."""
+    def test_from_whole_units(self):
+        units = even_units(10, M, M[0::3])
+        self.assertEqual(current_units([u / 10 for u in units], 10), units)
+
+    def test_ratio_rounded_keeps_total(self):
+        pcts = [0.5 if i in (0, 1) else 0.0 for i in range(len(M))]       # 50/50 cho 3 máy
+        self.assertEqual(sum(current_units(pcts, 3)), 3)
+
+    def test_empty_phasing_goes_to_first_month(self):
+        u = current_units([0.0] * len(M), 4)
+        self.assertEqual((u[0], sum(u)), (4, 4))
 
 
 class PhaseTextTest(unittest.TestCase):

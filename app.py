@@ -60,6 +60,7 @@ from capex_engine import (
     calculate_depreciation_schedule,
     calculate_project_financials,
     clean_number,
+    current_units,
     even_units,
     phase_presets,
     phase_text,
@@ -2306,6 +2307,7 @@ def render_batch_adjust_dialog(target_dept: str, target_site: str):
             "Thành tiền": clean_number(r.get("total_budget", 0)),
             "Phân loại": r.get("capex_type", ""),
             "Loại nhu cầu": r.get("need_type", ""),
+            "Phân kỳ": phase_text([clean_number(r.get(f"pct_{m}", 0), 0.0) for m in months], clean_number(r.get("quantity", 0), 0.0), months),
         })
 
     df_adj = pd.DataFrame(adj_rows)
@@ -2324,6 +2326,7 @@ def render_batch_adjust_dialog(target_dept: str, target_site: str):
             "Thành tiền": st.column_config.NumberColumn("Thành tiền", disabled=True, format=MONEY_FMT),
             "Phân loại": st.column_config.TextColumn("Phân loại", disabled=True, width="small"),
             "Loại nhu cầu": st.column_config.TextColumn("Nhu cầu", disabled=True, width="small"),
+            "Phân kỳ": st.column_config.TextColumn("Phân kỳ hiện tại", disabled=True, width="medium"),
         }
     )
     sel_adj = ed_adj[ed_adj["Chọn"] == True]
@@ -2335,25 +2338,54 @@ def render_batch_adjust_dialog(target_dept: str, target_site: str):
     act_col1, act_col2 = st.columns(2)
     with act_col1:
         st.markdown("**1. Đổi tháng giải ngân / chia nhiều tháng:**")
-        adj_mode = st.radio("Cách phân kỳ:", [PHASE_ONE, PHASE_EVEN], horizontal=True, key="dlg_adj_mode",
-                            help="Chia đều: SL nguyên của mỗi dòng chia đều các tháng chọn, dư dồn tháng sớm")
+        adj_mode = st.radio("Cách phân kỳ:", [PHASE_ONE, PHASE_EVEN, PHASE_MANUAL], horizontal=True, key="dlg_adj_mode",
+                            help="Chia đều: SL nguyên của mỗi dòng chia đều các tháng chọn, dư dồn tháng sớm. "
+                                 "Tự nhập: sửa SL từng tháng, Số lượng của dòng = tổng các tháng")
+        manual_units, adj_err = {}, None
         if adj_mode == PHASE_ONE:
             new_m = st.selectbox("Chọn tháng giải ngân mới:", months, key="dlg_adj_new_m")
             adj_months, adj_lbl = [new_m], new_m
-        else:
+        elif adj_mode == PHASE_EVEN:
             adj_presets = phase_presets(months)
             adj_pre = st.selectbox("Mẫu nhanh:", list(adj_presets), index=2, key="dlg_adj_preset")
             adj_months = st.multiselect("Các tháng mua:", months, default=adj_presets[adj_pre] or months[:1],
                                         key=f"dlg_adj_months_{adj_pre}")
             adj_lbl = f"{len(adj_months)} tháng"
-        if st.button(f"📅 Phân kỳ {n_sel} mục vào {adj_lbl}", use_container_width=True, disabled=n_sel == 0 or not adj_months,
-                     key="btn_move_month"):
+        else:  # tự nhập SL từng tháng, điền sẵn theo phân kỳ hiện có
+            adj_months, adj_lbl = list(months), "SL từng tháng đã nhập"
+            if n_sel:
+                cur = dept_rows.loc[sel_adj["ID"]]
+                mgrid = pd.DataFrame([current_units([clean_number(r.get(f"pct_{m}", 0), 0.0) for m in months],
+                                                    clean_number(r.get("quantity", 0), 0.0)) for _, r in cur.iterrows()], columns=months)
+                mgrid.insert(0, "Mã", cur["item_code"].tolist())
+                mgrid.insert(1, "Tên hạng mục", cur["item_name"].astype(str).tolist())
+                med = st.data_editor(mgrid, key=f"dlg_adj_manual_{abs(hash(tuple(mgrid['Mã']))) % 10**8}", hide_index=True,
+                                     use_container_width=True,
+                                     column_config={"Mã": st.column_config.TextColumn("Mã", disabled=True, width="small"),
+                                                    "Tên hạng mục": st.column_config.TextColumn("Tên hạng mục", disabled=True, width="medium"),
+                                                    **{m: st.column_config.NumberColumn(m, min_value=0, step=1, format="%d") for m in months}})
+                for _, r in med.iterrows():
+                    manual_units[r["Mã"]] = [int(pd.to_numeric(r[m], errors="coerce") or 0) for m in months]
+                empty = [n for n, u in zip(med["Tên hạng mục"], manual_units.values()) if sum(u) <= 0]
+                if empty:
+                    adj_err = "Nhập số lượng ít nhất 1 tháng cho: " + ", ".join(empty)
+                st.caption("Số lượng của dòng = tổng các tháng (thành tiền tính lại theo đơn giá).")
+        if (adj_go := st.button(f"📅 Phân kỳ {n_sel} mục vào {adj_lbl}", use_container_width=True, disabled=n_sel == 0 or not adj_months,
+                                key="btn_move_month")) and adj_err:
+            st.error(adj_err)
+        elif adj_go:
             sel_codes = set(sel_adj["Mã"])
             updated_stored = stored_df.copy()
             match_mask = (updated_stored["dept_proposing"].map(dept_key) == dept_key(target_dept)) & (updated_stored["item_code"].isin(sel_codes))
             for i in updated_stored[match_mask].index:
+                if adj_mode == PHASE_MANUAL:
+                    units_i = manual_units.get(updated_stored.at[i, "item_code"])
+                    if not units_i:
+                        continue
+                    updated_stored.at[i, "quantity"] = float(sum(units_i))
                 qty_i = clean_number(updated_stored.at[i, "quantity"], 0.0)
-                units_i = even_units(qty_i, months, adj_months)
+                if adj_mode != PHASE_MANUAL:
+                    units_i = even_units(qty_i, months, adj_months)
                 for j, m in enumerate(months):  # SL không nguyên -> chia đều theo tỷ lệ
                     updated_stored.at[i, f"pct_{m}"] = (units_i[j] / qty_i if units_i
                                                         else (1.0 / len(adj_months) if m in adj_months else 0.0))
@@ -2362,7 +2394,8 @@ def render_batch_adjust_dialog(target_dept: str, target_site: str):
                 for k, v in c_dict.items():
                     updated_stored.at[i, k] = v
             save_site(updated_stored.reset_index(drop=True), target_site)
-            st.session_state["flash"] = f"✅ Đã phân kỳ {n_sel} hạng mục của {target_dept} vào {', '.join(adj_months)}!"
+            st.session_state["flash"] = (f"✅ Đã cập nhật SL từng tháng cho {n_sel} hạng mục của {target_dept}!" if adj_mode == PHASE_MANUAL
+                                         else f"✅ Đã phân kỳ {n_sel} hạng mục của {target_dept} vào {', '.join(adj_months)}!")
             st.session_state["pending_dept"] = target_dept
             st.rerun()
 
