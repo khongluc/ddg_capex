@@ -66,3 +66,23 @@ Tài liệu này xác định các quy ước lập trình, cấu trúc thư m�
    - Giữ nguyên các hàm / biến mà `tests/test_app_helpers.py` trích xuất từ `app.py` bằng `ast.parse`: `dept_key`, `dept_mask`, `filter_values`, `save_view`, `_commit_checklist_items`, `phasing_picker` và các biến `ITEM_FILTERS`, `FILTER_BLANK`, `PHASE_ONE` (xem `WANTED_FUNCS` / `WANTED_NAMES` trong file test).
    - Tổng tỷ lệ phân kỳ (cột `pct_<tháng>`, năm ngân sách T10 → T9) của mỗi dòng phải bằng 1.0.
    - Xem thêm chi tiết tại [docs/COLLABORATION.md](file:///d:/DATA/dev/I_Cost/docs/COLLABORATION.md).
+
+---
+
+## 5. Mức Tự Chủ — Tự Làm, Không Hỏi Lại
+
+Người dùng đã giao: **agent tự chia việc và tự làm**. Mặc định là **làm luôn đến hết việc, báo kết quả sau** — không xin xác nhận từng bước, không hỏi "có muốn tôi tiếp tục không".
+
+**Tự quyết, KHÔNG hỏi:**
+- Cách làm, tên hàm / biến, bố cục giao diện (theo quy chuẩn ở trên).
+- Sửa / thêm code, kiểm thử, tài liệu trong repo; chạy `python -m unittest`, `compileall`, chạy app ở cổng của mình.
+- Commit khi kiểm thử xanh; push lên `origin/main` khi kiểm thử xanh.
+- Nhận việc trong "Việc chờ" của [docs/HANDOFF.md](docs/HANDOFF.md) có ghi tên mình, cập nhật bảng.
+- Yêu cầu chưa rõ: chọn cách hợp lý nhất, **ghi giả định** vào "Nhật ký" của HANDOFF và báo cáo cuối lượt — không dừng lại để hỏi.
+- Gặp lỗi: tự tìm nguyên nhân và sửa; chỉ báo khi đã thử mà không được.
+
+**Chỉ hỏi người dùng khi:**
+- Ghi / xóa dữ liệu thật: `data/icost.db` hoặc CSDL online (PostgreSQL).
+- Thao tác không khôi phục được: xóa file / dữ liệu ngoài phạm vi việc, `git push --force`, sửa lịch sử git.
+- Đổi quy tắc nghiệp vụ (ngưỡng TT45, luồng nộp / duyệt, phân quyền) hoặc làm việc người dùng đã hoãn (khấu hao theo tháng bàn giao).
+- File cần sửa đang trong "Đang làm" của agent kia → không hỏi người dùng: ghi "Hỏi / Nhắn" trong HANDOFF rồi làm việc khác trong lúc chờ.
