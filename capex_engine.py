@@ -116,6 +116,24 @@ def even_units(qty: float, months: List[str], chosen: List[str]) -> Optional[Lis
     return split_units(qty, [1.0 if m in set(chosen) else 0.0 for m in months])
 
 
+def phase_text(pcts: List[float], qty: float, months: List[str]) -> str:
+    """Phân kỳ dạng chữ để hiện trên bảng: SL nguyên từng tháng nếu được (vd. "T10 2026: 3 · T1 2027: 2"), không thì tỷ lệ %."""
+    units = snap_units(pcts, qty)
+    if units is not None:
+        return " · ".join(f"{m}: {u}" for m, u in zip(months, units) if u)
+    return " · ".join(f"{m}: {p:.0%}" for m, p in zip(months, pcts) if p > 0)
+
+
+def regrid_pcts(old_pcts: Optional[List[float]], month: str, months: List[str]) -> List[float]:
+    """Bảng chỉ có 1 cột "tháng" (tháng đầu): giữ phân kỳ nhiều tháng cũ nếu tháng đầu không đổi;
+    dòng mới / đổi tháng -> 100% vào tháng đó."""
+    if old_pcts and len(old_pcts) == len(months) and sum(old_pcts) > 0:
+        first = next(m for m, p in zip(months, old_pcts) if p > 0)
+        if first == month:
+            return list(old_pcts)
+    return [1.0 if m == month else 0.0 for m in months]
+
+
 def snap_units(pcts: List[float], qty: float, tol: float = 0.05) -> Optional[List[int]]:
     """Số lượng nguyên theo tháng nếu tỷ lệ phân kỳ ứng với số lượng gần nguyên (vd. 33,34% × 21 máy = 7,0014 -> 7).
     Trả về None khi SL không nguyên hoặc phân kỳ có tháng lẻ thật (vd. 50/50 cho 3 máy) - khi đó giữ nguyên tỷ lệ."""

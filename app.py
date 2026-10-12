@@ -62,6 +62,8 @@ from capex_engine import (
     clean_number,
     even_units,
     phase_presets,
+    phase_text,
+    regrid_pcts,
     USEFUL_LIFE_DEFAULTS
 )
 
@@ -3422,15 +3424,15 @@ with tab_infra:
         if selected_dept != ALL_DEPTS:
             st.caption("Hạ tầng dùng chung lập theo site, nên hiển thị toàn bộ hạ tầng của site (không lọc theo phòng ban đang chọn).")
 
-        def _infra_row(item, invest_type, qty, price, month, dept, reason):
+        def _infra_row(item, invest_type, qty, price, units, dept, reason):
             entity = (df_site["entity"].mode().iloc[0] if "entity" in df_site.columns and not df_site["entity"].dropna().empty else "DDC")
             row = {"entity": entity, "location": SITE_NAME.get(selected_site, selected_site), "quantity": float(qty),
                    "unit_price": float(price), "dept_proposing": dept or item_owner(item, master),
                    "dept_using": "Dùng chung toàn site", "need_type": qt.NEED_INFRA, "need_reason": reason,
                    "detail_work": "Hạ tầng CNTT dùng chung"}
             apply_it_catalog(row, master, item=item, invest_type=invest_type)
-            for m in months:
-                row[f"pct_{m}"] = 1.0 if m == month else 0.0
+            for m, u in zip(months, units):  # SL nguyên từng tháng
+                row[f"pct_{m}"] = u / qty
             return row
 
         def _confirm_infra_saved(expected: int, action: str):
@@ -3443,33 +3445,53 @@ with tab_infra:
                 st.session_state["flash"] = (f"⚠️ {action} nhưng CSDL {where} đang có {len(saved)} dòng hạ tầng (mong đợi {expected}) – "
                                              "vui lòng kiểm tra lại.")
 
-        # Form thêm từng hạng mục (ổn định hơn nhập trực tiếp trên lưới)
+        # Thêm nhiều hạng mục 1 lần (ổn định hơn nhập trực tiếp trên lưới), phân kỳ 1 / nhiều tháng
         if can_edit:
+            inf_ver = st.session_state.get("infra_version", 0)
             with st.expander("➕ Thêm hạng mục hạ tầng", expanded=df_inf.empty):
-                with st.form("infra_add_form", clear_on_submit=True):
-                    fa1, fa2, fa3 = st.columns([2.2, 1, 1])
-                    f_item_lbl = fa1.selectbox("(*) Hạng mục hạ tầng", list(sh_label.values()), index=None,
-                                               placeholder="Chọn hạng mục...")
-                    f_inv = fa2.selectbox("(*) Hình thức", INVEST_TYPES)
-                    f_month = fa3.selectbox("(*) Tháng triển khai", months)
-                    fb1, fb2, fb3 = st.columns([1, 1, 2.2])
-                    f_qty = fb1.number_input("(*) Số lượng", min_value=1, value=1, step=1)
-                    f_price = fb2.number_input("Đơn giá (VNĐ, 0 = giá danh mục)", min_value=0, value=0, step=1_000_000)
-                    f_dept = fb3.selectbox("Phòng đề xuất", owners_list := sorted({item_owner(it, master) for it in shared_items} | set(dept_list)),
-                                           index=owners_list.index(DEFAULT_INFRA_OWNER) if DEFAULT_INFRA_OWNER in owners_list else 0)
-                    f_reason = st.text_input("(*) Căn cứ / lý do", placeholder="VD: Triển khai hệ thống DWH; thay firewall hết hỗ trợ...")
-                    if st.form_submit_button("➕ Thêm vào ngân sách hạ tầng", type="primary", use_container_width=True):
-                        if not f_item_lbl:
-                            st.error("Chưa chọn Hạng mục hạ tầng.")
-                        elif not f_reason.strip():
-                            st.error("Cần ghi Căn cứ / lý do.")
-                        else:
-                            it = sh_by_code[sh_by_label[f_item_lbl]]
-                            new = _infra_row(it, f_inv, f_qty, f_price or it.get("price", 0), f_month, f_dept, f_reason.strip())
-                            st.session_state["infra_version"] = st.session_state.get("infra_version", 0) + 1
-                            save_site(pd.concat([df_site, pd.DataFrame([new])], ignore_index=True), selected_site)
-                            _confirm_infra_saved(len(df_inf) + 1, f"Đã thêm '{it['name']}'")
-                            st.rerun()
+                f_items = st.multiselect("(*) Hạng mục hạ tầng (chọn được nhiều)", list(sh_label.values()),
+                                         placeholder="Chọn hạng mục...", key=f"infra_add_items_{inf_ver}")
+                add_ed, f_err = pd.DataFrame(), None
+                if f_items:
+                    add_df = pd.DataFrame([{"Mã": sh_by_label[l], "Tên thiết bị / Hạng mục": sh_by_code[sh_by_label[l]]["name"],
+                                            "Hình thức": INVEST_TYPES[0], "Số lượng": 1,
+                                            "Đơn giá (VNĐ)": float(sh_by_code[sh_by_label[l]].get("price", 0) or 0)} for l in f_items])
+                    add_ed = st.data_editor(add_df, key=f"infra_add_grid_{inf_ver}_{abs(hash(tuple(f_items))) % 10**8}",
+                                            hide_index=True, use_container_width=True,
+                                            column_config={
+                                                "Mã": st.column_config.TextColumn("Mã", disabled=True, width="small"),
+                                                "Tên thiết bị / Hạng mục": st.column_config.TextColumn("Hạng mục", disabled=True, width="large"),
+                                                "Hình thức": st.column_config.SelectboxColumn("Hình thức", options=INVEST_TYPES, required=True),
+                                                "Số lượng": st.column_config.NumberColumn("Số lượng", min_value=1, step=1, format="%d", required=True),
+                                                "Đơn giá (VNĐ)": st.column_config.NumberColumn("Đơn giá (VNĐ)", min_value=0, format=MONEY_FMT),
+                                            })
+                    add_ed, f_err = phasing_picker(add_ed, f"infra_add_{inf_ver}")
+                fb3, fb4 = st.columns([1.2, 2])
+                owners_list = sorted({item_owner(it, master) for it in shared_items} | set(dept_list))
+                f_dept = fb3.selectbox("Phòng đề xuất", owners_list, key=f"infra_add_dept_{inf_ver}",
+                                       index=owners_list.index(DEFAULT_INFRA_OWNER) if DEFAULT_INFRA_OWNER in owners_list else 0)
+                f_reason = fb4.text_input("(*) Căn cứ / lý do", key=f"infra_add_reason_{inf_ver}",
+                                          placeholder="VD: Triển khai hệ thống DWH; thay firewall hết hỗ trợ...")
+                if st.button(f"➕ Thêm {len(add_ed)} hạng mục vào ngân sách hạ tầng", type="primary", use_container_width=True,
+                             disabled=add_ed.empty, key=f"infra_add_btn_{inf_ver}"):
+                    if f_err:
+                        st.error(f_err)
+                    elif (add_ed["Số lượng"] <= 0).any():
+                        st.error("Nhập số lượng lớn hơn 0 cho mọi hạng mục.")
+                    elif not f_reason.strip():
+                        st.error("Cần ghi Căn cứ / lý do.")
+                    else:
+                        new = []
+                        for _, r in add_ed.iterrows():
+                            it = sh_by_code[r["Mã"]]
+                            price = r.get("Đơn giá (VNĐ)")
+                            price = float(it.get("price", 0)) if price is None or pd.isna(price) or price <= 0 else float(price)
+                            new.append(_infra_row(it, r.get("Hình thức") or INVEST_TYPES[0], sum(r["_units"]), price, r["_units"],
+                                                  f_dept, f_reason.strip()))
+                        st.session_state["infra_version"] = inf_ver + 1
+                        save_site(pd.concat([df_site, pd.DataFrame(new)], ignore_index=True), selected_site)
+                        _confirm_infra_saved(len(df_inf) + len(new), f"Đã thêm {len(new)} hạng mục hạ tầng")
+                        st.rerun()
 
         st.markdown("##### Danh sách hạng mục hạ tầng của site (sửa / xóa trực tiếp trên bảng)")
 
@@ -3482,10 +3504,12 @@ with tab_infra:
         df_edit = pd.DataFrame([{
             "item": sh_label.get(r.get("catalog_code"), r.get("item_name")), "invest_type": r.get("invest_type") or "Mua mới",
             "quantity": r.get("quantity"), "unit_price": r.get("unit_price"), "month": first_month(r),
+            "phase": phase_text([qt._num(r.get(f"pct_{m}")) for m in months], qt._num(r.get("quantity"), 0.0), months),
             "dept_proposing": r.get("dept_proposing"), "need_reason": r.get("need_reason") or "",
             "item_seq": r.get("item_seq"), "item_code_base": r.get("item_code_base"),  # ẩn: giữ Mã hạng mục cố định
-        } for _, r in df_inf.iterrows()], columns=["item", "invest_type", "quantity", "unit_price", "month", "dept_proposing", "need_reason",
-                                                    "item_seq", "item_code_base"])
+            "pcts": json.dumps([qt._num(r.get(f"pct_{m}")) for m in months]),  # ẩn: giữ phân kỳ nhiều tháng khi lưu
+        } for _, r in df_inf.iterrows()], columns=["item", "invest_type", "quantity", "unit_price", "month", "phase", "dept_proposing",
+                                                    "need_reason", "item_seq", "item_code_base", "pcts"])
         owners = sorted({item_owner(it, master) for it in shared_items} | set(dept_list))
         ed_inf = st.data_editor(
             df_edit, key=f"infra_{budget_year}_{selected_site}_{st.session_state.get('infra_version', 0)}",
@@ -3495,10 +3519,12 @@ with tab_infra:
                 "invest_type": st.column_config.SelectboxColumn("Hình thức", options=INVEST_TYPES, required=True),
                 "quantity": st.column_config.NumberColumn("Số lượng", min_value=1, step=1, format=MONEY_FMT, required=True),
                 "unit_price": st.column_config.NumberColumn("Đơn giá (VNĐ, trống = giá danh mục)", min_value=0, format=MONEY_FMT),
-                "month": st.column_config.SelectboxColumn("Tháng triển khai", options=months, required=True),
+                "month": st.column_config.SelectboxColumn("Tháng triển khai (đầu)", options=months, required=True,
+                                                          help="Đổi tháng: cả SL dồn vào tháng mới. Giữ nguyên: giữ phân kỳ nhiều tháng đang có"),
+                "phase": st.column_config.TextColumn("Phân kỳ hiện tại", disabled=True, width="medium"),
                 "dept_proposing": st.column_config.SelectboxColumn("Phòng đề xuất (trống = phòng phụ trách)", options=owners),
                 "need_reason": st.column_config.TextColumn("Căn cứ / lý do (bắt buộc)", width="large"),
-                "item_seq": None, "item_code_base": None,
+                "item_seq": None, "item_code_base": None, "pcts": None,
             })
         if not df_inf.empty:
             g = df_inf.groupby("it_group")["total_budget"].sum().sort_values(ascending=False)
@@ -3534,8 +3560,12 @@ with tab_infra:
                        "need_type": qt.NEED_INFRA, "need_reason": reason, "detail_work": "Hạ tầng CNTT dùng chung",
                        "item_seq": r.get("item_seq"), "item_code_base": r.get("item_code_base")}
                 apply_it_catalog(row, master, item=item, invest_type=r.get("invest_type") or "Mua mới")
-                for m in months:
-                    row[f"pct_{m}"] = 1.0 if m == r.get("month") else 0.0
+                try:
+                    old_pcts = json.loads(r.get("pcts") or "null")
+                except (TypeError, ValueError):
+                    old_pcts = None
+                for m, pc in zip(months, regrid_pcts(old_pcts, r.get("month"), months)):
+                    row[f"pct_{m}"] = pc
                 new_rows.append(row)
             if not new_rows and df_inf.empty:
                 errs.append("Bảng chưa có dòng nào được ghi nhận. Dùng mục '➕ Thêm hạng mục hạ tầng' ở trên để thêm, "
