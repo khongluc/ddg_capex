@@ -57,7 +57,8 @@ class DevLoginGuardTest(unittest.TestCase):
         self.assertNotIn("metadata", state)
 
     def test_no_auto_admin_login(self):
-        src = open(auth.__file__, encoding="utf-8").read()
+        with open(auth.__file__, encoding="utf-8") as f:
+            src = f.read()
         self.assertNotIn("@daidung.vn", src)                       # không ghi cứng email trong code
         self.assertNotIn('session_state["dev_login_email"] = default_admin', src)
 

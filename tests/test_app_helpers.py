@@ -14,7 +14,8 @@ WANTED_NAMES = {"ITEM_FILTERS", "FILTER_BLANK", "PHASE_ONE"}
 
 
 def load_app_funcs(**globals_):
-    tree = ast.parse(open(APP, encoding="utf-8").read())
+    with open(APP, encoding="utf-8") as f:
+        tree = ast.parse(f.read())
     keep = [n for n in tree.body
             if (isinstance(n, ast.FunctionDef) and n.name in WANTED_FUNCS)
             or (isinstance(n, ast.Assign) and any(getattr(x, "id", "") in WANTED_NAMES

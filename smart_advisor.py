@@ -43,7 +43,7 @@ PILLAR_META = {
         "name": "Quản trị & Môi trường Làm việc Số",
         "icon": "💼",
         "desc": "Laptop, PC văn phòng, máy in, ERP, Office 365, Cloud & đường truyền viễn thông",
-        "groups": ["IT01", "IT02", "IT07", "IT09", "IT11", "IT12", "IT13", "IT14", "IT15"],
+        "groups": ["IT01", "IT02", "IT07", "IT09", "IT11", "IT12", "IT13", "IT14", "IT15", "IT16"],
         "color": "#16A34A"
     }
 }
@@ -379,8 +379,8 @@ PACKAGE_DEFS = [
         "id": "PKG-SOFTWARE",
         "name": "Gói 2: Bản quyền Phần mềm Thiết kế & Hệ thống",
         "icon": "💿",
-        "desc": "Tekla Structures, Autodesk AEC/BIM, Microsoft Office 365, ERP",
-        "groups": ["IT09", "IT10", "IT11"],
+        "desc": "Tekla Structures, Autodesk AEC/BIM, Microsoft Office 365, ERP, Phần mềm AI",
+        "groups": ["IT09", "IT10", "IT11", "IT16"],
         "target_rebate": "8% - 12%",
         "lead_time_days": 45
     },
