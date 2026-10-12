@@ -1,5 +1,6 @@
 """Hàm trong app.py (lọc theo hạng mục, lưu bảng đang lọc). app.py chạy Streamlit khi nạp, nên chỉ tách đúng các hàm cần thử."""
 import ast
+import contextlib
 import os
 import unittest
 
@@ -8,15 +9,16 @@ import pandas as pd
 from tests import fixtures as fx
 
 APP = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "app.py")
-WANTED_FUNCS = {"dept_key", "dept_mask", "filter_values", "save_view", "_commit_checklist_items"}
-WANTED_NAMES = {"ITEM_FILTERS", "FILTER_BLANK"}
+WANTED_FUNCS = {"dept_key", "dept_mask", "filter_values", "save_view", "_commit_checklist_items", "phasing_picker"}
+WANTED_NAMES = {"ITEM_FILTERS", "FILTER_BLANK", "PHASE_ONE"}
 
 
 def load_app_funcs(**globals_):
     tree = ast.parse(open(APP, encoding="utf-8").read())
     keep = [n for n in tree.body
             if (isinstance(n, ast.FunctionDef) and n.name in WANTED_FUNCS)
-            or (isinstance(n, ast.Assign) and any(getattr(t, "id", "") in WANTED_NAMES for t in n.targets))]
+            or (isinstance(n, ast.Assign) and any(getattr(x, "id", "") in WANTED_NAMES
+                                                  for t in n.targets for x in ([t] + list(getattr(t, "elts", [])))))]
     ns = {"pd": pd, "ALL_DEPTS": "(Tất cả phòng ban)", **globals_}
     exec(compile(ast.Module(keep, []), APP, "exec"), ns)
     return ns
@@ -109,6 +111,100 @@ class PopupCommitTest(unittest.TestCase):
                             "ĐVT": "", "Số lượng": 3, "Đơn giá (VNĐ)": 27_000_000, "Ghi chú": ""}])
         self.assertEqual((out[0]["catalog_code"], out[0]["item_name"]), (fx.ZWCAD, "ZWCAD"))
 
+
+    def test_one_item_split_over_months(self):
+        """1 hạng mục SL nhiều, chia nhiều tháng (SL nguyên từng tháng) -> 1 dòng, giá trị tháng = SL tháng × đơn giá."""
+        from capex_engine import even_units, phase_presets
+        quarters = phase_presets(fx.MONTHS)["Đầu mỗi quý"]
+        units = even_units(10, fx.MONTHS, quarters)
+        self.assertEqual([units[fx.MONTHS.index(m)] for m in quarters], [3, 3, 2, 2])
+        manual = [0] * len(fx.MONTHS)
+        manual[1], manual[5] = 4, 1   # tự nhập: SL = tổng các tháng (5), bỏ qua cột Số lượng cũ
+        out = self.commit([
+            {"Mã": "", "Tên thiết bị / Hạng mục": "zwCAD", "Số lượng": 10, "Đơn giá (VNĐ)": 27_000_000, "_units": units},
+            {"Mã": "", "Tên thiết bị / Hạng mục": "zwCAD", "Số lượng": 1, "Đơn giá (VNĐ)": 27_000_000, "_units": manual},
+        ])
+        a, b = out
+        self.assertEqual(a["quantity"], 10)
+        self.assertEqual([a[f"val_{m}"] for m in quarters], [81_000_000, 81_000_000, 54_000_000, 54_000_000])
+        self.assertAlmostEqual(sum(a[f"pct_{m}"] for m in fx.MONTHS), 1.0)
+        self.assertEqual(a["handover_date"], fx_last_day(quarters[-1]))
+        self.assertEqual((b["quantity"], b["total_budget"]), (5, 135_000_000))
+        self.assertEqual((b[f"val_{fx.MONTHS[1]}"], b[f"val_{fx.MONTHS[5]}"]), (108_000_000, 27_000_000))
+
+    def test_even_units_edge_cases(self):
+        from capex_engine import even_units
+        self.assertEqual(sum(even_units(2, fx.MONTHS, fx.MONTHS[:4])), 2)        # SL < số tháng: dồn tháng sớm
+        self.assertEqual(even_units(2, fx.MONTHS, fx.MONTHS[:4])[:2], [1, 1])
+        self.assertIsNone(even_units(2.5, fx.MONTHS, fx.MONTHS[:2]))             # SL lẻ -> chia theo tỷ lệ
+        self.assertIsNone(even_units(5, fx.MONTHS, []))
+
+
+class _FakeSt:
+    """Streamlit giả cho phasing_picker: radio / selectbox / multiselect trả giá trị cho trước, data_editor trả bảng đã sửa."""
+    def __init__(self, mode, pick=None, chosen=None, edit=None):
+        self.mode, self.pick, self.chosen, self.edit = mode, pick, chosen, edit
+        self.column_config = types_ns(TextColumn=lambda *a, **k: None, NumberColumn=lambda *a, **k: None)
+
+    def radio(self, *a, **k): return self.mode
+    def selectbox(self, label, options, **k): return self.pick if self.pick is not None else options[k.get("index", 0)]
+    def multiselect(self, label, options, default=None, **k): return self.chosen if self.chosen is not None else default
+    def columns(self, spec): return [contextlib.nullcontext() for _ in spec]
+    def dataframe(self, *a, **k): pass
+    def caption(self, *a, **k): pass
+
+    def data_editor(self, df, **k):
+        df = df.copy()
+        for (row, col), v in (self.edit or {}).items():
+            df.loc[row, col] = v
+        return df
+
+
+def types_ns(**kw):
+    import types
+    return types.SimpleNamespace(**kw)
+
+
+class PhasingPickerTest(unittest.TestCase):
+    def run_picker(self, fake, rows):
+        from capex_engine import even_units, phase_presets
+        ns = load_app_funcs(st=fake, months=fx.MONTHS, even_units=even_units, phase_presets=phase_presets)
+        return ns, ns["phasing_picker"](pd.DataFrame(rows), "k")
+
+    ROWS = [{"Tên thiết bị / Hạng mục": "Laptop", "Số lượng": 10, "Đơn giá (VNĐ)": 20_000_000},
+            {"Tên thiết bị / Hạng mục": "Màn hình", "Số lượng": 3, "Đơn giá (VNĐ)": 4_000_000}]
+
+    def test_one_month(self):
+        ns, (out, err) = self.run_picker(_FakeSt("1 tháng", pick=fx.MONTHS[4]), self.ROWS)
+        self.assertIsNone(err)
+        self.assertEqual(out["_units"][0][4], 10)
+        self.assertEqual(sum(out["_units"][0]), 10)
+
+    def test_even_quarters_default(self):
+        ns, (out, err) = self.run_picker(_FakeSt("Chia đều nhiều tháng"), self.ROWS)   # mẫu mặc định: đầu mỗi quý
+        self.assertIsNone(err)
+        q = [0, 3, 6, 9]
+        self.assertEqual([out["_units"][0][i] for i in q], [3, 3, 2, 2])
+        self.assertEqual([out["_units"][1][i] for i in q], [1, 1, 1, 0])
+        self.assertEqual(out["Số lượng"].tolist(), [10, 3])
+
+    def test_even_no_month_is_error(self):
+        _, (out, err) = self.run_picker(_FakeSt("Chia đều nhiều tháng", chosen=[]), self.ROWS)
+        self.assertTrue(err)
+
+    def test_manual_grid_sets_quantity(self):
+        edit = {(0, fx.MONTHS[0]): 6, (0, fx.MONTHS[2]): 6, (1, fx.MONTHS[0]): 0}
+        _, (out, err) = self.run_picker(_FakeSt("Tự nhập SL từng tháng", edit=edit), self.ROWS)
+        self.assertIn("Màn hình", err)                                        # dòng 2 không còn tháng nào
+        edit[(1, fx.MONTHS[11])] = 2
+        _, (out, err) = self.run_picker(_FakeSt("Tự nhập SL từng tháng", edit=edit), self.ROWS)
+        self.assertIsNone(err)
+        self.assertEqual(out["Số lượng"].tolist(), [12, 2])
+        self.assertEqual(out["_units"][1][11], 2)
+
+def fx_last_day(month_label):
+    from capex_engine import default_handover_date
+    return default_handover_date({f"pct_{month_label}": 1}, fx.MONTHS)
 
 if __name__ == "__main__":
     unittest.main()

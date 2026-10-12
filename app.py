@@ -60,6 +60,8 @@ from capex_engine import (
     calculate_depreciation_schedule,
     calculate_project_financials,
     clean_number,
+    even_units,
+    phase_presets,
     USEFUL_LIFE_DEFAULTS
 )
 
@@ -1890,7 +1892,9 @@ def _commit_checklist_items(selected_items_df: pd.DataFrame, target_dept: str, t
         it_code = str(r_it.get("Mã", "")).strip()
         it_name = str(r_it.get("Tên thiết bị / Hạng mục", "")).strip()
         cat_it = next((x for x in cat_all if it_code and x.get("code") == it_code), None) or find_catalog_item(it_name, master)
-        q = int(r_it.get("Số lượng", 1))
+        units = r_it.get("_units")
+        units = units if isinstance(units, list) and len(units) == len(months) and sum(units) > 0 else None
+        q = int(sum(units)) if units else int(r_it.get("Số lượng", 1))
         p = float(r_it.get("Đơn giá (VNĐ)", 0))
         note_txt = str(r_it.get("Ghi chú", "")).strip()
 
@@ -1911,8 +1915,8 @@ def _commit_checklist_items(selected_items_df: pd.DataFrame, target_dept: str, t
             "need_type": need_type,
             "need_reason": need_reason if need_type in qt.NEED_WITH_REASON else "",
         }
-        for m in months:
-            row_dict[f"pct_{m}"] = 1.0 if m == target_month else 0.0
+        for i, m in enumerate(months):  # phân kỳ theo SL nguyên từng tháng; không có -> cả SL vào 1 tháng
+            row_dict[f"pct_{m}"] = units[i] / q if units else (1.0 if m == target_month else 0.0)
 
         inv = str(r_it.get("Hình thức") or "").strip() or None
         if cat_it:
@@ -1940,6 +1944,57 @@ def _commit_checklist_items(selected_items_df: pd.DataFrame, target_dept: str, t
     st.session_state["flash"] = f"🎉 Đã thêm thành công {len(new_items_list)} hạng mục vào ngân sách phòng ban '{target_dept}' ({format_vnd(total_cost)})!"
     st.session_state["pending_dept"] = target_dept
     st.rerun()
+
+
+PHASE_ONE, PHASE_EVEN, PHASE_MANUAL = "1 tháng", "Chia đều nhiều tháng", "Tự nhập SL từng tháng"
+
+
+def phasing_picker(sel_df: pd.DataFrame, key: str) -> tuple:
+    """Popup: chọn cách phân kỳ cho các hạng mục đã chọn - cả SL vào 1 tháng, chia đều các tháng chọn, hoặc nhập SL từng tháng.
+    Trả về (bảng có thêm cột _units = SL nguyên từng tháng và Số lượng = tổng, lỗi hoặc None)."""
+    mode = st.radio("📅 Phân kỳ mua:", [PHASE_ONE, PHASE_EVEN, PHASE_MANUAL], horizontal=True, key=f"{key}_mode",
+                    help="Chia đều: SL nguyên chia đều các tháng chọn, dư dồn tháng sớm (10 máy / 4 quý = 3-3-2-2). "
+                         "Tự nhập: gõ SL từng tháng, Số lượng = tổng các tháng.")
+    out = sel_df.copy()
+    qtys = [int(q) for q in pd.to_numeric(out.get("Số lượng", pd.Series(dtype=float)), errors="coerce").fillna(0)]
+    names = out["Tên thiết bị / Hạng mục"].astype(str).tolist() if not out.empty else []
+    if mode == PHASE_ONE:
+        m1 = st.selectbox("Tháng sử dụng:", months, index=0, key=f"{key}_month")
+        units = [[q if m == m1 else 0 for m in months] for q in qtys]
+    elif mode == PHASE_EVEN:
+        presets = phase_presets(months)
+        pc1, pc2 = st.columns([1, 2.4])
+        with pc1:
+            pre = st.selectbox("Mẫu nhanh:", list(presets), index=2, key=f"{key}_preset")
+        with pc2:
+            chosen = st.multiselect("Các tháng mua:", months, default=presets[pre] or months[:1], key=f"{key}_months_{pre}")
+        if not chosen:
+            return out, "Chọn ít nhất 1 tháng mua."
+        units = [even_units(q, months, chosen) or [0] * len(months) for q in qtys]
+        if not out.empty:
+            prev = pd.DataFrame([u for u in units], columns=months)
+            prev.insert(0, "Hạng mục", names)
+            st.dataframe(prev[["Hạng mục"] + [m for m in months if m in chosen]], hide_index=True, use_container_width=True)
+            few = [n for n, q in zip(names, qtys) if 0 < q < len(chosen)]
+            if few:
+                st.caption("SL ít hơn số tháng, các tháng cuối không mua: " + ", ".join(few))
+    else:
+        if out.empty:
+            return out, None
+        grid = pd.DataFrame([[q if i == 0 else 0 for i in range(len(months))] for q in qtys], columns=months)
+        grid.insert(0, "Hạng mục", names)
+        sig = abs(hash(tuple(names))) % 10**8
+        ed = st.data_editor(grid, key=f"{key}_grid_{sig}", hide_index=True, use_container_width=True,
+                            column_config={"Hạng mục": st.column_config.TextColumn("Hạng mục", disabled=True, width="medium"),
+                                           **{m: st.column_config.NumberColumn(m, min_value=0, step=1, format="%d") for m in months}})
+        units = [[int(pd.to_numeric(v, errors="coerce") or 0) for v in ed.loc[i, months]] for i in ed.index]
+        empty = [n for n, u in zip(names, units) if sum(u) <= 0]
+        if empty:
+            return out, "Nhập số lượng ít nhất 1 tháng cho: " + ", ".join(empty)
+    if not out.empty:
+        out["_units"] = pd.Series(units, index=out.index, dtype=object)
+        out["Số lượng"] = [sum(u) for u in units]
+    return out, None
 
 
 def dialog_dept_picker(default_dept: str, key: str) -> tuple:
@@ -2042,12 +2097,11 @@ def render_item_picker_dialog(target_dept: str, target_site: str):
             }
         )
         sel_kit_df = ed_kit[(ed_kit["Chọn"] == True) & (ed_kit["Số lượng"] > 0)]
+        st.markdown("---")
+        sel_kit_df, k_err = phasing_picker(sel_kit_df, "dlg_k")
         cost_kit = (sel_kit_df["Số lượng"] * sel_kit_df["Đơn giá (VNĐ)"]).sum() if not sel_kit_df.empty else 0.0
 
-        st.markdown("---")
-        kb1, kb2, kb3 = st.columns([1.2, 1.2, 1.6])
-        with kb1:
-            k_month = st.selectbox("Tháng sử dụng:", months, index=0, key="dlg_k_month")
+        kb2, kb3 = st.columns([2.4, 1.6])
         with kb2:
             k_need = st.radio("Nhu cầu:", qt.NEED_TYPES, index=qt.NEED_TYPES.index(qt.NEED_NEW), horizontal=True, key="dlg_k_need",
                               help="Dòng 'Định biên' nên sinh từ tab Định biên (tránh tính trùng); thêm tay mặc định là Phát sinh mới, bắt buộc ghi lý do")
@@ -2064,10 +2118,12 @@ def render_item_picker_dialog(target_dept: str, target_site: str):
             k_reason = st.text_input("Lý do phát sinh / căn cứ trang bị:", value=f"Tuyển mới {n_people} {kit_obj['name'] if kit_obj else ''}", key="dlg_k_reason")
 
         if st.button(f"💾 XÁC NHẬN THÊM {len(sel_kit_df)} MỤC TRONG GÓI VÀO {target_dept}", type="primary", use_container_width=True, disabled=sel_kit_df.empty, key="btn_apply_dlg_kit"):
-            if k_need in qt.NEED_WITH_REASON and not k_reason.strip():
+            if k_err:
+                st.error(k_err)
+            elif k_need in qt.NEED_WITH_REASON and not k_reason.strip():
                 st.error("Vui lòng nhập lý do / căn cứ phát sinh trước khi thêm!")
             else:
-                _commit_checklist_items(sel_kit_df, target_dept, target_site, k_month, k_need, k_reason)
+                _commit_checklist_items(sel_kit_df, target_dept, target_site, None, k_need, k_reason)
 
     # Tab 2: Universal Search Checklist
     with dlg_tab2:
@@ -2125,12 +2181,11 @@ def render_item_picker_dialog(target_dept: str, target_site: str):
                 }
             )
             sel_cat_df = ed_cat[ed_cat["Chọn"] == True]
+            st.markdown("---")
+            sel_cat_df, c_err = phasing_picker(sel_cat_df, "dlg_c")
             cost_cat = (sel_cat_df["Số lượng"] * sel_cat_df["Đơn giá (VNĐ)"]).sum() if not sel_cat_df.empty else 0.0
 
-            st.markdown("---")
-            cb1, cb2, cb3 = st.columns([1.2, 1.2, 1.6])
-            with cb1:
-                c_month = st.selectbox("Tháng sử dụng:", months, index=0, key="dlg_c_month")
+            cb2, cb3 = st.columns([2.4, 1.6])
             with cb2:
                 c_need = st.radio("Nhu cầu:", qt.NEED_TYPES, index=qt.NEED_TYPES.index(qt.NEED_NEW), horizontal=True, key="dlg_c_need")
             with cb3:
@@ -2146,10 +2201,12 @@ def render_item_picker_dialog(target_dept: str, target_site: str):
                 c_reason = st.text_input("Lý do phát sinh / căn cứ trang bị:", placeholder="VD: Tuyển thêm nhân sự, nâng cấp máy...", key="dlg_c_reason")
 
             if st.button(f"💾 XÁC NHẬN THÊM {len(sel_cat_df)} MỤC ĐÃ TICK VÀO {target_dept}", type="primary", use_container_width=True, disabled=sel_cat_df.empty, key="btn_apply_dlg_cat"):
-                if c_need in qt.NEED_WITH_REASON and not c_reason.strip():
+                if c_err:
+                    st.error(c_err)
+                elif c_need in qt.NEED_WITH_REASON and not c_reason.strip():
                     st.error("Vui lòng nhập lý do / căn cứ phát sinh trước khi thêm!")
                 else:
-                    _commit_checklist_items(sel_cat_df, target_dept, target_site, c_month, c_need, c_reason)
+                    _commit_checklist_items(sel_cat_df, target_dept, target_site, None, c_need, c_reason)
 
     # Tab 3: hạng mục chưa có trong danh mục (nhập tay)
     with dlg_tab3:
@@ -2180,11 +2237,10 @@ def render_item_picker_dialog(target_dept: str, target_site: str):
         in_cat = [n for n in sel_new["Tên thiết bị / Hạng mục"] if find_catalog_item(n, master)]
         if in_cat:
             st.info("Có trong danh mục, sẽ lấy theo danh mục (mã, nhóm, hạch toán): " + ", ".join(in_cat))
-        cost_new = (sel_new["Số lượng"] * sel_new["Đơn giá (VNĐ)"]).sum() if not sel_new.empty else 0.0
         st.markdown("---")
-        nb1, nb2, nb3 = st.columns([1.2, 1.2, 1.6])
-        with nb1:
-            n_month = st.selectbox("Tháng sử dụng:", months, index=0, key="dlg_n_month")
+        sel_new, n_err = phasing_picker(sel_new, "dlg_n")
+        cost_new = (sel_new["Số lượng"] * sel_new["Đơn giá (VNĐ)"]).sum() if not sel_new.empty else 0.0
+        nb2, nb3 = st.columns([2.4, 1.6])
         with nb2:
             n_need = st.radio("Nhu cầu:", qt.NEED_TYPES, index=qt.NEED_TYPES.index(qt.NEED_NEW), horizontal=True, key="dlg_n_need")
         with nb3:
@@ -2202,12 +2258,16 @@ def render_item_picker_dialog(target_dept: str, target_site: str):
                            if not find_catalog_item(n, master) and not str(g or "").strip()]
             if missing_grp:
                 st.error("Chọn Nhóm CNTT cho: " + ", ".join(missing_grp))
+            elif n_err:
+                st.error(n_err)
+            elif (sel_new["Số lượng"] <= 0).any():
+                st.error("Nhập số lượng lớn hơn 0 cho mọi hạng mục.")
             elif (sel_new["Đơn giá (VNĐ)"] <= 0).any():
                 st.error("Nhập đơn giá lớn hơn 0 cho mọi hạng mục.")
             elif n_need in qt.NEED_WITH_REASON and not n_reason.strip():
                 st.error("Vui lòng nhập lý do / căn cứ phát sinh trước khi thêm!")
             else:
-                _commit_checklist_items(sel_new, target_dept, target_site, n_month, n_need, n_reason)
+                _commit_checklist_items(sel_new, target_dept, target_site, None, n_need, n_reason)
 
 
 @st.dialog("📋 Checklist Rà Soát & Điều Chỉnh Nhanh Phòng Ban", width="large")
@@ -2272,21 +2332,35 @@ def render_batch_adjust_dialog(target_dept: str, target_site: str):
 
     act_col1, act_col2 = st.columns(2)
     with act_col1:
-        st.markdown("**1. Đổi tháng giải ngân hàng loạt:**")
-        new_m = st.selectbox("Chọn tháng giải ngân mới:", months, key="dlg_adj_new_m")
-        if st.button(f"📅 Chuyển {n_sel} mục sang {new_m}", use_container_width=True, disabled=n_sel == 0, key="btn_move_month"):
+        st.markdown("**1. Đổi tháng giải ngân / chia nhiều tháng:**")
+        adj_mode = st.radio("Cách phân kỳ:", [PHASE_ONE, PHASE_EVEN], horizontal=True, key="dlg_adj_mode",
+                            help="Chia đều: SL nguyên của mỗi dòng chia đều các tháng chọn, dư dồn tháng sớm")
+        if adj_mode == PHASE_ONE:
+            new_m = st.selectbox("Chọn tháng giải ngân mới:", months, key="dlg_adj_new_m")
+            adj_months, adj_lbl = [new_m], new_m
+        else:
+            adj_presets = phase_presets(months)
+            adj_pre = st.selectbox("Mẫu nhanh:", list(adj_presets), index=2, key="dlg_adj_preset")
+            adj_months = st.multiselect("Các tháng mua:", months, default=adj_presets[adj_pre] or months[:1],
+                                        key=f"dlg_adj_months_{adj_pre}")
+            adj_lbl = f"{len(adj_months)} tháng"
+        if st.button(f"📅 Phân kỳ {n_sel} mục vào {adj_lbl}", use_container_width=True, disabled=n_sel == 0 or not adj_months,
+                     key="btn_move_month"):
             sel_codes = set(sel_adj["Mã"])
             updated_stored = stored_df.copy()
             match_mask = (updated_stored["dept_proposing"].map(dept_key) == dept_key(target_dept)) & (updated_stored["item_code"].isin(sel_codes))
             for i in updated_stored[match_mask].index:
-                for m in months:
-                    updated_stored.at[i, f"pct_{m}"] = 1.0 if m == new_m else 0.0
+                qty_i = clean_number(updated_stored.at[i, "quantity"], 0.0)
+                units_i = even_units(qty_i, months, adj_months)
+                for j, m in enumerate(months):  # SL không nguyên -> chia đều theo tỷ lệ
+                    updated_stored.at[i, f"pct_{m}"] = (units_i[j] / qty_i if units_i
+                                                        else (1.0 / len(adj_months) if m in adj_months else 0.0))
                 r_dict = updated_stored.loc[i].to_dict()
                 c_dict = calculate_row(r_dict, months=months, year_code=year_code, master=master)
                 for k, v in c_dict.items():
                     updated_stored.at[i, k] = v
             save_site(updated_stored.reset_index(drop=True), target_site)
-            st.session_state["flash"] = f"✅ Đã chuyển {n_sel} hạng mục của {target_dept} sang tháng {new_m} thành công!"
+            st.session_state["flash"] = f"✅ Đã phân kỳ {n_sel} hạng mục của {target_dept} vào {', '.join(adj_months)}!"
             st.session_state["pending_dept"] = target_dept
             st.rerun()
 
@@ -2541,32 +2615,26 @@ with tab_input:
         # =========================================================
         with in_mode_tab1:
             st.markdown("##### 🛒 Chọn nhanh danh sách thiết bị cần trang bị cho phòng ban")
-            st.caption("Chọn nhóm CNTT, nhập số lượng cần mua vào cột 'Số lượng' (món không mua để 0), rồi bấm 'Thêm vào ngân sách' để tự động lập toàn bộ chỉ với 1 click!")
+            st.caption("Chọn một hoặc nhiều nhóm CNTT, nhập số lượng cần mua vào cột 'Số lượng' (món không mua để 0), chọn cách phân bổ tháng (1 tháng, chia đều nhiều tháng hoặc tự nhập SL từng tháng) rồi bấm 'Thêm'.")
 
             catalog_all = master.get("standard_items", [])
             grp_list = it_groups(master)
 
-            b_col1, b_col2, b_col3 = st.columns([1.5, 1, 1])
+            grp_labels = [f"{g['code']}. {g['name']}" for g in grp_list]
+            b_col1, b_col3 = st.columns([2.5, 1])
             with b_col1:
-                b_grp_label = st.selectbox(
-                    "1. Chọn Nhóm CNTT:",
-                    [f"{g['code']}. {g['name']}" for g in grp_list],
-                    key="batch_grp_picker"
+                b_grp_labels = st.multiselect(
+                    "1. Chọn Nhóm CNTT (chọn được nhiều nhóm):",
+                    grp_labels,
+                    default=grp_labels[:1],
+                    key="batch_grp_picker",
+                    help="Số lượng đã nhập được giữ lại khi thêm / bớt nhóm"
                 )
-                b_grp_code = b_grp_label.split(".")[0].strip() if b_grp_label else "IT01"
-
-            with b_col2:
-                b_month = st.selectbox(
-                    "2. Tháng đưa vào sử dụng:",
-                    months,
-                    index=3 if len(months) > 3 else 0,
-                    key="batch_month_picker",
-                    help="Toàn bộ thiết bị được chọn sẽ giải ngân 100% vào tháng này"
-                )
+                b_grp_codes = [lbl.split(".")[0].strip() for lbl in b_grp_labels]
 
             with b_col3:
                 b_need_type = st.radio(
-                    "3. Loại nhu cầu:",
+                    "2. Loại nhu cầu:",
                     qt.NEED_TYPES,
                     index=1,
                     horizontal=True,
@@ -2579,30 +2647,35 @@ with tab_input:
                                          placeholder="VD: Tuyển dụng nhân sự mới; phục vụ dự án X...",
                                          key="batch_reason_input")
 
-            # Lấy danh sách thiết bị thuộc nhóm
-            grp_items = [it for it in catalog_all if it.get("group") == b_grp_code or str(it.get("group", "")).startswith(b_grp_code)]
+            # Lấy danh sách thiết bị thuộc các nhóm đã chọn
+            grp_items = [it for it in catalog_all if any(it.get("group") == c or str(it.get("group", "")).startswith(c) for c in b_grp_codes)]
+            # SL / ghi chú đã nhập theo mã hạng mục, giữ qua các lần đổi nhóm
+            b_kept = st.session_state.setdefault(f"batch_kept_{st.session_state.get('batch_ver', 0)}", {})
 
-            if not grp_items:
-                st.warning(f"Không có hạng mục nào thuộc nhóm {b_grp_label}.")
+            if not b_grp_codes:
+                st.info("Chọn ít nhất 1 nhóm CNTT.")
+            elif not grp_items:
+                st.warning(f"Không có hạng mục nào thuộc nhóm {', '.join(b_grp_labels)}.")
             else:
                 batch_rows = []
                 for it in grp_items:
                     cls_prev = classify_item(it, master)
                     acc_lbl, capex_tg = accounting_class(cls_prev.get("item_kind", KIND_HARDWARE), float(it.get("price", 0)), master)
+                    kept_q, kept_note = b_kept.get(it.get("code", "") or it["name"], (0, ""))
                     batch_rows.append({
                         "Mã": it.get("code", ""),
                         "Tên thiết bị / Hạng mục": it["name"],
                         "ĐVT": it.get("unit", "Cái"),
                         "Giá tham chiếu (VNĐ)": float(it.get("price", 0)),
                         "Phân loại": f"{capex_tg}",
-                        "Số lượng": 0,
-                        "Ghi chú / Đối tượng": ""
+                        "Số lượng": kept_q,
+                        "Ghi chú / Đối tượng": kept_note
                     })
 
                 df_batch_grid = pd.DataFrame(batch_rows)
                 edited_batch = st.data_editor(
                     df_batch_grid,
-                    key=f"batch_editor_{b_grp_code}_{st.session_state.get('batch_ver', 0)}",
+                    key=f"batch_editor_{'_'.join(b_grp_codes)}_{st.session_state.get('batch_ver', 0)}",
                     use_container_width=True,
                     hide_index=True,
                     column_config={
@@ -2615,10 +2688,16 @@ with tab_input:
                         "Ghi chú / Đối tượng": st.column_config.TextColumn("Ghi chú / Đối tượng sử dụng", width="medium")
                     }
                 )
+                for _, r_b in edited_batch.iterrows():
+                    b_kept[r_b["Mã"] or r_b["Tên thiết bị / Hạng mục"]] = (int(pd.to_numeric(r_b["Số lượng"], errors="coerce") or 0),
+                                                                          str(r_b["Ghi chú / Đối tượng"] or ""))
 
-                selected_batch = edited_batch[edited_batch["Số lượng"] > 0]
+                selected_batch = edited_batch[edited_batch["Số lượng"] > 0].rename(
+                    columns={"Giá tham chiếu (VNĐ)": "Đơn giá (VNĐ)", "Ghi chú / Đối tượng": "Ghi chú"})
+                st.markdown("**3. Phân bổ theo tháng:**")
+                selected_batch, b_err = phasing_picker(selected_batch, "batch")
                 num_sel = len(selected_batch)
-                total_batch_cost = (selected_batch["Số lượng"] * selected_batch["Giá tham chiếu (VNĐ)"]).sum() if num_sel > 0 else 0
+                total_batch_cost = (selected_batch["Số lượng"] * selected_batch["Đơn giá (VNĐ)"]).sum() if num_sel > 0 else 0
 
                 b_sub1, b_sub2 = st.columns([2, 1.2])
                 with b_sub1:
@@ -2633,55 +2712,13 @@ with tab_input:
                     """, unsafe_allow_html=True)
                 with b_sub2:
                     if st.button(f"➕ Thêm {num_sel} mục vào {active_dept}", type="primary", use_container_width=True, disabled=num_sel == 0):
-                        if b_need_type == qt.NEED_NEW and not b_reason.strip():
+                        if b_err:
+                            st.error(b_err)
+                        elif b_need_type == qt.NEED_NEW and not b_reason.strip():
                             st.error("Vui lòng ghi rõ 'Lý do phát sinh / căn cứ trang bị' trước khi thêm!")
                         else:
-                            ent_names = [e["name"] for e in master.get("entities", [])]
-                            target_ent = ent_names[0] if ent_names else "DDC"
-                            target_div = division_of(active_dept, master)
-                            target_loc = SITE_NAME.get(selected_site, selected_site)
-
-                            new_items_list = []
-                            for _, r_it in selected_batch.iterrows():
-                                it_name = r_it["Tên thiết bị / Hạng mục"]
-                                cat_it = next((x for x in catalog_all if x["name"] == it_name), None)
-                                q = int(r_it["Số lượng"])
-                                p = float(r_it["Giá tham chiếu (VNĐ)"])
-                                note_txt = str(r_it.get("Ghi chú / Đối tượng", "")).strip()
-
-                                row_dict = {
-                                    "entity": target_ent,
-                                    "division": target_div,
-                                    "dept_proposing": active_dept,
-                                    "dept_using": active_dept,
-                                    "location": target_loc,
-                                    "item_name": it_name,
-                                    "detail_work": note_txt,
-                                    "supplier": "",  # chưa chọn nhà cung cấp khi lập ngân sách
-                                    "quantity": q,
-                                    "unit_price": p,
-                                    "contract_date": "",  # chưa ký hợp đồng: người lập điền khi có
-                                    "completion_date": "",
-                                    "handover_date": "",  # trống -> tự lấy cuối tháng giải ngân cuối
-                                    "need_type": b_need_type,
-                                    "need_reason": b_reason if b_need_type == qt.NEED_NEW else "",
-                                }
-                                for m in months:
-                                    row_dict[f"pct_{m}"] = 1.0 if m == b_month else 0.0
-
-                                if cat_it:
-                                    apply_it_catalog(row_dict, master, item=cat_it, invest_type="Mua mới")
-                                else:
-                                    row_dict.update({"it_group": b_grp_label, "invest_type": "Mua mới"})
-
-                                calc_row = calculate_row(row_dict, months=months, year_code=year_code, master=master)
-                                new_items_list.append(calc_row)
-
-                            updated_df_all = pd.concat([df_site, pd.DataFrame(new_items_list)], ignore_index=True)
-                            save_site(updated_df_all.reset_index(drop=True), selected_site)
                             st.session_state["batch_ver"] = st.session_state.get("batch_ver", 0) + 1
-                            st.session_state["flash"] = f"🎉 Đã thêm thành công {len(new_items_list)} hạng mục vào ngân sách phòng ban '{active_dept}' (Tổng tiền: {format_vnd(total_batch_cost)})!"
-                            st.rerun()
+                            _commit_checklist_items(selected_batch, active_dept, selected_site, None, b_need_type, b_reason)
 
         # =========================================================
         # CHẾ ĐỘ 2: THÊM CHI TIẾT 1 HẠNG MỤC (SINGLE ITEM FORM)
@@ -2774,7 +2811,7 @@ with tab_input:
 
                 alloc_type = st.radio(
                     "Phương thức phân bổ phân kỳ:",
-                    ["Giải ngân 100% vào tháng nghiệm thu", "Chia đều 12 tháng", "Tự nhập tỷ lệ từng tháng"],
+                    ["Giải ngân 100% vào tháng nghiệm thu", "Chia đều 12 tháng", "Chia đều SL các tháng chọn", "Tự nhập tỷ lệ từng tháng"],
                     horizontal=True,
                     key="single_alloc_type"
                 )
@@ -2791,6 +2828,14 @@ with tab_input:
                     for m in months:
                         pct_inputs[m] = round(1.0 / 12.0, 4)
                     st.info("👉 Chia đều 8.33% cho mỗi tháng")
+                elif alloc_type == "Chia đều SL các tháng chọn":
+                    f_months = st.multiselect("Các tháng mua (SL nguyên chia đều, dư dồn tháng sớm):", months,
+                                              default=phase_presets(months)["Đầu mỗi quý"], key="single_alloc_months")
+                    f_units = even_units(f_qty, months, f_months)
+                    for j, m in enumerate(months):
+                        pct_inputs[m] = (f_units[j] / f_qty if f_units else (1.0 / len(f_months) if m in f_months else 0.0)) if f_months else 0.0
+                    if f_units:
+                        st.info("👉 " + " · ".join(f"{m}: {u}" for m, u in zip(months, f_units) if u))
                 else:
                     m_cols1 = st.columns(6)
                     m_cols2 = st.columns(6)

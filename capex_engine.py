@@ -103,6 +103,19 @@ def split_units(qty: float, weights: List[float]) -> Optional[List[int]]:
     return units
 
 
+def phase_presets(months: List[str]) -> Dict[str, List[str]]:
+    """Mẫu chọn nhanh các tháng mua (năm ngân sách T10 -> T9)."""
+    half = len(months) // 2
+    return {"Tự chọn": [], "Cả năm (mỗi tháng)": list(months), "Đầu mỗi quý": list(months[0::3]),
+            "Nửa năm đầu": list(months[:half]), "Nửa năm sau": list(months[half:])}
+
+
+def even_units(qty: float, months: List[str], chosen: List[str]) -> Optional[List[int]]:
+    """SL nguyên chia đều các tháng chọn, phần dư dồn vào các tháng sớm (vd. 10 máy / 4 quý = 3-3-2-2).
+    None nếu SL không nguyên hoặc không chọn tháng nào."""
+    return split_units(qty, [1.0 if m in set(chosen) else 0.0 for m in months])
+
+
 def snap_units(pcts: List[float], qty: float, tol: float = 0.05) -> Optional[List[int]]:
     """Số lượng nguyên theo tháng nếu tỷ lệ phân kỳ ứng với số lượng gần nguyên (vd. 33,34% × 21 máy = 7,0014 -> 7).
     Trả về None khi SL không nguyên hoặc phân kỳ có tháng lẻ thật (vd. 50/50 cho 3 máy) - khi đó giữ nguyên tỷ lệ."""
