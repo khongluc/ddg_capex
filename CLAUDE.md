@@ -29,7 +29,8 @@ git status
 
 ```
 d:\DATA\dev\I_Cost\
-├── app.py                  # Presentation Layer: 11 Tabs Streamlit UI, Dialogs, Filter bar
+├── app.py                  # Khung: đăng nhập, thanh bên, dữ liệu site / phòng ban, popup, hàm hỗ trợ, điều hướng 11 tab
+├── ui/                     # Giao diện từng tab: ui/tab_*.py có render(ctx); ui/styles.py (CSS)
 ├── auth.py                 # Xác thực OIDC (Google/UltraID), Dev Login Guard, RBAC 4 vai trò
 ├── capex_engine.py         # Core Calculation: Khấu hao TT45, Phân kỳ 12 tháng, Sinh mã kế toán
 ├── master_data.py          # Master Catalog: 16 Nhóm CNTT (IT01-IT16), ~255 hạng mục chuẩn
@@ -59,9 +60,10 @@ d:\DATA\dev\I_Cost\
    - Khi phòng ban ở trạng thái `STATUS_SUBMITTED` hoặc `STATUS_APPROVED`, người lập không được sửa/ghi đè. Hàm `save_site()` phải giữ nguyên các dòng đã khóa (`wf.keep_locked_rows`).
 3. **Tính Đầy Đủ Phân Kỳ Dòng Tiền**:
    - Tổng tỷ lệ phân kỳ 12 tháng (cột `pct_<tháng>`, năm ngân sách T10 → T9, vd. `pct_T10 2026` ... `pct_T9 2027`) của mỗi dòng phải đạt **chính xác 100% (1.0)**.
-4. **Tính Tương Thích với `tests/test_app_helpers.py`**:
+4. **Cấu trúc giao diện `ui/`**: mỗi tab là `ui/tab_<tên>.py` với `render(ctx)`; `ctx = app.app_context()` (giá trị dùng chung của lượt chạy). Đầu `render` lấy đúng tên cần dùng (`x, y = ctx.x, ctx.y`) - thêm giá trị mới từ app thì thêm vào dòng đó. Không viết code tab mới vào `app.py`. `tests/test_ui_apptest.py` chạy app thật (AppTest) cho 4 vai trò - phải xanh.
+5. **Tính Tương Thích với `tests/test_app_helpers.py`**:
    - File `test_app_helpers.py` sử dụng `ast.parse` để bóc tách trực tiếp các hàm: `dept_key`, `dept_mask`, `filter_values`, `save_view`, `_commit_checklist_items`, `phasing_picker` và các biến `ITEM_FILTERS`, `FILTER_BLANK`, `PHASE_ONE` (xem `WANTED_FUNCS` / `WANTED_NAMES` trong file test). **Không được đổi tên hoặc xóa các hàm/biến này trong `app.py`**.
-5. **Đường Dẫn Động & Fallback Biểu Mẫu**:
+6. **Đường Dẫn Động & Fallback Biểu Mẫu**:
    - Dùng hàm `resolve_template_path()` để tìm file mẫu trong `templates/` hoặc thư mục gốc.
 
 ---

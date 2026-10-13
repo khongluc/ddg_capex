@@ -44,7 +44,8 @@ Tài liệu này xác định các quy ước lập trình, cấu trúc thư m�
 
 | Module | Trách nhiệm | Ranh giới |
 | :--- | :--- | :--- |
-| **`app.py`** | Giao diện Streamlit, Điều hướng, Dialogs, Filter Bar | Không nhúng logic khấu hao hay SQL thô; gọi qua service modules |
+| **`app.py`** | Khung: đăng nhập, thanh bên, dữ liệu site / phòng ban, popup, điều hướng | Không viết code tab mới ở đây |
+| **`ui/tab_*.py`** | Nội dung từng tab: `render(ctx)`, đầu hàm lấy tên cần dùng từ `ctx` (`app.app_context()`) | Không nhúng logic tính toán / SQL thô; gọi qua service modules. `ui/styles.py`: CSS |
 | **`capex_engine.py`** | Thuật toán phân kỳ, Khấu hao TT45, Phân loại TSCĐ/CCDC | Không phụ thuộc `streamlit` |
 | **`db.py`** | Kết nối CSDL, Schema, Prepared Statements, Audit Log | Đảm bảo 100% Parameterized queries |
 | **`quota.py`** | Định biên nhân sự, Kits tiêu chuẩn (`DEFAULT_STANDARD_KITS`) | Độc lập giao diện |
