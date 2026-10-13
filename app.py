@@ -39,6 +39,7 @@ import ui.tab_scenario
 import ui.tab_software
 import ui.tab_versions
 import workflow as wf
+import validators
 import headcount_import as hi
 from capex_engine import (
     load_capex_from_excel,
@@ -660,16 +661,18 @@ if selected_site != ALL_SITES:
         if site_pending:
             st.caption(f"⏳ Còn {len(site_pending)} phòng ban chưa duyệt - duyệt đủ mới nộp được site "
                        "(xem bảng Tiến độ phòng ban ở tab Lập & Nhập liệu, chọn Tất cả phòng ban).")
-        if st.button("📨 Nộp ngân sách site để duyệt", use_container_width=True, disabled=df_site.empty or bool(site_pending),
-                     help="Nộp toàn bộ ngân sách của site (tất cả phòng ban đã được IT site duyệt)"):
-            missing_reason = 0
-            if "need_type" in df_site.columns:
-                reason = df_site["need_reason"] if "need_reason" in df_site.columns else pd.Series("", index=df_site.index)
-                missing_reason = int((df_site["need_type"].isin(qt.NEED_WITH_REASON) & (reason.fillna("").astype(str).str.strip() == "")).sum())
-            if invalid_rows:
-                st.error(f"Còn {invalid_rows} dòng có tổng phân kỳ khác 100%. Vui lòng chỉnh trước khi nộp.")
-            elif missing_reason:
-                st.error(f"Còn {missing_reason} dòng 'Phát sinh mới' / 'Hạ tầng dùng chung' chưa ghi lý do / căn cứ. Vui lòng bổ sung trước khi nộp.")
+        site_val = validators.validate_budget_rows(df_site, months=months, master=master)
+        btn_disabled = df_site.empty or bool(site_pending) or not site_val.is_valid
+        if not site_val.is_valid:
+            btn_help = f"Chưa đủ điều kiện nộp site: còn {site_val.critical_count} lỗi critical ({'; '.join(site_val.summary_messages[:2])})"
+        else:
+            btn_help = "Nộp toàn bộ ngân sách của site (tất cả phòng ban đã được IT site duyệt)"
+        if site_val.warning_count > 0 and site_val.is_valid:
+            st.caption(f"⚠️ Lưu ý: Toàn site còn {site_val.warning_count} cảnh báo rà soát (vẫn cho phép nộp).")
+        if st.button("📨 Nộp ngân sách site để duyệt", use_container_width=True, disabled=btn_disabled,
+                     help=btn_help):
+            if not site_val.is_valid:
+                st.error("Chưa đủ điều kiện nộp ngân sách site: " + "; ".join(site_val.summary_messages))
             else:
                 db.set_status(budget_year, selected_site, db.STATUS_SUBMITTED, current_user.email)
                 st.rerun()

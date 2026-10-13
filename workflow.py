@@ -3,7 +3,7 @@ Nộp & duyệt ngân sách theo phòng ban: Phòng ban nộp -> IT site duyệt
 Dòng của phòng ban đã nộp / đã duyệt bị khóa: khi lưu site, các dòng đó luôn giữ đúng bản đã lưu.
 """
 import math
-from typing import Dict, List, Any, Set, Tuple, Callable
+from typing import Dict, List, Any, Set, Tuple, Callable, Optional
 
 import pandas as pd
 
@@ -139,21 +139,11 @@ def merge_site_rows(base: List[Dict[str, Any]], new: List[Dict[str, Any]], curre
     return out + added, conflicts
 
 
-def dept_problems(rows: pd.DataFrame) -> List[str]:
-    """Kiểm tra trước khi nộp / duyệt 1 phòng ban."""
-    if rows is None or rows.empty:
-        return ["Phòng ban chưa có dòng ngân sách nào"]
-    msgs = []
-    if "pct_valid" in rows.columns:
-        n = int((~rows["pct_valid"].fillna(False).astype(bool)).sum())
-        if n:
-            msgs.append(f"{n} dòng có tổng phân kỳ khác 100%")
-    if "need_type" in rows.columns:
-        reason = rows["need_reason"] if "need_reason" in rows.columns else pd.Series("", index=rows.index)
-        n = int((rows["need_type"].isin(qt.NEED_WITH_REASON) & (reason.fillna("").astype(str).str.strip() == "")).sum())
-        if n:
-            msgs.append(f"{n} dòng 'Phát sinh mới' / 'Hạ tầng dùng chung' chưa ghi lý do / căn cứ")
-    return msgs
+def dept_problems(rows: pd.DataFrame, months: Optional[List[str]] = None, master: Optional[Dict[str, Any]] = None) -> List[str]:
+    """Kiểm tra trước khi nộp / duyệt 1 phòng ban (trả về danh sách tóm tắt lỗi chặn nộp)."""
+    import validators
+    report = validators.validate_budget_rows(rows, months=months, master=master)
+    return report.summary_messages
 
 
 def dept_overview(lines: pd.DataFrame, statuses: Dict[str, Dict[str, Any]], canon: Callable[[str], str] = None) -> pd.DataFrame:

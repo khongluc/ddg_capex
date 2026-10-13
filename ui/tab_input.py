@@ -8,6 +8,7 @@ import streamlit as st
 import smart_advisor as advisor
 import db
 import quota as qt
+import validators
 from capex_engine import calculate_row, even_units, phase_presets
 from master_data import (
     INVEST_TYPES,
@@ -138,6 +139,28 @@ def render(ctx):
         # Lọc theo hạng mục (riêng cho từng site + phòng ban)
         grid_filter_key = f"gridflt_{budget_year}_{selected_site}_{dept_key(selected_dept)}"
         grid_mask = item_filter_widgets(df_curr, grid_filter_key)
+
+        # Kiểm tra tính hợp lệ & cờ cảnh báo của bảng hiện hành
+        val_report = validators.validate_budget_rows(df_curr, months=months, master=master)
+        only_errors = False
+        if val_report.invalid_item_codes:
+            crit_c = len(val_report.critical_item_codes)
+            warn_c = len(val_report.warning_item_codes)
+            badge_details = []
+            if crit_c:
+                badge_details.append(f"{crit_c} lỗi nghiêm trọng")
+            if warn_c:
+                badge_details.append(f"{warn_c} cảnh báo")
+            lbl = f"🚨 Chỉ hiện các dòng cần xử lý ({len(val_report.invalid_item_codes)} dòng · {', '.join(badge_details)})"
+            only_errors = st.toggle(
+                lbl,
+                key=f"flterr_{budget_year}_{selected_site}_{dept_key(selected_dept)}",
+                help="Bật để chỉ hiển thị các dòng bị lỗi phân kỳ, thiếu đơn giá/số lượng, thiếu căn cứ hoặc cảnh báo giá/danh mục"
+            )
+            if only_errors and "item_code" in df_curr.columns:
+                is_err_row = df_curr["item_code"].isin(val_report.invalid_item_codes)
+                grid_mask = grid_mask & is_err_row
+
         grid_filtered = not bool(grid_mask.all())
         df_grid = df_curr[grid_mask]
 
@@ -192,7 +215,7 @@ def render(ctx):
             edited_df = df_grid
         else:
             # Khóa gồm cả bộ lọc: đổi bộ lọc -> bảng sửa tạo lại (tránh áp chỗ sửa dở sang dòng khác)
-            _flt_sig = abs(hash(tuple(tuple(st.session_state.get(f"{grid_filter_key}_{c}", [])) for _, c in ITEM_FILTERS)))
+            _flt_sig = abs(hash((tuple(tuple(st.session_state.get(f"{grid_filter_key}_{c}", [])) for _, c in ITEM_FILTERS), bool(only_errors))))
             main_editor_key = f"editor_{budget_year}_{selected_site}_{dept_key(selected_dept)}_{_flt_sig}_{st.session_state.get('editor_version', 0)}"
             edited_df = st.data_editor(
                 df_grid,

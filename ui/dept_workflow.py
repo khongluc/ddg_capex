@@ -4,19 +4,22 @@ import streamlit as st
 
 import db
 import workflow as wf
+import validators
 
 
 def render_dept_workflow(ctx, dept: str, rows: pd.DataFrame):
     """Nộp & duyệt 1 phòng ban: phòng ban nộp; IT site / Admin duyệt, trả lại (ghi chú), mở lại, ghi chú từng dòng."""
     MONEY_FMT, budget_year, can_review, current_user = ctx.MONEY_FMT, ctx.budget_year, ctx.can_review, ctx.current_user
     dept_key, dept_state, df_site = ctx.dept_key, ctx.dept_state, ctx.df_site
+    master, months = ctx.master, ctx.months
     save_site, selected_site, site_status = ctx.save_site, ctx.selected_site, ctx.site_status
 
     ds = dept_state(dept)
     status = ds["status"]
     site_open = site_status["status"] in db.EDITABLE_STATUSES
     is_owner = current_user.is_dept_user and dept_key(dept) in {dept_key(d) for d in current_user.allowed_depts(selected_site)}
-    problems = wf.dept_problems(rows)
+    val_report = validators.validate_budget_rows(rows, months=months, master=master)
+    problems = val_report.summary_messages
     with st.container(border=True):
         c1, c2 = st.columns([1.3, 2.7])
         c1.markdown(f"**Duyệt phòng ban:** {db.DEPT_STATUS_LABELS.get(status, status)}")
@@ -29,27 +32,30 @@ def render_dept_workflow(ctx, dept: str, rows: pd.DataFrame):
             return
         if status in db.DEPT_LOCKED_STATUSES:
             c2.caption("🔒 Dòng của phòng ban đang khóa sửa." + ("" if can_review else " IT site trả lại hoặc mở lại nếu cần chỉnh."))
+        if status in db.EDITABLE_STATUSES:
+            if problems:
+                c2.error("🚫 **Chưa đủ điều kiện nộp:** " + "; ".join(problems))
+            elif val_report.warning_messages:
+                c2.warning(f"⚠️ Có {val_report.warning_count} lưu ý cần kiểm tra (vẫn cho phép nộp).")
+            elif not rows.empty:
+                c2.success("✅ Toàn bộ hạng mục đã đáp ứng chuẩn nộp duyệt.")
         note = ""
         if can_review and status != db.STATUS_APPROVED:
             note = c2.text_input("Ghi chú duyệt / lý do trả lại", key=f"dept_note_{selected_site}_{dept_key(dept)}")
         b = c2.columns(3)
         if is_owner and status in db.EDITABLE_STATUSES:
-            if b[0].button("📨 Nộp phòng ban", type="primary", use_container_width=True, disabled=rows.empty):
-                if problems:
-                    st.error("Chưa nộp được: " + "; ".join(problems))
-                else:
-                    db.set_dept_status(budget_year, selected_site, dept, db.STATUS_SUBMITTED, current_user.email)
-                    st.session_state["flash"] = f"Đã nộp ngân sách {dept} - chờ IT site duyệt."
-                    st.rerun()
+            btn_help = ("Còn lỗi cần sửa trước khi nộp: " + "; ".join(problems)) if problems else "Nộp ngân sách phòng ban để IT site phê duyệt"
+            if b[0].button("📨 Nộp phòng ban", type="primary", use_container_width=True, disabled=rows.empty or bool(problems), help=btn_help):
+                db.set_dept_status(budget_year, selected_site, dept, db.STATUS_SUBMITTED, current_user.email)
+                st.session_state["flash"] = f"Đã nộp ngân sách {dept} - chờ IT site duyệt."
+                st.rerun()
         if can_review and status != db.STATUS_APPROVED:
-            if b[0].button("✅ Duyệt phòng ban", type="primary", use_container_width=True, disabled=rows.empty,
-                           help=None if status == db.STATUS_SUBMITTED else "Duyệt cả khi phòng chưa nộp (phòng không có tài khoản lập)"):
-                if problems:
-                    st.error("Chưa duyệt được: " + "; ".join(problems))
-                else:
-                    db.set_dept_status(budget_year, selected_site, dept, db.STATUS_APPROVED, current_user.email, note.strip())
-                    st.session_state["flash"] = f"Đã duyệt ngân sách {dept}."
-                    st.rerun()
+            approve_help = ("Còn lỗi chưa thể duyệt: " + "; ".join(problems)) if problems else (None if status == db.STATUS_SUBMITTED else "Duyệt cả khi phòng chưa nộp (phòng không có tài khoản lập)")
+            if b[0].button("✅ Duyệt phòng ban", type="primary", use_container_width=True, disabled=rows.empty or bool(problems),
+                           help=approve_help):
+                db.set_dept_status(budget_year, selected_site, dept, db.STATUS_APPROVED, current_user.email, note.strip())
+                st.session_state["flash"] = f"Đã duyệt ngân sách {dept}."
+                st.rerun()
             if status == db.STATUS_SUBMITTED and b[1].button("↩️ Trả lại", use_container_width=True):
                 if not note.strip():
                     st.error("Ghi lý do trả lại để phòng ban biết cần chỉnh gì.")
