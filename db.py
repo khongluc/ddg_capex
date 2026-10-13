@@ -726,6 +726,41 @@ def recent_audit(limit: int = 200) -> List[Dict[str, Any]]:
         return [dict(r) for r in conn.execute("SELECT * FROM audit_log ORDER BY id DESC LIMIT ?", (limit,))]
 
 
+def query_audit(emails: List[str] = None, actions: List[str] = None, date_from: str = None, date_to: str = None,
+                text: str = None, limit: int = 2000) -> List[Dict[str, Any]]:
+    """Nhật ký thao tác có lọc (mới nhất trước): người, loại thao tác, khoảng ngày 'YYYY-MM-DD' (gồm cả 2 đầu),
+    chữ trong chi tiết. Câu truy vấn tham số hóa, chạy được SQLite và PostgreSQL."""
+    where, args = [], []
+    if emails:
+        where.append(f"email IN ({','.join('?' * len(emails))})")
+        args += list(emails)
+    if actions:
+        where.append(f"action IN ({','.join('?' * len(actions))})")
+        args += list(actions)
+    if date_from:
+        where.append("ts >= ?")
+        args.append(str(date_from))
+    if date_to:  # ts dạng 'YYYY-MM-DDTHH:MM:SS' -> nhỏ hơn ngày kế tiếp
+        where.append("ts < ?")
+        args.append((datetime.date.fromisoformat(str(date_to)) + datetime.timedelta(days=1)).isoformat())
+    if text:
+        where.append("LOWER(detail) LIKE ?")
+        args.append(f"%{str(text).strip().lower()}%")
+    sql = "SELECT * FROM audit_log" + (" WHERE " + " AND ".join(where) if where else "") + " ORDER BY id DESC LIMIT ?"
+    init_db()
+    with connect() as conn:
+        return [dict(r) for r in conn.execute(sql, (*args, int(limit)))]
+
+
+def audit_values(column: str) -> List[str]:
+    """Danh sách giá trị khác nhau của cột email / action trong nhật ký (cho bộ lọc)."""
+    if column not in ("email", "action"):
+        raise ValueError(column)
+    init_db()
+    with connect() as conn:
+        return sorted(str(r[0]) for r in conn.execute(f"SELECT DISTINCT {column} FROM audit_log") if r[0])
+
+
 def _jsonable(row: Dict[str, Any]) -> Dict[str, Any]:
     out = {}
     for k, v in row.items():

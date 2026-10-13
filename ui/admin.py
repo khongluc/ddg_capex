@@ -7,6 +7,15 @@ import streamlit as st
 import db
 from master_data import load_master_data, save_master_data
 
+AUDIT_LABELS = {  # mã thao tác trong nhật ký -> tên dễ đọc
+    "login": "Đăng nhập", "save_lines": "Lưu ngân sách site", "set_status": "Đổi trạng thái site",
+    "set_dept_status": "Đổi trạng thái phòng ban", "save_version": "Chốt phiên bản", "save_user": "Lưu tài khoản",
+    "delete_user": "Xóa tài khoản", "add_exec": "Ghi chứng từ", "add_exec_many": "Nạp chứng từ từ file",
+    "delete_exec": "Xóa chứng từ", "price_update": "Cập nhật đơn giá", "software_catalog_save": "Lưu danh mục phần mềm",
+    "import_headcount": "Nạp định biên", "contingency_pct": "Đổi tỷ lệ dự phòng", "backup_download": "Tải sao lưu",
+    "backup_restore": "Khôi phục sao lưu",
+}
+
 
 def render_admin_page(ctx):
     MONEY_FMT, SITES, budget_year, current_user = ctx.MONEY_FMT, ctx.SITES, ctx.budget_year, ctx.current_user
@@ -126,7 +135,28 @@ def render_admin_page(ctx):
         st.caption("Để duyệt / trả lại: chọn site ở thanh bên trái, nút thao tác nằm ngay dưới tiêu đề trang.")
 
     with a_audit:
-        st.dataframe(pd.DataFrame(db.recent_audit()), use_container_width=True, hide_index=True)
+        au1, au2, au3, au4 = st.columns([1.4, 1.4, 1.2, 1.2])
+        f_emails = au1.multiselect("Người thao tác", db.audit_values("email"), placeholder="Tất cả", key="audit_emails")
+        f_actions = au2.multiselect("Loại thao tác", db.audit_values("action"), placeholder="Tất cả", key="audit_actions",
+                                    format_func=lambda a: AUDIT_LABELS.get(a, a))
+        today = datetime.date.today()
+        f_from = au3.date_input("Từ ngày", value=today - datetime.timedelta(days=30), key="audit_from")
+        f_to = au4.date_input("Đến ngày", value=today, key="audit_to")
+        f_text = st.text_input("Tìm trong chi tiết", placeholder="VD: mã hạng mục, site, số chứng từ...", key="audit_text")
+        logs = pd.DataFrame(db.query_audit(f_emails, f_actions, f_from.isoformat(), f_to.isoformat(), f_text),
+                            columns=["id", "ts", "email", "action", "detail"])
+        logs["action_label"] = logs["action"].map(lambda a: AUDIT_LABELS.get(a, a))
+        logs["ts"] = logs["ts"].astype(str).str.replace("T", " ", regex=False)
+        st.caption(f"{len(logs)} thao tác" + (" (hiện tối đa 2.000 dòng mới nhất - thu hẹp bộ lọc để xem cũ hơn)" if len(logs) >= 2000 else ""))
+        st.dataframe(logs, use_container_width=True, hide_index=True, height=420,
+                     column_order=["ts", "email", "action_label", "detail"],
+                     column_config={"ts": "Thời gian", "email": "Người thao tác", "action_label": "Thao tác",
+                                    "detail": st.column_config.TextColumn("Chi tiết", width="large")})
+        st.download_button("📥 Tải nhật ký đang lọc (.csv)",
+                           logs[["ts", "email", "action_label", "detail"]].rename(columns={
+                               "ts": "Thời gian", "email": "Người thao tác", "action_label": "Thao tác", "detail": "Chi tiết"})
+                           .to_csv(index=False).encode("utf-8-sig"),
+                           file_name=f"NhatKy_{f_from:%Y%m%d}_{f_to:%Y%m%d}.csv", mime="text/csv", key="audit_csv")
 
     with a_backup:
         import io as _io

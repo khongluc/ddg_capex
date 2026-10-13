@@ -110,6 +110,18 @@ class AppUiTest(unittest.TestCase):
         finally:
             db.set_status(fx.YEAR, fx.SITE, db.STATUS_DRAFT, "test")
 
+    def test_admin_page_with_audit_filters(self):
+        """Trang Phân quyền & Tiến độ (Admin) chạy không lỗi; lọc nhật ký theo loại thao tác."""
+        at = self.start("admin")
+        next(r for r in at.radio if r.key == "admin_view").set_value("Phân quyền & Tiến độ")
+        at.run()
+        self.assertNoError(at, "trang Phân quyền")
+        db.log("admin@test.local", "save_lines", "thử lọc nhật ký")
+        acts = next(m for m in at.multiselect if m.key == "audit_actions")
+        acts.set_value(["save_lines"])  # set_value nhận mã thao tác (options là nhãn hiển thị)
+        at.run()
+        self.assertNoError(at, "lọc nhật ký")
+
     def test_all_sites_view(self):
         at = self.start("admin", site="__ALL__")
         self.assertNoError(at, "admin - tổng hợp tất cả site")
