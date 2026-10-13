@@ -1,7 +1,6 @@
 """
 Core calculation engine, data model, import/export for CAPEX Web App
 """
-import os
 import io
 import calendar
 import datetime
@@ -214,7 +213,6 @@ def calculate_row(row: Dict[str, Any], months: List[str] = DEFAULT_MONTHS, year_
     entity = str(row.get("entity", "DDC"))
     site = str(row.get("location", "VP Bạch Đằng"))
     cat1 = str(row.get("asset_cat1", "B. Máy móc thiết bị"))
-    cat2 = str(row.get("asset_cat2", "B1. MMTB: Mua mới"))
     cost_lv2 = str(row.get("cost_lv2", "04.01. Máy móc thiết bị đầu tư mới"))
     
     p_code = generate_project_code(entity, site, cat1, year_code, master)

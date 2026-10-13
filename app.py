@@ -4,7 +4,6 @@ HỆ THỐNG QUẢN LÝ & TÍNH TOÁN NGÂN SÁCH ĐẦU TƯ CAPEX
 import os
 import html as _html
 import datetime
-import io
 import json
 import math
 import pandas as pd
@@ -20,9 +19,6 @@ from master_data import (
     load_master_data,
     save_master_data,
     division_of,
-    generate_project_code,
-    generate_item_code,
-    generate_budget_code,
     fiscal_months,
     it_groups,
     it_kinds,
@@ -32,7 +28,6 @@ from master_data import (
     item_scope,
     item_owner,
     SCOPE_SHARED,
-    SCOPE_USER,
     DEFAULT_INFRA_OWNER,
     SCOPE_LABELS,
     accounting_class,
@@ -41,7 +36,6 @@ from master_data import (
     KIND_HARDWARE,
     KIND_SW_PERPETUAL,
     KIND_SW_SUBSCRIPTION,
-    DEFAULT_MONTHS
 )
 import quota as qt
 import pricing
@@ -66,7 +60,6 @@ from capex_engine import (
     phase_presets,
     phase_text,
     regrid_pcts,
-    USEFUL_LIFE_DEFAULTS
 )
 
 # Page configuration
@@ -1471,7 +1464,6 @@ def render_admin_page():
         import io as _io
         import json as _json
         import zipfile as _zip
-        from master_data import MASTER_DATA_FILE
         st.markdown("##### CSDL đang dùng")
         try:
             _si = db.storage_info()

@@ -3,9 +3,8 @@ smart_advisor.py
 Module Phân tích Thông minh, Kiểm định Rủi ro, Kịch bản Cắt giảm,
 Đóng gói Mua sắm và Báo cáo Điều hành 1 Trang cho Hệ thống CapEx DDC.
 """
-from typing import Dict, List, Any, Tuple, Optional
+from typing import Dict, List, Any
 import pandas as pd
-import numpy as np
 import datetime
 import html as _html
 
@@ -478,8 +477,6 @@ def render_executive_briefing_html(
     creator = meta.get("creator_name", "Phòng CNTT & CĐS")
     
     tot_budget = float(df["total_budget"].sum()) if "total_budget" in df.columns else 0.0
-    tot_items = len(df)
-    tot_qty = int(df["quantity"].sum()) if "quantity" in df.columns else 0
     
     ct = df.get("capex_type", pd.Series(index=df.index, dtype=object)).fillna("Chưa phân loại")
     tot_capex = float(df.loc[ct == "CAPEX", "total_budget"].sum())
