@@ -1004,13 +1004,16 @@ def code_version() -> str:
     """Commit đang chạy (đọc .git, không gọi lệnh ngoài) - để biết bản online đã lấy code mới chưa."""
     root = os.path.dirname(os.path.abspath(__file__))
     try:
-        head = open(os.path.join(root, ".git", "HEAD"), encoding="utf-8").read().strip()
+        def _read(*parts):
+            with open(os.path.join(root, ".git", *parts), encoding="utf-8") as f:
+                return f.read()
+
+        head = _read("HEAD").strip()
         if head.startswith("ref:"):
             ref = head.split(" ", 1)[1].strip()
-            path = os.path.join(root, ".git", *ref.split("/"))
-            if os.path.exists(path):
-                return open(path, encoding="utf-8").read().strip()[:7]
-            for line in open(os.path.join(root, ".git", "packed-refs"), encoding="utf-8"):
+            if os.path.exists(os.path.join(root, ".git", *ref.split("/"))):
+                return _read(*ref.split("/")).strip()[:7]
+            for line in _read("packed-refs").splitlines():
                 if line.strip().endswith(" " + ref):
                     return line.split(" ", 1)[0][:7]
             return "?"
