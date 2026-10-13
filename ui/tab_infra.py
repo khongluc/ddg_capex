@@ -18,7 +18,7 @@ def render(ctx):
     months, phasing_picker, save_site, selected_dept = ctx.months, ctx.phasing_picker, ctx.save_site, ctx.selected_dept
     selected_site, site_label = ctx.selected_site, ctx.site_label
 
-    st.markdown("### 🏗️ Hạ tầng CNTT dùng chung theo site")
+    st.markdown("### Hạ tầng CNTT dùng chung theo site")
     st.caption("Máy chủ, lưu trữ, mạng, an ninh mạng, camera, phòng họp, phòng máy chủ & UPS, Cloud / đường truyền / dịch vụ, "
                "phần mềm hệ thống dùng chung. Ngân sách đứng tên phòng phụ trách (mặc định PHÒNG CNTT), site = nơi lắp đặt; "
                "không tính theo định biên. Phạm vi & phòng phụ trách từng nhóm sửa ở tab Quản lý Danh mục.")
@@ -62,16 +62,16 @@ def render(ctx):
             saved = [l for l in db.load_lines(budget_year, [selected_site]) if l.get("need_type") == qt.NEED_INFRA]
             where = "PostgreSQL" if db.using_server_db() else "SQLite"
             if len(saved) == expected:
-                st.session_state["flash"] = (f"✅ {action} – CSDL {where} hiện có {len(saved)} hạng mục hạ tầng của {site_label(selected_site)} "
+                st.session_state["flash"] = (f"{action} – CSDL {where} hiện có {len(saved)} hạng mục hạ tầng của {site_label(selected_site)} "
                                              f"(tổng {format_vnd(sum(l.get('total_budget', 0) for l in saved))}).")
             else:
-                st.session_state["flash"] = (f"⚠️ {action} nhưng CSDL {where} đang có {len(saved)} dòng hạ tầng (mong đợi {expected}) – "
+                st.session_state["flash"] = (f"{action} nhưng CSDL {where} đang có {len(saved)} dòng hạ tầng (mong đợi {expected}) – "
                                              "vui lòng kiểm tra lại.")
 
         # Thêm nhiều hạng mục 1 lần (ổn định hơn nhập trực tiếp trên lưới), phân kỳ 1 / nhiều tháng
         if can_edit:
             inf_ver = st.session_state.get("infra_version", 0)
-            with st.expander("➕ Thêm hạng mục hạ tầng", expanded=df_inf.empty):
+            with st.expander("Thêm hạng mục hạ tầng", expanded=df_inf.empty):
                 f_items = st.multiselect("(*) Hạng mục hạ tầng (chọn được nhiều)", list(sh_label.values()),
                                          placeholder="Chọn hạng mục...", key=f"infra_add_items_{inf_ver}")
                 add_ed, f_err = pd.DataFrame(), None
@@ -191,7 +191,7 @@ def render(ctx):
                     row[f"pct_{m}"] = pc
                 new_rows.append(row)
             if not new_rows and df_inf.empty:
-                errs.append("Bảng chưa có dòng nào được ghi nhận. Dùng mục '➕ Thêm hạng mục hạ tầng' ở trên để thêm, "
+                errs.append("Bảng chưa có dòng nào được ghi nhận. Dùng mục 'Thêm hạng mục hạ tầng' ở trên để thêm, "
                             "hoặc khi nhập trên bảng hãy nhấn Enter sau ô cuối trước khi bấm Lưu")
             if not new_rows and not df_inf.empty and not st.session_state.get("infra_confirm_clear"):
                 errs.append(f"Bảng đang trống – không lưu để tránh xóa {len(df_inf)} dòng hạ tầng hiện có. "

@@ -21,7 +21,7 @@ def render(ctx):
     resolve_template_path, save_site, scope_sites, selected_dept = ctx.resolve_template_path, ctx.save_site, ctx.scope_sites, ctx.selected_dept
     selected_site, site_label = ctx.selected_site, ctx.site_label
 
-    st.markdown("### 👥 Định biên & Nhu cầu Thiết bị / Phần mềm theo Phòng ban")
+    st.markdown("### Định biên & Nhu cầu Thiết bị / Phần mềm theo Phòng ban")
     st.caption("Định mức = Nhân sự định biên × Bộ trang bị tiêu chuẩn. Thiết bị & phần mềm vĩnh viễn: mua bổ sung phần thiếu so với hiện có "
                "+ thay thế thiết bị cũ. Phần mềm thuê bao: gia hạn số đang có + mua thêm phần thiếu. "
                "Nhu cầu ngoài định biên nhập ở tab 'Lập & Nhập liệu' với loại 'Phát sinh mới'.")
@@ -54,7 +54,7 @@ def render(ctx):
 
     # ---- Nhập file định biên nhân sự (Khối QTNNL) ----
     if current_user.is_admin:
-        with st.expander("📥 Nhập file định biên nhân sự (Khối QTNNL) – tính cho toàn bộ phòng ban", expanded=False):
+        with st.expander("Nhập file định biên nhân sự (Khối QTNNL) – tính cho toàn bộ phòng ban", expanded=False):
             st.caption("File theo mẫu 'Tổng hợp định biên … - Gửi CNTT': mỗi dòng 1 vị trí; dùng Khối/Phòng, Vị trí, Cấp bậc, Nơi làm việc, "
                        "cột Thiết bị CNTT / Phần mềm (nếu có), Nhân sự thực tế, Định biên và nhân sự 12 tháng. "
                        "**Họ tên và mã nhân viên không được lưu.**")
@@ -100,7 +100,7 @@ def render(ctx):
                     h3.metric(f"Định biên {fy}", fmt_num(P['plan'].sum()))
                     h4.metric("Phòng ban × site", f"{P.groupby(['site', 'dept']).ngroups}")
                     if roster["issues"]:
-                        with st.popover(f"⚠️ {len(roster['issues'])} dòng lỗi dữ liệu trong file (đã xử lý tạm)"):
+                        with st.popover(f"{len(roster['issues'])} dòng lỗi dữ liệu trong file (đã xử lý tạm)"):
                             st.write("\n".join(f"- {x}" for x in roster["issues"]))
 
                     t_site, t_kit, t_need = st.tabs(["Nơi làm việc → Site", "Bộ trang bị theo vị trí", "Nhu cầu ước tính"])
@@ -302,7 +302,7 @@ def render(ctx):
             items = kit_store.get(kit_code)
             return None if items is None else json.dumps(items, ensure_ascii=False)
 
-        st.markdown("#### 🧩 Chọn trang bị cho từng vị trí (phần cứng & phần mềm)")
+        st.markdown("#### Chọn trang bị cho từng vị trí (phần cứng & phần mềm)")
         st.caption("Bộ trang bị tiêu chuẩn chỉ là gợi ý ban đầu. Chọn vị trí rồi: bỏ tích 'Dùng' để bỏ hạng mục, bấm ô Hạng mục "
                    "để đổi model / phiên bản, thêm phần cứng / phần mềm cơ bản / phần mềm chuyên dụng bằng ô 'Thêm nhanh'. "
                    "'Số lượng / người' nhân với định biên; 'Số lượng cố định' dùng khi chỉ một số người "
@@ -317,7 +317,7 @@ def render(ctx):
             # nhãn phải cố định (không đổi theo định biên / trạng thái tự chọn) để ô chọn không bị đặt lại
             sel_pos = st.selectbox("Vị trí", pos_codes, key=f"kitpos_{q_key}", format_func=lambda c: kit_label.get(c, c))
             st.caption(f"Định biên {fmt_num(plan_by_code.get(sel_pos, 0))} người · "
-                       + ("✏️ trang bị tự chọn" if kit_store.get(sel_pos) is not None else "theo bộ tiêu chuẩn")
+                       + ("trang bị tự chọn" if kit_store.get(sel_pos) is not None else "theo bộ tiêu chuẩn")
                        + " · Vị trí đã tự chọn: "
                        + (", ".join(c for c in pos_codes if kit_store.get(c) is not None) or "chưa có"))
             std_items = [dict(i, fixed_qty=0, note="") for i in kits_by_code.get(sel_pos, {}).get("items", [])]
@@ -381,7 +381,7 @@ def render(ctx):
                     st.rerun()
                 if kit_store.get(sel_pos) is not None:
                     rc1, rc2 = st.columns([3, 1])
-                    rc1.caption("✏️ Vị trí này đang dùng trang bị tự chọn (khác bộ tiêu chuẩn). Nhớ bấm Lưu ở cuối trang.")
+                    rc1.caption("Vị trí này đang dùng trang bị tự chọn (khác bộ tiêu chuẩn). Nhớ bấm Lưu ở cuối trang.")
                     if rc2.button("↩️ Về bộ tiêu chuẩn", use_container_width=True, key=f"kitreset_{q_key}"):
                         kit_store[sel_pos] = None
                         st.session_state[f"kitver_{q_key}"] = ver + 1

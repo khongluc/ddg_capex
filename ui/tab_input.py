@@ -37,15 +37,15 @@ def render(ctx):
     save_site, save_view, selected_dept, selected_site = ctx.save_site, ctx.save_view, ctx.selected_dept, ctx.selected_site
     site_can_edit, site_label, year_code = ctx.site_can_edit, ctx.site_label, ctx.year_code
 
-    st.markdown("### 📝 Biểu mẫu Lập & Nhập liệu Ngân sách CAPEX")
+    st.markdown("### Biểu mẫu Lập & Nhập liệu Ngân sách CAPEX")
 
     if selected_site == ALL_SITES:
-        st.info("🌐 Đang xem tổng hợp nhiều site (chỉ đọc). Chọn một site cụ thể ở thanh bên trái để nhập liệu.")
+        st.info("Đang xem tổng hợp nhiều site (chỉ đọc). Chọn một site cụ thể ở thanh bên trái để nhập liệu.")
     elif not can_edit:
         if site_can_edit and selected_dept != ALL_DEPTS and dept_state(selected_dept)["status"] in db.DEPT_LOCKED_STATUSES:
-            st.info(f"🔒 {selected_dept} đã nộp / đã duyệt - chỉ xem. IT site trả lại hoặc mở lại phòng ban nếu cần chỉnh sửa.")
+            st.info(f"{selected_dept} đã nộp / đã duyệt - chỉ xem. IT site trả lại hoặc mở lại phòng ban nếu cần chỉnh sửa.")
         else:
-            st.info("🔒 Bạn không có quyền chỉnh sửa ngân sách site này ở trạng thái hiện tại (chỉ xem).")
+            st.info("Bạn không có quyền chỉnh sửa ngân sách site này ở trạng thái hiện tại (chỉ xem).")
 
     # 1. Bộ chọn Phòng ban & Thẻ thông tin tiến độ
     col_d1, col_d2 = st.columns([1.6, 2.4])
@@ -60,7 +60,7 @@ def render(ctx):
             st.session_state["sb_dept"] = st.session_state["active_dept_selector"]
 
         active_dept = st.selectbox(
-            "🏢 Phòng ban lập ngân sách:",
+            "Phòng ban lập ngân sách:",
             dept_options_input,
             key="active_dept_selector",
             on_change=_sync_dept_from_input,
@@ -107,7 +107,7 @@ def render(ctx):
     audit_target_df = dept_rows_now if selected_dept != ALL_DEPTS else df_site
     if not audit_target_df.empty:
         audit_res = advisor.audit_budget(audit_target_df, master, months)
-        with st.expander(f"🛡️ Kiểm định Chất lượng Hồ sơ & Điểm Sức khỏe: {audit_res['score']}/100 điểm ({audit_res['status_label']})", expanded=(audit_res["score"] < 80)):
+        with st.expander(f"Kiểm định Chất lượng Hồ sơ & Điểm Sức khỏe: {audit_res['score']}/100 điểm ({audit_res['status_label']})", expanded=(audit_res["score"] < 80)):
             ak1, ak2, ak3, ak4 = st.columns(4)
             ak1.metric("Điểm sức khỏe", f"{audit_res['score']} / 100", audit_res["status_label"], delta_color="normal")
             ak2.metric("Lỗi nghiêm trọng (Critical)", f"{audit_res['metrics']['critical']} cờ", delta_color="inverse" if audit_res['metrics']['critical'] > 0 else "normal")
@@ -127,10 +127,10 @@ def render(ctx):
                     </div>
                     """, unsafe_allow_html=True)
             else:
-                st.success("✅ Tuyệt vời! Toàn bộ hạng mục đã đáp ứng chuẩn mực phân kỳ, phân loại kế toán và căn cứ thẩm định.")
+                st.success("Tuyệt vời! Toàn bộ hạng mục đã đáp ứng chuẩn mực phân kỳ, phân loại kế toán và căn cứ thẩm định.")
 
     # Bảng chi tiết của phòng ban đang chọn (đặt ngay dưới ô chọn phòng ban)
-    grid_title = f"📋 Bảng Ngân sách Hiện hành – {active_dept}" if selected_dept != ALL_DEPTS else f"📋 Bảng Ngân sách Hiện hành – {site_label(selected_site)} (Tất cả phòng ban)"
+    grid_title = f"Bảng Ngân sách Hiện hành – {active_dept}" if selected_dept != ALL_DEPTS else f"Bảng Ngân sách Hiện hành – {site_label(selected_site)} (Tất cả phòng ban)"
     st.markdown(f"#### {grid_title}")
 
     if df_curr.empty:
@@ -151,7 +151,7 @@ def render(ctx):
                 badge_details.append(f"{crit_c} lỗi nghiêm trọng")
             if warn_c:
                 badge_details.append(f"{warn_c} cảnh báo")
-            lbl = f"🚨 Chỉ hiện các dòng cần xử lý ({len(val_report.invalid_item_codes)} dòng · {', '.join(badge_details)})"
+            lbl = f"Chỉ hiện các dòng cần xử lý ({len(val_report.invalid_item_codes)} dòng · {', '.join(badge_details)})"
             only_errors = st.toggle(
                 lbl,
                 key=f"flterr_{budget_year}_{selected_site}_{dept_key(selected_dept)}",
@@ -186,7 +186,7 @@ def render(ctx):
             if not dept_rows_now.empty:
                 dept_meta = dict(st.session_state["metadata"])
                 dept_meta["proposing_dept"] = active_dept
-                lazy_excel_download(dept_rows_now, dept_meta, f"📥 Tải Excel ({active_dept[:15]}...)",
+                lazy_excel_download(dept_rows_now, dept_meta, f"Tải Excel ({active_dept[:15]}...)",
                                     f"CAPEX_{budget_year}_{active_dept.replace(' ', '_')}.xlsx",
                                     key=f"dept_{budget_year}_{selected_site}_{active_dept}",
                                     help_text=f"Tải riêng file Excel phiếu ngân sách của phòng ban {active_dept}")
@@ -195,7 +195,7 @@ def render(ctx):
                 if st.button("📋 Rà soát & Sửa nhanh", use_container_width=True, key="btn_tbl_adj_dlg", help="Mở popup checklist để đổi tháng hoặc xóa hàng loạt"):
                     render_batch_adjust_dialog(active_dept, selected_site)
             elif can_edit:
-                st.caption("💡 Chọn dòng và bấm Delete để xóa.")
+                st.caption("Chọn dòng và bấm Delete để xóa.")
 
         # Setup columns for interactive editor
         core_cols = [
@@ -270,29 +270,29 @@ def render(ctx):
             st.rerun()
 
     if can_edit and dept_state(active_dept)["status"] in db.DEPT_LOCKED_STATUSES:
-        st.info(f"🔒 {active_dept} đã nộp / đã duyệt - không thêm hạng mục. IT site trả lại hoặc mở lại phòng ban nếu cần bổ sung.")
+        st.info(f"{active_dept} đã nộp / đã duyệt - không thêm hạng mục. IT site trả lại hoặc mở lại phòng ban nếu cần bổ sung.")
     elif can_edit:
-        st.markdown(f"#### ⚡ Lập & Điều chỉnh Ngân sách – {active_dept}")
+        st.markdown(f"#### Lập & Điều chỉnh Ngân sách – {active_dept}")
         col_dlg_btn1, col_dlg_btn2 = st.columns([1.6, 1.4])
         with col_dlg_btn1:
-            if st.button("✨ MỞ POPUP CHECKLIST THÔNG MINH (Gói Chức Danh & Chọn Nhanh)", type="primary", use_container_width=True, key="btn_open_picker_dlg"):
+            if st.button("✨ Thêm hạng mục (gói chức danh / chọn từ danh mục)", type="primary", use_container_width=True, key="btn_open_picker_dlg"):
                 render_item_picker_dialog(active_dept, selected_site)
         with col_dlg_btn2:
-            if not dept_rows_now.empty and st.button("📋 POPUP CHECKLIST RÀ SOÁT & SỬA NHANH", use_container_width=True, key="btn_open_adj_dlg"):
+            if not dept_rows_now.empty and st.button("📋 Rà soát & sửa nhanh nhiều dòng", use_container_width=True, key="btn_open_adj_dlg"):
                 render_batch_adjust_dialog(active_dept, selected_site)
 
         st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
         # Form nhập liệu thuận tiện: 2 phương thức nhập
         in_mode_tab1, in_mode_tab2 = st.tabs([
-            "🛒 CHỌN NHANH THEO DANH MỤC CNTT (Nhiều thiết bị cùng lúc - Tiện lợi nhất)",
-            "✍️ THÊM CHI TIẾT 1 HẠNG MỤC (Tùy chỉnh riêng)"
+            "Chọn nhanh theo danh mục CNTT",
+            "Thêm chi tiết 1 hạng mục"
         ])
 
         # =========================================================
         # CHẾ ĐỘ 1: CHỌN NHANH THEO DANH MỤC CNTT (MULTI-ITEM BATCH)
         # =========================================================
         with in_mode_tab1:
-            st.markdown("##### 🛒 Chọn nhanh danh sách thiết bị cần trang bị cho phòng ban")
+            st.markdown("##### Chọn nhanh danh sách thiết bị cần trang bị cho phòng ban")
             st.caption("Chọn một hoặc nhiều nhóm CNTT, nhập số lượng cần mua vào cột 'Số lượng' (món không mua để 0), chọn cách phân bổ tháng (1 tháng, chia đều nhiều tháng hoặc tự nhập SL từng tháng) rồi bấm 'Thêm'.")
 
             catalog_all = master.get("standard_items", [])
@@ -402,7 +402,7 @@ def render(ctx):
         # CHẾ ĐỘ 2: THÊM CHI TIẾT 1 HẠNG MỤC (SINGLE ITEM FORM)
         # =========================================================
         with in_mode_tab2:
-            st.markdown("##### ✍️ Thêm chi tiết từng hạng mục (tùy chỉnh riêng phân kỳ, nhà cung cấp, cấu hình)")
+            st.markdown("##### Thêm chi tiết từng hạng mục (tùy chỉnh riêng phân kỳ, nhà cung cấp, cấu hình)")
             catalog = master.get("standard_items", [])
             ALL_GROUPS = "(Tất cả nhóm)"
             OTHER_ITEM = "-- Hạng mục ngoài danh mục (tự nhập) --"
@@ -419,7 +419,7 @@ def render(ctx):
             if cat_item:
                 apply_it_catalog(preview, master, item=cat_item, invest_type=invest_type)
                 acc_label, capex_tag = accounting_class(preview["item_kind"], float(cat_item.get("price", 0)), master)
-                st.caption(f"📦 **{preview['it_group']}** · Loại: {it_kinds(master).get(preview['item_kind'], '')} · "
+                st.caption(f"**{preview['it_group']}** · Loại: {it_kinds(master).get(preview['item_kind'], '')} · "
                            f"ĐVT: {preview.get('unit', '')} · Giá tham chiếu: {format_vnd(cat_item.get('price', 0))} · "
                            f"Hạch toán: **{acc_label}** ({capex_tag})"
                            + (f"  \n⚠️ {cat_item['note']}" if cat_item.get("note") else ""))
@@ -501,11 +501,11 @@ def render(ctx):
                         target_m = months[0]
                     for m in months:
                         pct_inputs[m] = 1.0 if m == target_m else 0.0
-                    st.info(f"👉 Toàn bộ 100% giải ngân vào **{target_m}**")
+                    st.info(f"Toàn bộ 100% giải ngân vào **{target_m}**")
                 elif alloc_type == "Chia đều 12 tháng":
                     for m in months:
                         pct_inputs[m] = round(1.0 / 12.0, 4)
-                    st.info("👉 Chia đều 8.33% cho mỗi tháng")
+                    st.info("Chia đều 8.33% cho mỗi tháng")
                 elif alloc_type == "Chia đều SL các tháng chọn":
                     f_months = st.multiselect("Các tháng mua (SL nguyên chia đều, dư dồn tháng sớm):", months,
                                               default=phase_presets(months)["Đầu mỗi quý"], key="single_alloc_months")
@@ -513,7 +513,7 @@ def render(ctx):
                     for j, m in enumerate(months):
                         pct_inputs[m] = (f_units[j] / f_qty if f_units else (1.0 / len(f_months) if m in f_months else 0.0)) if f_months else 0.0
                     if f_units:
-                        st.info("👉 " + " · ".join(f"{m}: {u}" for m, u in zip(months, f_units) if u))
+                        st.info("" + " · ".join(f"{m}: {u}" for m, u in zip(months, f_units) if u))
                 else:
                     m_cols1 = st.columns(6)
                     m_cols2 = st.columns(6)
@@ -526,9 +526,9 @@ def render(ctx):
 
                 sum_pct = sum(pct_inputs.values())
                 if abs(sum_pct - 1.0) < 0.01:
-                    st.success(f"✅ Tổng tỷ lệ phân kỳ: {sum_pct*100:.1f}% (Hợp lệ)")
+                    st.success(f"Tổng tỷ lệ phân kỳ: {sum_pct*100:.1f}% (Hợp lệ)")
                 else:
-                    st.warning(f"⚠️ Tổng tỷ lệ phân kỳ: {sum_pct*100:.1f}%. Lưu ý: Tổng phân kỳ cần đạt 100%!")
+                    st.warning(f"Tổng tỷ lệ phân kỳ: {sum_pct*100:.1f}%. Lưu ý: Tổng phân kỳ cần đạt 100%!")
 
                 st.markdown("##### 6. Phân loại Kế toán & Chi phí")
                 cf1, cf2 = st.columns(2)
@@ -541,7 +541,7 @@ def render(ctx):
                     f_cost_lv2 = st.selectbox("Loại chi phí cấp 2", lv2_opts, key=f"lv2_{wkey}",
                                               index=_idx(lv2_opts, preview.get("cost_lv2", "04.03. Thiết bị quản lý - Thiết bị CNTT")))
 
-                btn_submit = st.form_submit_button("💾 THÊM HẠNG MỤC VÀO PHÒNG BAN", use_container_width=True)
+                btn_submit = st.form_submit_button("💾 Thêm hạng mục vào phòng ban", use_container_width=True)
 
                 if btn_submit:
                     if not f_item_name.strip():
@@ -550,7 +550,7 @@ def render(ctx):
                         st.error(f"Hạng mục '{f_need_type}' cần ghi Lý do / căn cứ!")
                     elif cat_item and item_scope(cat_item, master) == SCOPE_SHARED and dept_key(active_dept) != dept_key(item_owner(cat_item, master)):
                         st.error(f"'{cat_item['name']}' là hạ tầng CNTT dùng chung, do {item_owner(cat_item, master)} đề xuất ngân sách. "
-                                 "Vui lòng nhập ở tab '🏗️ Hạ tầng CNTT dùng chung'.")
+                                 "Vui lòng nhập ở tab 'Hạ tầng CNTT dùng chung'.")
                     else:
                         new_row = {
                             "entity": f_entity,
@@ -584,5 +584,5 @@ def render(ctx):
                         calculated = calculate_row(new_row, months=months, year_code=year_code, master=master)
                         updated_site_df = pd.concat([df_site, pd.DataFrame([calculated])], ignore_index=True)
                         saved_rows = save_site(updated_site_df.reset_index(drop=True), selected_site)
-                        st.session_state["flash"] = f"✅ Đã thêm hạng mục '{f_item_name}' vào phòng ban '{active_dept}' thành công! (Mã: {saved_rows[-1]['item_code']})"
+                        st.session_state["flash"] = f"Đã thêm hạng mục '{f_item_name}' vào phòng ban '{active_dept}' thành công! (Mã: {saved_rows[-1]['item_code']})"
                         st.rerun()

@@ -32,11 +32,11 @@ def dialog_dept_picker(ctx, default_dept: str, key: str):
     def _label(d):
         stt = dept_state(d)["status"]
         return f"{d}  ·  {db.DEPT_STATUS_LABELS.get(stt, stt)}"
-    dept = st.selectbox("🏢 Chọn phòng ban cần lập / chỉnh sửa", options, index=idx, key=key, format_func=_label,
+    dept = st.selectbox("Chọn phòng ban cần lập / chỉnh sửa", options, index=idx, key=key, format_func=_label,
                         help="Đổi phòng ngay trong popup; lưu xong trang chính chuyển sang phòng này")
     locked = dept_state(dept)["status"] in db.DEPT_LOCKED_STATUSES
     if locked:
-        st.warning(f"🔒 {dept} đã nộp / đã duyệt - không thêm / sửa được. IT site trả lại hoặc mở lại phòng ban nếu cần điều chỉnh.")
+        st.warning(f"{dept} đã nộp / đã duyệt - không thêm / sửa được. IT site trả lại hoặc mở lại phòng ban nếu cần điều chỉnh.")
     return dept, locked
 
 
@@ -62,9 +62,9 @@ def render_item_picker_dialog(ctx, target_dept: str, target_site: str):
     """, unsafe_allow_html=True)
 
     dlg_tab1, dlg_tab2, dlg_tab3 = st.tabs([
-        "📦 GÓI TRANG BỊ THEO CHỨC DANH (1-Click Presets)",
-        "🔍 CHECKLIST TÌM KIẾM TOÀN DANH MỤC",
-        "✍️ HẠNG MỤC NGOÀI DANH MỤC",
+        "Gói trang bị theo chức danh",
+        "Tìm trong toàn danh mục",
+        "Hạng mục ngoài danh mục",
     ])
 
     standard_kits = qt.standard_kits(master)
@@ -145,7 +145,7 @@ def render_item_picker_dialog(ctx, target_dept: str, target_site: str):
         if k_need in qt.NEED_WITH_REASON:
             k_reason = st.text_input("Lý do phát sinh / căn cứ trang bị:", value=f"Tuyển mới {n_people} {kit_obj['name'] if kit_obj else ''}", key="dlg_k_reason")
 
-        if st.button(f"💾 XÁC NHẬN THÊM {len(sel_kit_df)} MỤC TRONG GÓI VÀO {target_dept}", type="primary", use_container_width=True, disabled=sel_kit_df.empty, key="btn_apply_dlg_kit"):
+        if st.button(f"💾 Thêm {len(sel_kit_df)} mục trong gói vào {target_dept}", type="primary", use_container_width=True, disabled=sel_kit_df.empty, key="btn_apply_dlg_kit"):
             if k_err:
                 st.error(k_err)
             elif k_need in qt.NEED_WITH_REASON and not k_reason.strip():
@@ -158,7 +158,7 @@ def render_item_picker_dialog(ctx, target_dept: str, target_site: str):
         st.caption(f"Tìm kiếm nhanh trong toàn bộ {len(cat_all)} hạng mục CNTT chuẩn hóa, tick chọn và điều chỉnh số lượng.")
         sc1, sc2 = st.columns([2, 1.2])
         with sc1:
-            search_kw = st.text_input("🔍 Gõ từ khóa tìm kiếm (tên thiết bị, phần mềm, mã...):", placeholder="VD: laptop, dell, tekla, autocad, màn hình, máy in...", key="dlg_search_kw")
+            search_kw = st.text_input("Gõ từ khóa tìm kiếm (tên thiết bị, phần mềm, mã...):", placeholder="VD: laptop, dell, tekla, autocad, màn hình, máy in...", key="dlg_search_kw")
         with sc2:
             all_groups_label = f"(Tất cả {len(it_groups(master))} nhóm CNTT)"
             grp_choices = [all_groups_label] + [f"{g['code']}. {g['name']}" for g in it_groups(master)]
@@ -228,7 +228,7 @@ def render_item_picker_dialog(ctx, target_dept: str, target_site: str):
             if c_need in qt.NEED_WITH_REASON:
                 c_reason = st.text_input("Lý do phát sinh / căn cứ trang bị:", placeholder="VD: Tuyển thêm nhân sự, nâng cấp máy...", key="dlg_c_reason")
 
-            if st.button(f"💾 XÁC NHẬN THÊM {len(sel_cat_df)} MỤC ĐÃ TICK VÀO {target_dept}", type="primary", use_container_width=True, disabled=sel_cat_df.empty, key="btn_apply_dlg_cat"):
+            if st.button(f"💾 Thêm {len(sel_cat_df)} mục đã chọn vào {target_dept}", type="primary", use_container_width=True, disabled=sel_cat_df.empty, key="btn_apply_dlg_cat"):
                 if c_err:
                     st.error(c_err)
                 elif c_need in qt.NEED_WITH_REASON and not c_reason.strip():
@@ -280,7 +280,7 @@ def render_item_picker_dialog(ctx, target_dept: str, target_site: str):
             """, unsafe_allow_html=True)
         n_reason = st.text_input("Lý do phát sinh / căn cứ trang bị:", key="dlg_n_reason",
                                  placeholder="VD: Dự án mới cần thiết bị đo đạc, phần mềm chuyên dụng...") if n_need in qt.NEED_WITH_REASON else ""
-        if st.button(f"💾 XÁC NHẬN THÊM {len(sel_new)} HẠNG MỤC VÀO {target_dept}", type="primary", use_container_width=True,
+        if st.button(f"💾 Thêm {len(sel_new)} hạng mục vào {target_dept}", type="primary", use_container_width=True,
                      disabled=sel_new.empty, key="btn_apply_dlg_new"):
             missing_grp = [n for n, g in zip(sel_new["Tên thiết bị / Hạng mục"], sel_new["Nhóm"])
                            if not find_catalog_item(n, master) and not str(g or "").strip()]
@@ -361,7 +361,7 @@ def render_batch_adjust_dialog(ctx, target_dept: str, target_site: str):
     n_sel = len(sel_adj)
 
     st.markdown("---")
-    st.markdown(f"##### 🛠️ Thao tác hàng loạt cho **{n_sel}** mục đã chọn:")
+    st.markdown(f"##### Thao tác hàng loạt cho **{n_sel}** mục đã chọn:")
 
     act_col1, act_col2 = st.columns(2)
     with act_col1:
@@ -422,8 +422,8 @@ def render_batch_adjust_dialog(ctx, target_dept: str, target_site: str):
                 for k, v in c_dict.items():
                     updated_stored.at[i, k] = v
             save_site(updated_stored.reset_index(drop=True), target_site)
-            st.session_state["flash"] = (f"✅ Đã cập nhật SL từng tháng cho {n_sel} hạng mục của {target_dept}!" if adj_mode == PHASE_MANUAL
-                                         else f"✅ Đã phân kỳ {n_sel} hạng mục của {target_dept} vào {', '.join(adj_months)}!")
+            st.session_state["flash"] = (f"Đã cập nhật SL từng tháng cho {n_sel} hạng mục của {target_dept}!" if adj_mode == PHASE_MANUAL
+                                         else f"Đã phân kỳ {n_sel} hạng mục của {target_dept} vào {', '.join(adj_months)}!")
             st.session_state["pending_dept"] = target_dept
             st.rerun()
 
@@ -435,6 +435,6 @@ def render_batch_adjust_dialog(ctx, target_dept: str, target_site: str):
             del_mask = (stored_df["dept_proposing"].map(dept_key) == dept_key(target_dept)) & (stored_df["item_code"].isin(sel_codes))
             updated_stored = stored_df[~del_mask].reset_index(drop=True)
             save_site(updated_stored, target_site)
-            st.session_state["flash"] = f"🗑️ Đã xóa thành công {n_sel} hạng mục khỏi phòng ban {target_dept}!"
+            st.session_state["flash"] = f"Đã xóa thành công {n_sel} hạng mục khỏi phòng ban {target_dept}!"
             st.session_state["pending_dept"] = target_dept
             st.rerun()

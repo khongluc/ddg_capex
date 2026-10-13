@@ -15,7 +15,7 @@ def render_price_update(ctx):
     current_user, format_vnd, master, save_site = ctx.current_user, ctx.format_vnd, ctx.master, ctx.save_site
     site_label = ctx.site_label
 
-    with st.expander("📥 Cập nhật đơn giá từ báo giá", expanded=False):
+    with st.expander("Cập nhật đơn giá từ báo giá", expanded=False):
         st.caption("Tải mẫu (danh mục + giá hiện tại), điền cột **Giá mới** (chưa VAT), nhà cung cấp, ngày báo giá rồi nạp lại. "
                    "Khớp theo Mã; file không có mã thì khớp theo tên / tên gọi khác. Ô Giá mới để trống = giữ giá.")
         st.download_button("📄 Tải mẫu báo giá (.xlsx)", pricing.template_bytes(master),
@@ -30,7 +30,7 @@ def render_price_update(ctx):
             return
         changes, issues = pricing.match_quotes(quotes, master)
         if issues:
-            with st.popover(f"⚠️ {len(issues)} dòng không áp dụng được"):
+            with st.popover(f"{len(issues)} dòng không áp dụng được"):
                 st.write("\n".join(f"- {x}" for x in issues))
         if not changes:
             st.info("File không có giá nào khác giá hiện tại.")

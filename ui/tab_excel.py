@@ -18,14 +18,14 @@ def render(ctx):
     save_view, selected_dept, selected_site, site_label = ctx.save_view, ctx.selected_dept, ctx.selected_site, ctx.site_label
     year_code = ctx.year_code
 
-    st.markdown("### 📁 Nhập & Xuất File Excel Chuẩn Biểu mẫu Doanh nghiệp")
+    st.markdown("### Nhập & Xuất File Excel Chuẩn Biểu mẫu Doanh nghiệp")
 
     ex_c1, ex_c2 = st.columns(2)
 
     with ex_c1:
         st.markdown("""
         <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:20px;">
-            <h4 style="color:#166534; margin-top:0;">📤 Xuất File Excel CAPEX</h4>
+            <h4 style="color:#166534; margin-top:0;">Xuất file Excel CAPEX</h4>
             <p style="color:#15803D; font-size:13px;">
                 Xuất toàn bộ bảng ngân sách hiện hành thành file Excel (.xlsx) chuẩn biểu mẫu <b>CA.01_CAPEX</b>.
                 Đầy đủ công thức tính toán, định dạng màu sắc doanh nghiệp, tỷ lệ phân kỳ 12 tháng và mã ngân sách kế toán.
@@ -34,12 +34,12 @@ def render(ctx):
         """, unsafe_allow_html=True)
 
         if df_curr.empty:
-            st.warning("⚠️ Bảng dữ liệu đang trống, không thể xuất file.")
+            st.warning("Bảng dữ liệu đang trống, không thể xuất file.")
         else:
             scope_tag = "TONGHOP" if selected_site == ALL_SITES else selected_site
             file_name = f"CAPEX_{budget_year}_{scope_tag}_{dept_prop.replace(' ', '_')}_{datetime.date.today().strftime('%Y%m%d')}.xlsx"
             excel_bytes = lazy_excel_download(df_curr, st.session_state["metadata"],
-                                              f"📥 TẢI XUỐNG FILE EXCEL ({len(df_curr)} HẠNG MỤC)", file_name,
+                                              f"TẢI XUỐNG FILE EXCEL ({len(df_curr)} HẠNG MỤC)", file_name,
                                               key=f"all_{budget_year}_{selected_site}_{selected_dept}")
             if excel_bytes:
                 st.caption(f"File: {file_name} (~{len(excel_bytes)//1024} KB)")
@@ -61,7 +61,7 @@ def render(ctx):
     with ex_c2:
         st.markdown("""
         <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:20px;">
-            <h4 style="color:#1E40AF; margin-top:0;">📥 Nhập File Excel từ Phòng Ban</h4>
+            <h4 style="color:#1E40AF; margin-top:0;">Nhập file Excel từ phòng ban</h4>
             <p style="color:#1D4ED8; font-size:13px;">
                 Tải lên file Excel (.xlsx) theo biểu mẫu nhập liệu CAPEX để hệ thống tự động đọc, chuẩn hóa, tính toán và phân tích.
             </p>
@@ -70,7 +70,7 @@ def render(ctx):
 
         import_to_all = selected_site == ALL_SITES and current_user.is_admin
         if not (can_edit or import_to_all):
-            st.info("🔒 Bạn không có quyền nhập dữ liệu vào phạm vi đang chọn.")
+            st.info("Bạn không có quyền nhập dữ liệu vào phạm vi đang chọn.")
             uploaded_file = None
         else:
             if import_to_all:
@@ -92,7 +92,7 @@ def render(ctx):
 
                 sel_sheet = st.selectbox("Chọn Sheet cần đọc:", sheet_choices)
 
-                if st.button("⚡ ĐỌC DỮ LIỆU TỪ FILE EXCEL", use_container_width=True):
+                if st.button("⚡ Đọc dữ liệu từ file Excel", use_container_width=True):
                     up_meta, up_df = load_capex_from_excel(uploaded_file, sel_sheet, months=months, year_code=year_code)
                     up_meta.pop("creator_email", None)
                     st.session_state["metadata"].update(up_meta)
@@ -102,20 +102,20 @@ def render(ctx):
                         groups, unmatched = distribute_by_location(up_df)
                         for code, part in groups.items():
                             save_site(part, code, overwrite=True)
-                        st.session_state["flash"] = (f"🎉 Đã nhập {sum(len(p) for p in groups.values())} hạng mục vào {len(groups)} site."
+                        st.session_state["flash"] = (f"Đã nhập {sum(len(p) for p in groups.values())} hạng mục vào {len(groups)} site."
                                                      + (f" Bỏ qua vị trí không khớp danh mục: {unmatched}" if unmatched else ""))
                         st.rerun()
                     else:
                         base = df_curr if import_mode == "append" else pd.DataFrame()
                         save_view(pd.concat([base, up_df], ignore_index=True))
-                        st.session_state["flash"] = f"🎉 Đã nhập thành công {len(up_df)} hạng mục từ sheet '{sel_sheet}' vào {site_label(selected_site)}!"
+                        st.session_state["flash"] = f"Đã nhập thành công {len(up_df)} hạng mục từ sheet '{sel_sheet}' vào {site_label(selected_site)}!"
                         st.rerun()
             except Exception as e:
                 st.error(f"Lỗi khi đọc file Excel: {e}")
 
     if not df_curr.empty:
         st.divider()
-        st.markdown("### 📅 Kế hoạch Mua sắm & Phân kỳ (Tháng / Quý)")
+        st.markdown("### Kế hoạch Mua sắm & Phân kỳ (Tháng / Quý)")
         st.caption("Xem trước và lọc chi tiết số lượng và số tiền theo 12 tháng (T10 → T9) hoặc 4 quý. Số lượng nguyên chuẩn xác theo phân kỳ.")
 
         kp_c1, kp_c2, kp_c3 = st.columns([1.5, 1, 1])

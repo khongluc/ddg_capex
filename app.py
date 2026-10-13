@@ -117,6 +117,7 @@ def format_vnd(amount: float) -> str:
 def plot_chart(fig, **kw):
     fig.update_layout(
         template="plotly_white",
+        colorway=ui.styles.CHART_COLORS,
         separators=plot_separators(),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
@@ -181,7 +182,7 @@ SAMPLE_EXCEL_PATH = resolve_template_path("2. Form file nhập liệu CAPEX 2026
 
 def site_label(code: str) -> str:
     if code == ALL_SITES:
-        return "🌐 Tất cả site được xem"
+        return "Tất cả site được xem"
     return f"{SITE_NAME.get(code, code)} ({code})"
 
 
@@ -431,18 +432,18 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     if current_user.is_admin:
-        st.caption("💾 CSDL: " + ("PostgreSQL (lưu bền)" if db.using_server_db() else "SQLite (file cục bộ)")
+        st.caption("CSDL: " + ("PostgreSQL (lưu bền)" if db.using_server_db() else "SQLite (file cục bộ)")
                    + f" · Phiên bản code: {code_version()}")
     if st.button("🚪 Đăng xuất", use_container_width=True):
         auth.logout()
 
     if current_user.is_admin:
-        admin_view = st.radio("Màn hình", ["📊 Ngân sách", "👥 Phân quyền & Tiến độ"], key="admin_view",
+        admin_view = st.radio("Màn hình", ["Ngân sách", "Phân quyền & Tiến độ"], key="admin_view",
                               help="Phân quyền người dùng, tiến độ các site, nhật ký, sao lưu / khôi phục")
     else:
-        admin_view = "📊 Ngân sách"
+        admin_view = "Ngân sách"
 
-    st.markdown("### ⚙️ Thiết lập Ngân sách")
+    st.markdown("### Thiết lập Ngân sách")
 
     budget_year = st.selectbox("Năm ngân sách", ["2027", "2026", "2025"], index=0)
     year_code = f"A{budget_year[-2:]}"
@@ -519,7 +520,7 @@ with st.sidebar:
             can_edit = False  # phòng đã nộp / đã duyệt: khóa sửa
 
     st.markdown("---")
-    st.markdown("#### 🏢 Thông tin Đề xuất")
+    st.markdown("#### Thông tin Đề xuất")
     meta = st.session_state.setdefault("metadata", _default_metadata())  # có thể vừa bị xóa (đăng xuất) trong lượt chạy này
     creator_name = st.text_input("Họ và tên người lập", value=meta.get("creator_name") or current_user.name)
     creator_email = st.text_input("Email người lập", value=current_user.email, disabled=True)
@@ -532,11 +533,11 @@ with st.sidebar:
     st.session_state["metadata"]["budget_year"] = budget_year
 
     st.markdown("---")
-    st.markdown("#### 🔄 Hành động Nhanh")
+    st.markdown("#### Hành động Nhanh")
     if st.button("🔄 Làm mới", use_container_width=True):
         st.rerun()
     if site_can_edit and not current_user.is_dept_user:
-        with st.popover("🗑️ Xóa toàn bộ dòng của site", use_container_width=True):
+        with st.popover("Xóa toàn bộ dòng của site", use_container_width=True):
             st.warning(f"Xóa toàn bộ hạng mục năm {budget_year} của {site_label(selected_site)}?")
             if st.button("Xác nhận xóa", type="primary"):
                 save_site(pd.DataFrame(), selected_site)  # dòng của phòng ban đã nộp/duyệt được giữ lại
@@ -544,7 +545,7 @@ with st.sidebar:
                 st.rerun()
 
     if current_user.is_admin and os.path.exists(SAMPLE_EXCEL_PATH):
-        st.markdown("##### 📥 Nạp ngân sách cơ sở (Admin)")
+        st.markdown("##### Nạp ngân sách cơ sở (Admin)")
         st.caption("Đọc file CAPEX và phân các dòng về đúng site theo cột Vị trí (ghi đè dữ liệu các site có trong file).")
         seed_sheet = st.selectbox("Sheet nguồn", ["CA.01_CAPEX (2)", "CA.01_CAPEX"])
         if st.button("Nạp & phân về các site", use_container_width=True):
@@ -592,22 +593,15 @@ else:
         db.STATUS_APPROVED: "status-pill-approved",
         db.STATUS_RETURNED: "status-pill-returned",
     }.get(status_code, "status-pill-draft")
-    dot_icon = {
-        db.STATUS_DRAFT: "🟢",
-        db.STATUS_SUBMITTED: "🟡",
-        db.STATUS_APPROVED: "🔵",
-        db.STATUS_RETURNED: "🔴",
-    }.get(status_code, "⚪")
-    status_pill_html = f'<span class="header-status-pill {pill_cls}">{dot_icon} {status_lbl}</span>'
+    status_pill_html = f'<span class="header-status-pill {pill_cls}">{status_lbl}</span>'
 
 st.markdown(f"""
 <div class="main-header">
     <div class="header-top-row">
         <div class="header-brand-title">
-            <div class="brand-icon-box">💼</div>
             <div class="header-title-text">
                 <div class="sub-corp">Ngân sách đầu tư CNTT · Năm tài chính T10/{int(budget_year) - 1} – T9/{budget_year}</div>
-                <h1>NGÂN SÁCH CAPEX THƯỜNG NIÊN {budget_year}</h1>
+                <h1>Ngân sách CAPEX thường niên {budget_year}</h1>
             </div>
         </div>
         <div>
@@ -615,10 +609,10 @@ st.markdown(f"""
         </div>
     </div>
     <div class="header-meta-chips">
-        <span class="meta-chip">📍 Site: <strong>{site_label(selected_site)}</strong></span>
-        <span class="meta-chip">🏛️ Đơn vị đề xuất: <strong>{_html.escape(dept_prop)}</strong></span>
-        <span class="meta-chip">👤 Người lập: <strong>{_html.escape(creator_name or 'Chưa nhập')}</strong></span>
-        <span class="meta-chip">📅 Ngày: <strong>{meta.get('date', '')}</strong></span>
+        <span class="meta-chip">Site: <strong>{site_label(selected_site)}</strong></span>
+        <span class="meta-chip">Đơn vị đề xuất: <strong>{_html.escape(dept_prop)}</strong></span>
+        <span class="meta-chip">Người lập: <strong>{_html.escape(creator_name or 'Chưa nhập')}</strong></span>
+        <span class="meta-chip">Ngày: <strong>{meta.get('date', '')}</strong></span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -655,11 +649,11 @@ if selected_site != ALL_SITES:
 
     invalid_rows = int((~df_site["pct_valid"].fillna(False).astype(bool)).sum()) if "pct_valid" in df_site.columns else 0
     if current_user.is_dept_user and status in db.EDITABLE_STATUSES:
-        st.caption("ℹ️ Lập xong, bấm **📨 Nộp phòng ban** ở tab Lập & Nhập liệu để IT site duyệt.")
+        st.caption("Lập xong, bấm **📨 Nộp phòng ban** ở tab Lập & Nhập liệu để IT site duyệt.")
     site_pending = wf.pending_depts(wf.dept_overview(df_site, dept_status_map)) if selected_site != ALL_SITES else []
     if status in db.EDITABLE_STATUSES and site_can_edit and not current_user.is_dept_user:
         if site_pending:
-            st.caption(f"⏳ Còn {len(site_pending)} phòng ban chưa duyệt - duyệt đủ mới nộp được site "
+            st.caption(f"Còn {len(site_pending)} phòng ban chưa duyệt - duyệt đủ mới nộp được site "
                        "(xem bảng Tiến độ phòng ban ở tab Lập & Nhập liệu, chọn Tất cả phòng ban).")
         site_val = validators.validate_budget_rows(df_site, months=months, master=master)
         btn_disabled = df_site.empty or bool(site_pending) or not site_val.is_valid
@@ -668,7 +662,7 @@ if selected_site != ALL_SITES:
         else:
             btn_help = "Nộp toàn bộ ngân sách của site (tất cả phòng ban đã được IT site duyệt)"
         if site_val.warning_count > 0 and site_val.is_valid:
-            st.caption(f"⚠️ Lưu ý: Toàn site còn {site_val.warning_count} cảnh báo rà soát (vẫn cho phép nộp).")
+            st.caption(f"Lưu ý: Toàn site còn {site_val.warning_count} cảnh báo rà soát (vẫn cho phép nộp).")
         if st.button("📨 Nộp ngân sách site để duyệt", use_container_width=True, disabled=btn_disabled,
                      help=btn_help):
             if not site_val.is_valid:
@@ -692,7 +686,7 @@ if selected_site != ALL_SITES:
             db.set_status(budget_year, selected_site, db.STATUS_RETURNED, current_user.email, note)
             st.rerun()
     if current_user.is_admin and status == db.STATUS_APPROVED:
-        with st.popover("🔓 Mở điều chỉnh ngân sách", use_container_width=True):
+        with st.popover("Mở điều chỉnh ngân sách", use_container_width=True):
             st.caption("Bản đã duyệt được giữ làm phiên bản để so sánh; theo dõi thực hiện vẫn tính theo bản duyệt cho tới khi duyệt bản điều chỉnh. "
                        "Các phòng ban giữ trạng thái đã duyệt - IT site mở lại đúng phòng cần điều chỉnh.")
             rev_reason = st.text_area("Lý do điều chỉnh (bắt buộc)", key="rev_reason_input")
@@ -707,17 +701,17 @@ if selected_site != ALL_SITES:
 
 # TABS NAVIGATION
 tab_names = [
-    "📊 Tổng quan",
-    "📝 Lập CapEx",
-    "👥 Định biên",
-    "🏗️ Hạ tầng",
-    "💿 Phần mềm",
-    "📁 Nhập / Xuất",
-    "🎯 Kịch bản",
-    "💳 Giải ngân",
-    "🗂️ Phiên bản",
-    "📈 Thẩm định",
-    "⚙️ Danh mục",
+    "Tổng quan",
+    "Lập CapEx",
+    "Định biên",
+    "Hạ tầng",
+    "Phần mềm",
+    "Nhập / Xuất",
+    "Kịch bản",
+    "Giải ngân",
+    "Phiên bản",
+    "Thẩm định",
+    "Danh mục",
 ]
 # =====================================================================
 # TRANG QUẢN TRỊ: PHÂN QUYỀN & TIẾN ĐỘ (mở từ thanh bên, chỉ Admin)
@@ -726,7 +720,7 @@ def render_admin_page():
     return ui.admin.render_admin_page(app_context())
 
 
-if current_user.is_admin and admin_view == "👥 Phân quyền & Tiến độ":
+if current_user.is_admin and admin_view == "Phân quyền & Tiến độ":
     render_admin_page()
     st.stop()
 
@@ -801,7 +795,7 @@ def _commit_checklist_items(selected_items_df: pd.DataFrame, target_dept: str, t
     updated_df_all = pd.concat([current_stored_df, pd.DataFrame(new_items_list)], ignore_index=True)
     save_site(updated_df_all.reset_index(drop=True), target_site)
     total_cost = (selected_items_df["Số lượng"] * selected_items_df["Đơn giá (VNĐ)"]).sum()
-    st.session_state["flash"] = f"🎉 Đã thêm thành công {len(new_items_list)} hạng mục vào ngân sách phòng ban '{target_dept}' ({format_vnd(total_cost)})!"
+    st.session_state["flash"] = f"Đã thêm thành công {len(new_items_list)} hạng mục vào ngân sách phòng ban '{target_dept}' ({format_vnd(total_cost)})!"
     st.session_state["pending_dept"] = target_dept
     st.rerun()
 
@@ -812,7 +806,7 @@ PHASE_ONE, PHASE_EVEN, PHASE_MANUAL = "1 tháng", "Chia đều nhiều tháng", 
 def phasing_picker(sel_df: pd.DataFrame, key: str) -> tuple:
     """Popup: chọn cách phân kỳ cho các hạng mục đã chọn - cả SL vào 1 tháng, chia đều các tháng chọn, hoặc nhập SL từng tháng.
     Trả về (bảng có thêm cột _units = SL nguyên từng tháng và Số lượng = tổng, lỗi hoặc None)."""
-    mode = st.radio("📅 Phân kỳ mua:", [PHASE_ONE, PHASE_EVEN, PHASE_MANUAL], horizontal=True, key=f"{key}_mode",
+    mode = st.radio("Phân kỳ mua:", [PHASE_ONE, PHASE_EVEN, PHASE_MANUAL], horizontal=True, key=f"{key}_mode",
                     help="Chia đều: SL nguyên chia đều các tháng chọn, dư dồn tháng sớm (10 máy / 4 quý = 3-3-2-2). "
                          "Tự nhập: gõ SL từng tháng, Số lượng = tổng các tháng.")
     out = sel_df.copy()
@@ -861,12 +855,12 @@ def dialog_dept_picker(default_dept: str, key: str):
     return ui.dialogs.dialog_dept_picker(app_context(), default_dept, key)
 
 
-@st.dialog('🛒 Checklist Lập Ngân Sách CNTT Thông Minh', width='large')
+@st.dialog('Checklist Lập Ngân Sách CNTT Thông Minh', width='large')
 def render_item_picker_dialog(target_dept: str, target_site: str):
     return ui.dialogs.render_item_picker_dialog(app_context(), target_dept, target_site)
 
 
-@st.dialog('📋 Checklist Rà Soát & Điều Chỉnh Nhanh Phòng Ban', width='large')
+@st.dialog('Checklist Rà Soát & Điều Chỉnh Nhanh Phòng Ban', width='large')
 def render_batch_adjust_dialog(target_dept: str, target_site: str):
     return ui.dialogs.render_batch_adjust_dialog(app_context(), target_dept, target_site)
 

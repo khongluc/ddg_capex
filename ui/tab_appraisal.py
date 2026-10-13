@@ -11,9 +11,9 @@ def render(ctx):
     budget_year, df_curr, fmt_num, format_vnd = ctx.budget_year, ctx.df_curr, ctx.fmt_num, ctx.format_vnd
     months, plot_chart = ctx.months, ctx.plot_chart
 
-    st.markdown("### 📈 Phân tích Khấu hao TSCĐ & Đánh giá Hiệu quả Dự án")
+    st.markdown("### Phân tích Khấu hao TSCĐ & Đánh giá Hiệu quả Dự án")
 
-    sub_tab1, sub_tab2 = st.tabs(["📉 Dự phóng Khấu hao TSCĐ", "💰 Thẩm định Hiệu quả Đầu tư (NPV / IRR / ROI)"])
+    sub_tab1, sub_tab2 = st.tabs(["Dự phóng Khấu hao TSCĐ", "Thẩm định Hiệu quả Đầu tư (NPV / IRR / ROI)"])
 
     with sub_tab1:
         st.markdown("#### Dự phóng Khấu hao TSCĐ & Phân bổ CCDC (đường thẳng, Thông tư 45/2013/TT-BTC)")
@@ -90,16 +90,16 @@ def render(ctx):
                 discount_rate=in_discount
             )
 
-            st.markdown("##### 🎯 Kết quả Thẩm định")
+            st.markdown("##### Kết quả Thẩm định")
             res_npv = fin_result["npv"]
             res_irr = fin_result["irr"]
             res_pb = fin_result["payback_years"]
             res_roi = fin_result["roi_pct"]
 
             if res_npv > 0 and res_irr > (in_discount * 100):
-                st.success(f"✅ **DỰ ÁN KHẢ THI CAO** (NPV > 0 và IRR > WACC {in_discount*100:.1f}%)")
+                st.success(f"**DỰ ÁN KHẢ THI CAO** (NPV > 0 và IRR > WACC {in_discount*100:.1f}%)")
             else:
-                st.error("⚠️ **DỰ ÁN CẦN XEM XÉT LẠI** (Hiệu quả chưa đạt tỷ suất kỳ vọng)")
+                st.error("**DỰ ÁN CẦN XEM XÉT LẠI** (Hiệu quả chưa đạt tỷ suất kỳ vọng)")
 
         rc1, rc2, rc3, rc4 = st.columns(4)
         with rc1:

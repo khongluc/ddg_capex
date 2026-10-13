@@ -1,6 +1,10 @@
 """CSS giao diện (bảng màu Corporate Navy, tab dạng capsule, thẻ chỉ số...) - nạp 1 lần mỗi lượt chạy."""
 import streamlit as st
 
+# Bộ màu biểu đồ dùng chung: navy -> xanh -> xanh ngọc -> vàng đất -> xám (đậm trước, nhạt sau)
+CHART_COLORS = ["#0F2C59", "#2563EB", "#0EA5A4", "#D97706", "#64748B", "#93C5FD", "#7C3AED", "#DC2626",
+                "#16A34A", "#CBD5E1"]
+
 CSS = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -111,119 +115,60 @@ CSS = """
     .role-badge-dept { background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; }
     .role-badge-viewer { background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; }
 
-    /* Main Executive Header Banner */
+    /* Đầu trang: thẻ sáng, viền nhấn navy bên trái */
     .main-header {
-        background: linear-gradient(135deg, #0A192F 0%, #0F2C59 55%, #173B75 100%);
-        padding: 16px 22px;
-        border-radius: 14px;
-        color: white;
-        margin-bottom: 14px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        box-shadow: 0 10px 25px -5px rgba(15, 44, 89, 0.22), 0 8px 10px -6px rgba(15, 44, 89, 0.1);
-        position: relative;
-        overflow: hidden;
+        background: #FFFFFF;
+        padding: 14px 20px;
+        border-radius: 12px;
+        color: #0F172A;
+        margin-bottom: 12px;
+        border: 1px solid #E2E8F0;
+        border-left: 4px solid #1E40AF;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
     }
-
-    .main-header::before {
-        content: "";
-        position: absolute;
-        top: -60px;
-        right: -60px;
-        width: 240px;
-        height: 240px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0) 70%);
-        pointer-events: none;
-    }
-
-    .header-top-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
-    .header-brand-title {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-    }
-
-    .brand-icon-box {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        background: rgba(255, 255, 255, 0.12);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 22px;
-    }
-
+    .header-top-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .header-brand-title { display: flex; align-items: center; gap: 14px; }
     .header-title-text h1 {
-        color: #FFFFFF !important;
-        font-size: 20px !important;
-        font-weight: 800 !important;
+        color: #0F2C59 !important;
+        font-size: 19px !important;
+        font-weight: 750 !important;
         letter-spacing: -0.01em;
         margin: 0 !important;
         padding: 0 !important;
-        line-height: 1.25 !important;
+        line-height: 1.3 !important;
     }
-
-    .header-title-text .sub-corp {
-        color: #93C5FD;
-        font-size: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-top: 2px;
-    }
-
-    .header-meta-chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 10px;
-        padding-top: 10px;
-        border-top: 1px solid rgba(255, 255, 255, 0.12);
-    }
-
+    .header-title-text .sub-corp { color: #64748B; font-size: 12px; font-weight: 500; margin-top: 2px; }
+    .header-meta-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
     .meta-chip {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        color: #E2E8F0;
-        padding: 4px 11px;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        color: #64748B;
+        padding: 3px 10px;
         border-radius: 999px;
         font-size: 12px;
         font-weight: 500;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
     }
-
-    .meta-chip strong {
-        color: #FFFFFF;
-    }
-
+    .meta-chip strong { color: #0F172A; font-weight: 600; }
     .header-status-pill {
-        padding: 6px 14px;
+        padding: 5px 12px;
         border-radius: 999px;
         font-size: 12.5px;
-        font-weight: 700;
+        font-weight: 650;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        backdrop-filter: blur(6px);
+        gap: 6px;
     }
-    .status-pill-draft { background: rgba(59, 130, 246, 0.25); color: #93C5FD; border: 1px solid rgba(59, 130, 246, 0.45); }
-    .status-pill-submitted { background: rgba(245, 158, 11, 0.25); color: #FCD34D; border: 1px solid rgba(245, 158, 11, 0.45); }
-    .status-pill-approved { background: rgba(16, 185, 129, 0.25); color: #6EE7B7; border: 1px solid rgba(16, 185, 129, 0.45); }
-    .status-pill-returned { background: rgba(239, 68, 68, 0.25); color: #FCA5A5; border: 1px solid rgba(239, 68, 68, 0.45); }
-    .status-pill-all { background: rgba(255, 255, 255, 0.18); color: #FFFFFF; border: 1px solid rgba(255, 255, 255, 0.35); }
+    .header-status-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .status-pill-draft { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+    .status-pill-submitted { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
+    .status-pill-approved { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+    .status-pill-returned { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
+    .status-pill-all { background: #F1F5F9; color: #334155; border: 1px solid #E2E8F0; }
+
+    /* Tiêu đề mục: gọn, cùng 1 màu */
+    [data-testid="stMarkdownContainer"] h3 { font-size: 1.25rem !important; font-weight: 700 !important; color: #0F172A !important; }
+    [data-testid="stMarkdownContainer"] h4 { font-size: 1.05rem !important; font-weight: 650 !important; color: #0F2C59 !important; }
+    [data-testid="stMarkdownContainer"] h5 { font-size: 0.95rem !important; font-weight: 650 !important; color: #334155 !important; }
 
     /* Executive KPI Cards */
     .kpi-card {
@@ -333,7 +278,9 @@ CSS = """
         border-bottom: none !important;
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
         margin-bottom: 16px !important;
-        flex-wrap: wrap !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        scrollbar-width: thin;
     }
     .stTabs [data-baseweb="tab-highlight"] { display: none !important; }
 

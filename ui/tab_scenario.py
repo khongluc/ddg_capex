@@ -10,20 +10,20 @@ def render(ctx):
     MONEY_FMT, df_curr, format_vnd_short, months = ctx.MONEY_FMT, ctx.df_curr, ctx.format_vnd_short, ctx.months
     plot_chart = ctx.plot_chart
 
-    st.markdown("### 🎯 Mô phỏng Kịch bản Cắt giảm & Đóng gói Gói thầu Mua sắm")
+    st.markdown("### Mô phỏng Kịch bản Cắt giảm & Đóng gói Gói thầu Mua sắm")
     st.caption("Công cụ phân tích cho Ban Lãnh đạo & Hội đồng Thẩm định: Thử nghiệm kịch bản cắt giảm/hoãn tiến độ What-If "
                "và tự động gom nhóm nhu cầu thành các Gói thầu Mua sắm Tập trung để đàm phán chiết khấu số lượng lớn (Volume Discount).")
 
     if df_curr.empty:
-        st.info("💡 Chưa có dữ liệu CapEx để phân tích kịch bản. Vui lòng nạp hoặc nhập dữ liệu ở tab 'Lập & Nhập liệu CapEx'.")
+        st.info("Chưa có dữ liệu CapEx để phân tích kịch bản. Vui lòng nạp hoặc nhập dữ liệu ở tab 'Lập & Nhập liệu CapEx'.")
     else:
         sc_tab1, sc_tab2 = st.tabs([
-            "📉 Mô phỏng Kịch bản Cắt giảm & Tối ưu (What-If)",
-            "📦 Đóng gói Gói thầu Mua sắm Tập trung (Procurement)"
+            "Mô phỏng Kịch bản Cắt giảm & Tối ưu (What-If)",
+            "Đóng gói Gói thầu Mua sắm Tập trung (Procurement)"
         ])
 
         with sc_tab1:
-            st.markdown("##### 📉 Mô phỏng Cắt giảm & Điều tiết Tiến độ Ngân sách")
+            st.markdown("##### Mô phỏng Cắt giảm & Điều tiết Tiến độ Ngân sách")
             st.caption("Thử nghiệm tác động khi cắt giảm ngân sách theo các mục tiêu và chiến lược khác nhau.")
 
             w_col1, w_col2 = st.columns([1.2, 2.8])
@@ -53,7 +53,7 @@ def render(ctx):
             # Charts & Comparison Table
             sc_c1, sc_c2 = st.columns([1.3, 1.7])
             with sc_c1:
-                st.markdown("###### 📅 So sánh Dòng tiền 12 Tháng")
+                st.markdown("###### So sánh Dòng tiền 12 Tháng")
                 cf_df = sim_res["cashflow_df"]
                 fig_cf = go.Figure()
                 fig_cf.add_trace(go.Bar(
@@ -77,7 +77,7 @@ def render(ctx):
                 plot_chart(fig_cf, use_container_width=True)
 
             with sc_c2:
-                st.markdown("###### 🏛️ Chi tiết Tác động theo Khối / Đơn vị")
+                st.markdown("###### Chi tiết Tác động theo Khối / Đơn vị")
                 comp_show = sim_res["comparison_df"]
                 st.dataframe(
                     comp_show,
@@ -93,7 +93,7 @@ def render(ctx):
                 )
 
         with sc_tab2:
-            st.markdown("##### 📦 Đóng gói Gói thầu Mua sắm Tập trung (Procurement Sourcing Plan)")
+            st.markdown("##### Đóng gói Gói thầu Mua sắm Tập trung (Procurement Sourcing Plan)")
             st.caption("Tự động gom nhu cầu của toàn bộ các nhà máy và phòng ban thành các gói thầu lớn để đàm phán chiết khấu số lượng (Volume Discount).")
 
             pkgs = advisor.generate_procurement_packages(df_curr)

@@ -13,7 +13,7 @@ def render(ctx):
     MONEY_FMT, contingency_pct, current_user, master = ctx.MONEY_FMT, ctx.contingency_pct, ctx.current_user, ctx.master
     render_price_update = ctx.render_price_update
 
-    st.markdown("### ⚙️ Danh mục Tham chiếu Master Data & Bảng giá Chuẩn")
+    st.markdown("### Danh mục Tham chiếu Master Data & Bảng giá Chuẩn")
     st.caption("Các danh mục chuẩn dùng chung cho biểu mẫu quản lý tài sản và lập ngân sách.")
     cp1, cp2 = st.columns([1, 2])
     new_cont = cp1.number_input("Dự phòng phát sinh (% trên tổng hạng mục)", min_value=0.0, max_value=50.0, step=0.5,
@@ -27,7 +27,7 @@ def render(ctx):
             st.session_state["flash"] = f"Đã đặt dự phòng phát sinh {new_cont:g}%."
             st.rerun()
 
-    m_sub1, m_sub2, m_sub3 = st.tabs(["💻 Danh mục CNTT & Giá chuẩn", "🏢 Pháp nhân & Nhà máy", "🏷️ Loại Tài sản & Chi phí"])
+    m_sub1, m_sub2, m_sub3 = st.tabs(["Danh mục CNTT & Giá chuẩn", "Pháp nhân & Nhà máy", "Loại Tài sản & Chi phí"])
 
     with m_sub1:
         groups_cfg = it_groups(master)
@@ -124,7 +124,7 @@ def render(ctx):
         if current_user.is_admin:
             render_price_update()
 
-        with st.expander("🗂️ Nhóm CNTT & quy tắc hạch toán"):
+        with st.expander("Nhóm CNTT & quy tắc hạch toán"):
             df_groups = pd.DataFrame(groups_cfg, columns=["code", "name", "kind", "scope", "owner", "asset_cat1", "cost_lv2", "useful_months"])
             edited_groups = st.data_editor(
                 df_groups,
@@ -160,7 +160,7 @@ def render(ctx):
                 st.session_state["flash"] = "Đã lưu Nhóm CNTT & quy tắc hạch toán."
                 st.rerun()
 
-        with st.expander("🎒 Bộ trang bị tiêu chuẩn theo vị trí (dùng tính định biên)"):
+        with st.expander("Bộ trang bị tiêu chuẩn theo vị trí (dùng tính định biên)"):
             st.caption("Mỗi dòng: 1 hạng mục trong bộ trang bị của 1 vị trí và số lượng cho 1 nhân sự "
                        "(số lẻ = dùng chung, vd. 0,1 máy in/người = 1 máy/10 người; kết quả làm tròn lên theo phòng ban).")
             kit_items_label = {it["code"]: f"{it['code']} · {it['name']}" for it in master.get("standard_items", []) if it.get("code")}

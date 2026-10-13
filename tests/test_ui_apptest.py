@@ -80,7 +80,7 @@ class AppUiTest(unittest.TestCase):
 
     def test_checklist_popup_all_phasing_modes(self):
         """Popup checklist: mở được; mỗi tab trong popup chuyển đủ 3 cách phân kỳ (1 tháng / chia đều / tự nhập) không lỗi."""
-        at = self.open_popup("admin", "POPUP CHECKLIST THÔNG MINH")
+        at = self.open_popup("admin", "Thêm hạng mục (gói chức danh")
         found = [r.key for r in at.radio if r.key in ("dlg_k_mode", "dlg_c_mode", "dlg_n_mode")]
         self.assertGreaterEqual(len(found), 2, f"popup thiếu ô chọn phân kỳ: {found}")
         for key in found:
@@ -93,7 +93,7 @@ class AppUiTest(unittest.TestCase):
                 self.assertNoError(at, f"popup checklist {key} = {mode}")
 
     def test_review_popup_opens_for_dept_user(self):
-        at = self.open_popup("dept", "POPUP CHECKLIST RÀ SOÁT")
+        at = self.open_popup("dept", "Rà soát & sửa nhanh nhiều dòng")
         mode = next(r for r in at.radio if r.key == "dlg_adj_mode")
         for m in ("Chia đều nhiều tháng", "Tự nhập SL từng tháng"):
             mode.set_value(m)

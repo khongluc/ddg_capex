@@ -18,13 +18,13 @@ def render(ctx):
     save_site, selected_dept, selected_site, site_can_edit = ctx.save_site, ctx.selected_dept, ctx.selected_site, ctx.site_can_edit
     site_label, year_code = ctx.site_label, ctx.year_code
 
-    st.markdown("### 💿 Đầu tư Phần mềm & Bản quyền")
+    st.markdown("### Đầu tư Phần mềm & Bản quyền")
     st.caption("Danh mục phần mềm chuẩn và tổng hợp ngân sách phần mềm trong phạm vi đang chọn. "
                "Bản quyền vĩnh viễn: TSCĐ vô hình nếu ≥ 30 triệu/đơn vị, thấp hơn là CCDC; "
                "thuê bao theo năm: chi phí trả trước phân bổ theo thời hạn.")
     sw_catalog = [it for it in master.get("standard_items", []) if it.get("kind") in SW_KINDS]
     sw_by_code = {it["code"]: it for it in sw_catalog}
-    sw_sum_tab, sw_renew_tab, sw_cat_tab = st.tabs(["📊 Ngân sách phần mềm", "🔔 Nhắc gia hạn", "📚 Danh mục phần mềm & giá"])
+    sw_sum_tab, sw_renew_tab, sw_cat_tab = st.tabs(["Ngân sách phần mềm", "Nhắc gia hạn", "Danh mục phần mềm & giá"])
 
     with sw_sum_tab:
         kinds_s = df_curr["item_kind"] if "item_kind" in df_curr.columns else pd.Series(index=df_curr.index, dtype=object)
@@ -93,7 +93,7 @@ def render(ctx):
         cur_rn = df_curr if "site_code" in df_curr.columns else df_curr.assign(site_code=selected_site)
         gaps = renewals.renewal_gaps(prev_year_lines(), cur_rn, master)
         if gaps.empty:
-            st.success(f"✅ Không thiếu hạng mục định kỳ nào so với {prev_y} trong phạm vi đang chọn.")
+            st.success(f"Không thiếu hạng mục định kỳ nào so với {prev_y} trong phạm vi đang chọn.")
         else:
             n_miss = int((gaps["status"] == renewals.STATUS_MISSING).sum())
             n_wait = int((gaps["status"] == renewals.STATUS_WAIT_QUOTA).sum())
@@ -153,7 +153,7 @@ def render(ctx):
                         base_rn = pd.DataFrame(db.load_lines(budget_year, [selected_site])).drop(columns=["site_code"], errors="ignore")
                         save_site(pd.concat([base_rn, pd.DataFrame(new_rn)], ignore_index=True), selected_site)
                         st.session_state["renew_ver"] = rn_ver + 1
-                        st.session_state["flash"] = (f"🔁 Đã thêm {len(new_rn)} hạng mục gia hạn vào ngân sách {budget_year} "
+                        st.session_state["flash"] = (f"Đã thêm {len(new_rn)} hạng mục gia hạn vào ngân sách {budget_year} "
                                                      f"({format_vnd(sum(r.get('total_budget', 0) for r in new_rn))}).")
                         st.rerun()
 
@@ -205,7 +205,7 @@ def render(ctx):
             })
         zero_price = [it["name"] for it in sw_view if not it.get("price")]
         if zero_price:
-            st.caption(f"⚠️ {len(zero_price)} phần mềm chưa có đơn giá: {', '.join(zero_price[:5])}{'…' if len(zero_price) > 5 else ''}")
+            st.caption(f"{len(zero_price)} phần mềm chưa có đơn giá: {', '.join(zero_price[:5])}{'…' if len(zero_price) > 5 else ''}")
         if current_user.is_admin and st.button("💾 Lưu danh mục phần mềm", type="primary", key="sw_cat_save"):
             kind_by_lbl = {v: k for k, v in kind_lbl.items()}
             all_items = master.get("standard_items", [])

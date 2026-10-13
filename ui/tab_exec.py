@@ -15,7 +15,7 @@ def render(ctx):
     format_vnd, format_vnd_short, months, scope_sites = ctx.format_vnd, ctx.format_vnd_short, ctx.months, ctx.scope_sites
     selected_dept, selected_site, site_label, site_status = ctx.selected_dept, ctx.selected_site, ctx.site_label, ctx.site_status
 
-    st.markdown("### 💳 Thực hiện ngân sách")
+    st.markdown("### Thực hiện ngân sách")
     st.caption("Ghi nhận đề nghị mua, hợp đồng / PO và thanh toán theo Mã hạng mục đã duyệt. "
                "Còn lại = Ngân sách − max(Hợp đồng, Đề nghị). Số tiền chưa VAT, cùng cơ sở với ngân sách.")
     exec_rows = db.load_exec(budget_year, scope_sites)
@@ -54,7 +54,7 @@ def render(ctx):
 
     site_approved = selected_site != ALL_SITES and site_status["status"] == db.STATUS_APPROVED
     can_record = selected_site != ALL_SITES and (current_user.is_admin or (current_user.role == db.ROLE_SITE_IT and selected_site in current_user.sites))
-    ex_t1, ex_t2, ex_t3 = st.tabs(["📋 Theo hạng mục", "🧾 Sổ chứng từ", "📅 Kế hoạch vs thực chi"])
+    ex_t1, ex_t2, ex_t3 = st.tabs(["Theo hạng mục", "Sổ chứng từ", "Kế hoạch vs thực chi"])
     money_ex = st.column_config.NumberColumn(format=MONEY_FMT)
     with ex_t1:
         only_used = st.checkbox("Chỉ hiện hạng mục đã có chứng từ", value=False, key="exec_only_used")
@@ -73,14 +73,14 @@ def render(ctx):
                            mime="text/csv", key="exec_csv")
 
         if not can_record:
-            st.caption("👁️ Chỉ Admin và IT site của site này ghi nhận thực hiện; tài khoản của bạn xem.")
+            st.caption("Chỉ Admin và IT site của site này ghi nhận thực hiện; tài khoản của bạn xem.")
         elif not site_approved:
             st.info("Ghi nhận thực hiện sau khi ngân sách site được Admin duyệt.")
         elif summ.empty:
             st.caption("Chưa có hạng mục ngân sách trong phạm vi đang chọn.")
         else:
             with st.form(f"exec_add_{st.session_state.get('exec_form_ver', 0)}"):  # giữ dữ liệu khi báo lỗi, làm trống sau khi ghi
-                st.markdown("##### ➕ Ghi nhận chứng từ")
+                st.markdown("##### Ghi nhận chứng từ")
                 opts = summ[summ["flag"] != ex.FLAG_NO_LINE].sort_values("budget", ascending=False)
                 labels = {r["item_code"]: f"{r['item_code']} · {r['item_name']} · {r['dept']} (còn {r['remaining']:,.0f})"
                           for r in opts.to_dict("records")}
@@ -123,7 +123,7 @@ def render(ctx):
                                         "item_name": "Hạng mục", "amount": st.column_config.NumberColumn("Số tiền", format=MONEY_FMT),
                                         "vendor": "Nhà cung cấp", "note": "Ghi chú", "created_by": "Người ghi", "created_at": "Lúc ghi"})
             if can_record and site_approved:
-                with st.popover("🗑️ Xóa chứng từ ghi nhầm"):
+                with st.popover("Xóa chứng từ ghi nhầm"):
                     del_id = st.selectbox("Chọn chứng từ", led["id"].tolist(),
                                           format_func=lambda i: (lambda r: f"#{r['id']} · {r['doc_date']} · {r['kind']} {r['doc_no'] or ''} · "
                                                                            f"{r['item_code']} · {r['amount']:,.0f}")(led[led["id"] == i].iloc[0]))

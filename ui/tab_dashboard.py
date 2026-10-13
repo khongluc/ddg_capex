@@ -8,6 +8,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
+import ui.styles
+
 import smart_advisor as advisor
 import quota as qt
 import reports
@@ -22,7 +24,7 @@ def render(ctx):
     selected_site, site_label = ctx.selected_site, ctx.site_label
 
     if df_curr.empty:
-        st.info("💡 Chưa có dữ liệu CapEx. Bạn hãy chuyển sang tab **'Lập & Nhập liệu CapEx'** hoặc bấm nút **'Nạp dữ liệu mẫu'** ở thanh bên trái!")
+        st.info("Chưa có dữ liệu CapEx. Bạn hãy chuyển sang tab **'Lập & Nhập liệu CapEx'** hoặc bấm nút **'Nạp dữ liệu mẫu'** ở thanh bên trái!")
     else:
         # Calculate summary metrics
         total_capex = df_curr["total_budget"].sum() if "total_budget" in df_curr.columns else 0.0
@@ -91,7 +93,7 @@ def render(ctx):
         st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
         # Filters Row
-        with st.expander("🔍 Bộ lọc Phân tích Trực quan", expanded=False):
+        with st.expander("Bộ lọc Phân tích Trực quan", expanded=False):
             fc1, fc2, fc3 = st.columns(3)
             with fc1:
                 filter_entity = st.multiselect("Lọc theo Pháp nhân", options=sorted(df_curr["entity"].dropna().unique().tolist()))
@@ -113,14 +115,14 @@ def render(ctx):
         c1, c2 = st.columns([1, 1])
 
         with c1:
-            st.markdown("##### 🏢 Phân bổ Ngân sách theo Pháp nhân")
+            st.markdown("##### Phân bổ Ngân sách theo Pháp nhân")
             df_ent = df_filtered.groupby("entity")["total_budget"].sum().reset_index()
             fig_ent = px.pie(
                 df_ent,
                 names="entity",
                 values="total_budget",
                 hole=0.45,
-                color_discrete_sequence=px.colors.qualitative.Prism
+                color_discrete_sequence=ui.styles.CHART_COLORS
             )
             fig_ent.update_traces(
                 textposition='inside',
@@ -131,7 +133,7 @@ def render(ctx):
             plot_chart(fig_ent, use_container_width=True)
 
         with c2:
-            st.markdown("##### 🏗️ Phân bổ theo Loại Tài sản Cấp 1")
+            st.markdown("##### Phân bổ theo Loại Tài sản Cấp 1")
             df_cat = df_filtered.groupby("asset_cat1")["total_budget"].sum().reset_index().sort_values(by="total_budget", ascending=True)
             df_cat["budget_bil"] = df_cat["total_budget"] / 1e9
             fig_cat = px.bar(
@@ -151,7 +153,7 @@ def render(ctx):
         c3, c4 = st.columns([1.3, 1])
 
         with c3:
-            st.markdown("##### 📅 Dòng tiền Giải ngân Phân kỳ 12 Tháng")
+            st.markdown("##### Dòng tiền Giải ngân Phân kỳ 12 Tháng")
             val_cols = [f"val_{m}" for m in months if f"val_{m}" in df_filtered.columns]
             monthly_sums = [df_filtered[c].sum() / 1e9 for c in val_cols]
             cum_sums = np.cumsum(monthly_sums)
@@ -184,14 +186,14 @@ def render(ctx):
             plot_chart(fig_cash, use_container_width=True)
 
         with c4:
-            st.markdown("##### 📍 Phân bổ theo Vị trí / Nhà máy")
+            st.markdown("##### Phân bổ theo Vị trí / Nhà máy")
             df_loc = df_filtered.groupby("location")["total_budget"].sum().reset_index().sort_values(by="total_budget", ascending=False)
             df_loc["budget_bil"] = df_loc["total_budget"] / 1e9
             fig_site = px.pie(
                 df_loc,
                 names="location",
                 values="budget_bil",
-                color_discrete_sequence=px.colors.qualitative.Safe
+                color_discrete_sequence=ui.styles.CHART_COLORS
             )
             fig_site.update_traces(
                 textposition='inside',
@@ -203,7 +205,7 @@ def render(ctx):
 
         # CƠ CẤU: trang bị theo định biên / hạ tầng dùng chung / phát sinh mới
         if "need_type" in df_curr.columns and not df_curr.empty:
-            st.markdown("##### 🧭 Cơ cấu ngân sách CNTT")
+            st.markdown("##### Cơ cấu ngân sách CNTT")
             nt = df_curr["need_type"].fillna("Chưa phân loại")
             cc = st.columns(4)
             for col_box, (lbl, key) in zip(cc, [("Trang bị theo định biên", qt.NEED_QUOTA), ("Hạ tầng dùng chung", qt.NEED_INFRA),
@@ -212,7 +214,7 @@ def render(ctx):
 
         # TỔNG HỢP THEO PHÒNG BAN (theo phòng ban đang chọn; "Tất cả" = mọi phòng ban của site)
         if "dept_proposing" in df_curr.columns and not df_curr.empty:
-            st.markdown("##### 🏢 Tổng hợp Ngân sách theo Phòng ban")
+            st.markdown("##### Tổng hợp Ngân sách theo Phòng ban")
             canon = {dept_key(d): d for d in dept_list}
             df_dept = df_curr.assign(
                 dept=df_curr["dept_proposing"].map(lambda d: canon.get(dept_key(d), d) if str(d or "").strip() else "(Chưa ghi phòng ban)"),
@@ -268,7 +270,7 @@ def render(ctx):
         # TỔNG HỢP THEO KHỐI (so sánh năm trước)
         div_tbl = reports.summary_by_division(df_curr, prev_year_lines(), master)
         if not div_tbl.empty:
-            st.markdown("##### 🏛️ Tổng hợp Ngân sách theo Khối")
+            st.markdown("##### Tổng hợp Ngân sách theo Khối")
             prev_label = f"Năm {int(budget_year) - 1}"
             show = div_tbl.rename(columns={"Tổng": f"Tổng {budget_year}", "Năm trước": prev_label})
             st.dataframe(show, use_container_width=True, hide_index=True,
@@ -285,7 +287,7 @@ def render(ctx):
         if "it_group" in df_filtered.columns:
             c5, c6 = st.columns([1.4, 1])
             with c5:
-                st.markdown("##### 💻 Ngân sách theo Nhóm CNTT")
+                st.markdown("##### Ngân sách theo Nhóm CNTT")
                 df_grp = (df_filtered.assign(it_group=df_filtered["it_group"].fillna("(Chưa phân nhóm)"))
                           .groupby("it_group")["total_budget"].sum().reset_index().sort_values("total_budget"))
                 df_grp["budget_bil"] = df_grp["total_budget"] / 1e9
@@ -296,7 +298,7 @@ def render(ctx):
                 fig_grp.update_layout(margin=dict(t=10, b=10, l=10, r=10), height=360)
                 plot_chart(fig_grp, use_container_width=True)
             with c6:
-                st.markdown("##### 🧾 Phân loại Hạch toán")
+                st.markdown("##### Phân loại Hạch toán")
                 df_acc = (df_filtered.assign(capex_type=df_filtered.get("capex_type", pd.Series(dtype=str)).fillna("Chưa phân loại"))
                           .groupby("capex_type")["total_budget"].sum().reset_index())
                 fig_acc = px.pie(df_acc, names="capex_type", values="total_budget", hole=0.45,
@@ -307,7 +309,7 @@ def render(ctx):
                 plot_chart(fig_acc, use_container_width=True)
                 st.caption("CAPEX: TSCĐ (≥ 30tr/đơn vị) · CCDC: phân bổ dần TK 242 · OPEX: thuê bao, dịch vụ")
 
-        st.markdown("##### 🏆 Top 10 Hạng mục Ngân sách Đầu tư Lớn nhất")
+        st.markdown("##### Top 10 Hạng mục Ngân sách Đầu tư Lớn nhất")
         top_items = df_filtered.sort_values(by="total_budget", ascending=False).head(10)[
             ["stt", "item_name", "entity", "location", "asset_cat1", "quantity", "unit_price", "total_budget", "project_code"]
         ].copy()
@@ -325,7 +327,7 @@ def render(ctx):
         exp_p1, exp_p2 = st.columns(2)
 
         with exp_p1:
-            st.markdown("##### 🚀 4 Trụ cột Chiến lược Số hóa DDC")
+            st.markdown("##### 4 Trụ cột Chiến lược Số hóa DDC")
             strat_res = advisor.digital_strategy_breakdown(df_filtered)
             if not strat_res["pie_data"].empty:
                 fig_strat = px.pie(
@@ -333,7 +335,7 @@ def render(ctx):
                     names="Trụ cột",
                     values="Ngân sách (VNĐ)",
                     hole=0.45,
-                    color_discrete_sequence=["#0284C7", "#D97706", "#DC2626", "#16A34A"]
+                    color_discrete_sequence=ui.styles.CHART_COLORS[1:]
                 )
                 fig_strat.update_traces(textinfo="percent+label", hovertemplate="<b>%{label}</b><br>%{value:,.0f} VNĐ<br>%{percent}")
                 fig_strat.update_layout(margin=dict(t=10, b=10, l=10, r=10), height=300, showlegend=False)
@@ -342,9 +344,9 @@ def render(ctx):
                 st.caption(f"{p['icon']} **{p['name']}**: {format_vnd_short(p['budget'])} ({p['pct']:.1f}%) — {p['desc']}")
 
         with exp_p2:
-            st.markdown("##### 📑 Báo cáo Điều hành Tóm tắt 1 Trang (Executive Briefing)")
+            st.markdown("##### Báo cáo Điều hành Tóm tắt 1 Trang (Executive Briefing)")
             st.caption("Báo cáo cô đọng chuẩn Ban Tổng Giám đốc & Hội đồng Quản trị: tóm tắt dự toán, 4 quý, Top 5 khoản đầu tư và kết luận của CIO.")
-            with st.popover("👁️ Xem trước & In Báo cáo Điều hành (A4)", use_container_width=True):
+            with st.popover("Xem trước & In Báo cáo Điều hành (A4)", use_container_width=True):
                 meta_report = {
                     "budget_year": budget_year,
                     "selected_site": site_label(selected_site),

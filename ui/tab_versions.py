@@ -14,7 +14,7 @@ def render(ctx):
     current_user, dept_key, format_vnd_short, scope_sites = ctx.current_user, ctx.dept_key, ctx.format_vnd_short, ctx.scope_sites
     selected_dept, selected_site, site_label = ctx.selected_dept, ctx.selected_site, ctx.site_label
 
-    st.markdown("### 🗂️ Phiên bản & điều chỉnh ngân sách")
+    st.markdown("### Phiên bản & điều chỉnh ngân sách")
     st.caption("Mỗi lần Admin duyệt site, toàn bộ ngân sách được chốt thành 1 phiên bản (Bản duyệt, Điều chỉnh lần 1, 2...). "
                "So sánh theo Mã hạng mục cố định.")
     if selected_site == ALL_SITES:

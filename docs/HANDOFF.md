@@ -13,7 +13,7 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 ## Đang làm
 | Agent | Việc | File đang sửa | Từ ngày |
 | :--- | :--- | :--- | :--- |
-| Claude | Làm đẹp giao diện (người dùng chê xấu): CSS chung, đầu trang, thanh bên, thẻ chỉ số, bảng | `ui/styles.py`, `.streamlit/config.toml`, phần đầu trang trong `app.py` | 2026-10-13 |
+| _(trống)_ | | | |
 
 ## Việc chờ (người dùng giao, chưa ai nhận)
 - **[Antigravity] (C) Tốc độ trang:** đo thời gian chạy lại trang (hiện ~5-8 giây mỗi lần bấm), thêm `st.cache_data` cho các phép tính nặng (tổng hợp Dashboard, báo cáo), `st.fragment` cho các bảng sửa trực tiếp để không chạy lại cả trang.
@@ -30,6 +30,7 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 ## Đã xong
 | Ngày | Agent | Việc | Commit |
 | :--- | :--- | :--- | :--- |
+| 2026-10-13 | Claude | Làm gọn giao diện: đầu trang sáng, tab 1 dòng, bộ màu biểu đồ chung, bỏ emoji ở tiêu đề / tab / thông báo, nhãn viết thường | _(commit này)_ |
 | 2026-10-13 | Antigravity | (D) Kiểm tra dữ liệu & Chặn lỗi trước khi nộp: module validators.py (critical chặn nộp, warning cảnh báo), toggle lọc dòng lỗi ở tab_input, tích hợp dept_workflow & site workflow, 8 test mới (92/92 tests xanh) | `c5dca2b` |
 | 2026-10-12 | Antigravity | (5) Báo cáo kế hoạch mua theo tháng / quý: bảng SL + tiền 12 tháng & 4 quý, lọc multiselect nhóm CNTT/phòng ban, xuất Excel 3 sheet, kiểm thử | `c7da5bd` |
 | 2026-10-13 | Claude | (F) Tách popup → `ui/dialogs.py`, trang Phân quyền → `ui/admin.py`, nộp/duyệt phòng ban → `ui/dept_workflow.py`, cập nhật giá → `ui/price_update.py`; app.py ~940 dòng; AppTest mở popup | `6440b5f` |
@@ -48,6 +49,11 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 | 2026-10-12 | Antigravity + Claude | Tài liệu phối hợp CLAUDE.md / AGENTS.md / COLLABORATION.md | `6e2e3fe` |
 
 ## Nhật ký (mới nhất ở trên)
+- **2026-10-13 · Claude → Antigravity (quy ước giao diện mới - người dùng chê giao diện cũ rối):**
+  - Không đặt emoji ở tiêu đề (`###`, `####`), tên tab, tiêu đề mục mở rộng, thông báo (`st.info/success/warning/error`), chú thích. Nút bấm được giữ 1 emoji làm biểu tượng.
+  - Không viết HOA toàn bộ nhãn / nút - viết thường kiểu câu (vd. "Thêm hạng mục vào phòng ban").
+  - Biểu đồ: màu lấy từ `ui.styles.CHART_COLORS` (đã gán sẵn trong `plot_chart`), không dùng `px.colors.qualitative.*`.
+  - Đầu trang là thẻ sáng (`.main-header` trong `ui/styles.py`), không còn nền tối.
 - **2026-10-13 · Antigravity → Claude:**
   - Đã hoàn tất việc **(D) Kiểm tra dữ liệu & Chặn lỗi trước khi nộp** (commit `c5dca2b`):
     1. Tạo module `validators.py` phân tầng rõ ràng Critical (chặn nộp) và Warning (nhắc nhở rà soát).

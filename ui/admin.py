@@ -12,9 +12,9 @@ def render_admin_page(ctx):
     MONEY_FMT, SITES, budget_year, current_user = ctx.MONEY_FMT, ctx.SITES, ctx.budget_year, ctx.current_user
     dept_list, site_label = ctx.dept_list, ctx.site_label
 
-    st.markdown("### 👥 Phân quyền Người dùng & Tiến độ Lập Ngân sách các Site")
-    a_users, a_progress, a_audit, a_backup = st.tabs(["👤 Người dùng & Site được phân", "📋 Tiến độ các site",
-                                                      "🧾 Nhật ký thao tác", "💾 Sao lưu / Khôi phục"])
+    st.markdown("### Phân quyền Người dùng & Tiến độ Lập Ngân sách các Site")
+    a_users, a_progress, a_audit, a_backup = st.tabs(["Người dùng & Site được phân", "Tiến độ các site",
+                                                      "Nhật ký thao tác", "Sao lưu / Khôi phục"])
 
     users = db.list_users()
     site_codes = [s["code"] for s in SITES]
@@ -22,7 +22,7 @@ def render_admin_page(ctx):
     with a_users:
         pending = [u for u in users if u["role"] == db.ROLE_PENDING]
         if pending:
-            st.warning(f"⏳ Có {len(pending)} tài khoản đã đăng nhập và đang chờ phân quyền: "
+            st.warning(f"Có {len(pending)} tài khoản đã đăng nhập và đang chờ phân quyền: "
                        + ", ".join(u["email"] for u in pending))
 
         df_users = pd.DataFrame([{
@@ -36,10 +36,10 @@ def render_admin_page(ctx):
         } for u in users])
         st.dataframe(df_users, use_container_width=True, hide_index=True)
 
-        st.markdown("#### ✏️ Thêm / Cập nhật quyền")
+        st.markdown("#### Thêm / Cập nhật quyền")
         st.caption("Thêm trước email UltraID/Google của IT site, hoặc chọn tài khoản đang chờ để phân site. "
                    "Vai trò **IT Site** chỉ thấy và lập ngân sách cho các site được chọn.")
-        NEW_USER = "➕ Thêm email mới"
+        NEW_USER = "Thêm email mới"
         pick = st.selectbox("Tài khoản", [NEW_USER] + [u["email"] for u in users],
                             format_func=lambda e: e if e == NEW_USER else
                             f"{e} – {db.ROLE_LABELS.get(next(u['role'] for u in users if u['email'] == e), '')}")
@@ -112,7 +112,7 @@ def render_admin_page(ctx):
                     it_by_site.setdefault(c, []).append(u["email"])
         prog = pd.DataFrame([{
             "Site": site_label(c),
-            "IT phụ trách": ", ".join(it_by_site.get(c, [])) or "⚠️ Chưa phân",
+            "IT phụ trách": ", ".join(it_by_site.get(c, [])) or "Chưa phân",
             "Trạng thái": db.STATUS_LABELS.get(statuses.get(c, {}).get("status", db.STATUS_DRAFT)),
             "Số hạng mục": int(totals.loc[c, "count"]) if c in totals.index else 0,
             "Tổng ngân sách (VNĐ)": float(totals.loc[c, "sum"]) if c in totals.index else 0.0,
@@ -136,14 +136,14 @@ def render_admin_page(ctx):
         try:
             _si = db.storage_info()
             if _si["durable"]:
-                st.success(f"✅ **{_si['backend']}** – lưu bền ({_si.get('server', '')}) · máy chủ `{_si['location']}`")
+                st.success(f"**{_si['backend']}** – lưu bền ({_si.get('server', '')}) · máy chủ `{_si['location']}`")
             else:
-                st.warning(f"⚠️ **{_si['backend']}** – file `{_si['location']}`. Trên Streamlit Cloud dữ liệu có thể mất khi app "
+                st.warning(f"**{_si['backend']}** – file `{_si['location']}`. Trên Streamlit Cloud dữ liệu có thể mất khi app "
                            "khởi động lại; thêm mục [database] url vào Secrets để dùng PostgreSQL.")
             st.dataframe(pd.DataFrame([{"Bảng": k, "Số dòng": v} for k, v in _si["rows"].items()]),
                          hide_index=True, use_container_width=False)
         except Exception as _exc:
-            st.error(f"❌ Không kết nối được CSDL: {_exc}")
+            st.error(f"Không kết nối được CSDL: {_exc}")
         st.markdown("##### Sao lưu toàn bộ dữ liệu")
         st.caption("Gồm CSDL (người dùng, phân quyền, ngân sách các năm, định biên, nhật ký) và danh mục CNTT. "
                    "Khi chạy trên dịch vụ miễn phí không có ổ đĩa lưu bền (vd. Streamlit Community Cloud), "

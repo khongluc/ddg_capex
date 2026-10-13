@@ -31,14 +31,14 @@ def render_dept_workflow(ctx, dept: str, rows: pd.DataFrame):
             c2.caption("Site đã nộp / đã duyệt - không đổi trạng thái phòng ban.")
             return
         if status in db.DEPT_LOCKED_STATUSES:
-            c2.caption("🔒 Dòng của phòng ban đang khóa sửa." + ("" if can_review else " IT site trả lại hoặc mở lại nếu cần chỉnh."))
+            c2.caption("Dòng của phòng ban đang khóa sửa." + ("" if can_review else " IT site trả lại hoặc mở lại nếu cần chỉnh."))
         if status in db.EDITABLE_STATUSES:
             if problems:
-                c2.error("🚫 **Chưa đủ điều kiện nộp:** " + "; ".join(problems))
+                c2.error("**Chưa đủ điều kiện nộp:** " + "; ".join(problems))
             elif val_report.warning_messages:
-                c2.warning(f"⚠️ Có {val_report.warning_count} lưu ý cần kiểm tra (vẫn cho phép nộp).")
+                c2.warning(f"Có {val_report.warning_count} lưu ý cần kiểm tra (vẫn cho phép nộp).")
             elif not rows.empty:
-                c2.success("✅ Toàn bộ hạng mục đã đáp ứng chuẩn nộp duyệt.")
+                c2.success("Toàn bộ hạng mục đã đáp ứng chuẩn nộp duyệt.")
         note = ""
         if can_review and status != db.STATUS_APPROVED:
             note = c2.text_input("Ghi chú duyệt / lý do trả lại", key=f"dept_note_{selected_site}_{dept_key(dept)}")
@@ -68,7 +68,7 @@ def render_dept_workflow(ctx, dept: str, rows: pd.DataFrame):
                 db.set_dept_status(budget_year, selected_site, dept, db.STATUS_DRAFT, current_user.email, "Mở lại")
                 st.rerun()
         if can_review and status == db.STATUS_SUBMITTED and not rows.empty:
-            with st.expander("📝 Ghi chú duyệt từng dòng"):
+            with st.expander("Ghi chú duyệt từng dòng"):
                 blank = pd.Series("", index=rows.index)
                 view = pd.DataFrame({
                     "item_code": rows["item_code"], "item_name": rows["item_name"], "quantity": rows["quantity"],
@@ -107,7 +107,7 @@ def render_dept_overview(ctx):
     with st.container(border=True):
         cnt = ov["status"].value_counts()
         st.markdown(f"**Tiến độ phòng ban:** ✅ {cnt.get(db.STATUS_APPROVED, 0)} đã duyệt · 📨 {cnt.get(db.STATUS_SUBMITTED, 0)} chờ duyệt · "
-                    f"↩️ {cnt.get(db.STATUS_RETURNED, 0)} trả lại · 📝 {cnt.get(db.STATUS_DRAFT, 0)} đang lập / {len(ov)} phòng có ngân sách")
+                    f"{cnt.get(db.STATUS_RETURNED, 0)} trả lại · 📝 {cnt.get(db.STATUS_DRAFT, 0)} đang lập / {len(ov)} phòng có ngân sách")
         with st.expander("Xem bảng tiến độ" + (" và duyệt nhiều phòng" if can_review else ""), expanded=False):
             st.dataframe(ov.drop(columns=["status"]), use_container_width=True, hide_index=True,
                          column_config={"Tổng ngân sách": st.column_config.NumberColumn(format=MONEY_FMT)})
