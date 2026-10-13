@@ -16,6 +16,11 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 | _(trống)_ | | | |
 
 ## Việc chờ (người dùng giao, chưa ai nhận)
+- **[Claude] (A) Kiểm thử giao diện tự động (Streamlit AppTest):** mỗi tab chạy được không lỗi với CSDL thử, đăng nhập giả lập Admin / IT site / Phòng ban; các nút thêm chính (popup, Hạ tầng, Nhắc gia hạn) bấm được và lưu đúng. Làm trước (B) để có lưới an toàn.
+- **[Claude] (B) Tách `app.py` (~4.700 dòng) thành module theo tab** (`ui/tab_*.py`), `app.py` chỉ còn khung + điều hướng. Giảm đụng độ khi 2 agent cùng sửa (đã xảy ra ở `c7da5bd`). Cập nhật `tests/test_app_helpers.py` (đang tách hàm bằng `ast` từ `app.py`). Làm theo từng tab, mỗi tab 1 commit.
+- **[Antigravity] (C) Tốc độ trang:** đo thời gian chạy lại trang (hiện ~5-8 giây mỗi lần bấm), thêm `st.cache_data` cho các phép tính nặng (tổng hợp Dashboard, báo cáo), `st.fragment` cho các bảng sửa trực tiếp để không chạy lại cả trang.
+- **[Antigravity] (D) Kiểm tra dữ liệu trước khi nộp:** cảnh báo dòng thiếu mã danh mục, đơn giá 0, phân kỳ ≠ 100%, ngày bàn giao trước tháng giải ngân, trùng hạng mục trong 1 phòng; hiện ngay ở tab Lập CapEx và chặn nút Nộp nếu còn lỗi nặng.
+- **[Claude] (E) Nhắc gia hạn × Định biên:** thuê bao tính theo người (M365, diệt virus…) so với số người định biên năm nay thay vì SL năm trước; tránh nhắc sai khi định biên đã sinh lại.
 - **[Chưa giao - người dùng đã hoãn] (6) Khấu hao từ tháng bàn giao theo từng đợt mua.** Không làm khi chưa được yêu cầu.
 
 ## Hỏi / Nhắn
