@@ -13,7 +13,7 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 ## Đang làm
 | Agent | Việc | File đang sửa | Từ ngày |
 | :--- | :--- | :--- | :--- |
-| (Trống) | | | |
+| Claude | Làm đẹp giao diện (người dùng chê xấu): CSS chung, đầu trang, thanh bên, thẻ chỉ số, bảng | `ui/styles.py`, `.streamlit/config.toml`, phần đầu trang trong `app.py` | 2026-10-13 |
 
 ## Việc chờ (người dùng giao, chưa ai nhận)
 - **[Antigravity] (C) Tốc độ trang:** đo thời gian chạy lại trang (hiện ~5-8 giây mỗi lần bấm), thêm `st.cache_data` cho các phép tính nặng (tổng hợp Dashboard, báo cáo), `st.fragment` cho các bảng sửa trực tiếp để không chạy lại cả trang.
