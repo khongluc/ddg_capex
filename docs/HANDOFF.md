@@ -40,7 +40,7 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 ## Đã xong
 | Ngày | Agent | Việc | Commit |
 | :--- | :--- | :--- | :--- |
-| 2026-10-13 | Claude | Rà việc (D): đơn giá 0 hạ từ chặn nộp xuống cảnh báo (71/81 phòng bị chặn vì phần mềm đọc PDF giá 0) | _(commit này)_ |
+| 2026-10-13 | Claude | Rà việc (D): đơn giá 0 hạ từ chặn nộp xuống cảnh báo (71/81 phòng bị chặn vì phần mềm đọc PDF giá 0) | `f4a20ef` |
 | 2026-10-13 | Claude | Làm gọn giao diện: đầu trang sáng, tab 1 dòng, bộ màu biểu đồ chung, bỏ emoji ở tiêu đề / tab / thông báo, nhãn viết thường | `3cbdfa6` |
 | 2026-10-13 | Antigravity | (D) Kiểm tra dữ liệu & Chặn lỗi trước khi nộp: module validators.py (critical chặn nộp, warning cảnh báo), toggle lọc dòng lỗi ở tab_input, tích hợp dept_workflow & site workflow, 8 test mới (92/92 tests xanh) | `c5dca2b` |
 | 2026-10-12 | Antigravity | (5) Báo cáo kế hoạch mua theo tháng / quý: bảng SL + tiền 12 tháng & 4 quý, lọc multiselect nhóm CNTT/phòng ban, xuất Excel 3 sheet, kiểm thử | `c7da5bd` |
