@@ -109,6 +109,46 @@ def render(ctx):
                         st.session_state["flash"] = f"Đã ghi {db.EXEC_LABELS[kind]} {format_vnd(amount)} cho {code}."
                         st.session_state["exec_form_ver"] = st.session_state.get("exec_form_ver", 0) + 1
                         st.rerun()
+        if can_record and site_approved and not summ.empty:
+            with st.expander("Nạp nhiều chứng từ từ file (Excel / CSV xuất từ ERP)"):
+                st.caption("Mỗi dòng 1 chứng từ: Mã hạng mục, Loại chứng từ, Số chứng từ, Ngày, Số tiền (chưa VAT), Nhà cung cấp, Ghi chú. "
+                           "Xem trước trạng thái từng dòng rồi mới ghi; dòng lỗi và dòng trùng với sổ được bỏ qua.")
+                st.download_button("📄 Tải file mẫu", ex.import_template(), file_name="Mau_ChungTu_GiaiNgan.xlsx",
+                                   mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="exec_tpl")
+                imp_ver = st.session_state.get("exec_imp_ver", 0)
+                up = st.file_uploader("File chứng từ (.xlsx / .csv)", type=["xlsx", "xls", "csv"], key=f"exec_imp_file_{imp_ver}")
+                if up is not None:
+                    try:
+                        raw_imp = (pd.read_csv(up, dtype=str, encoding="utf-8-sig") if up.name.lower().endswith(".csv")
+                                   else pd.read_excel(up, sheet_name=0))
+                    except (ValueError, UnicodeDecodeError, OSError) as e:
+                        raw_imp = None
+                        st.error(f"Không đọc được file: {e}")
+                    if raw_imp is not None:
+                        prev = ex.parse_import(raw_imp, summ, exec_rows)
+                        n_ok = int((prev["status"] == ex.IMPORT_STATUS_OK).sum())
+                        n_over = int((prev["status"] == ex.IMPORT_STATUS_OVER).sum())
+                        n_skip = len(prev) - n_ok - n_over
+                        st.write(f"**{len(prev)}** dòng: {n_ok} hợp lệ · {n_over} vượt ngân sách / hợp đồng · {n_skip} bỏ qua (lỗi / trùng)")
+                        st.dataframe(prev.assign(site_code=prev["site_code"].map(site_label)), use_container_width=True, hide_index=True,
+                                     column_order=["row", "status", "message", "item_code", "item_name", "kind_label", "doc_no",
+                                                   "doc_date", "amount", "vendor", "note"],
+                                     column_config={"row": "Dòng", "status": "Trạng thái", "message": "Lý do",
+                                                    "item_code": "Mã hạng mục", "item_name": "Hạng mục", "kind_label": "Loại",
+                                                    "doc_no": "Số chứng từ", "doc_date": "Ngày",
+                                                    "amount": st.column_config.NumberColumn("Số tiền", format=MONEY_FMT),
+                                                    "vendor": "Nhà cung cấp", "note": "Ghi chú"})
+                        with_over = st.checkbox("Ghi cả dòng vượt ngân sách / hợp đồng", value=False, key=f"exec_imp_over_{imp_ver}")
+                        take = prev[(prev["status"] == ex.IMPORT_STATUS_OK) | (with_over & (prev["status"] == ex.IMPORT_STATUS_OVER))]
+                        if st.button(f"💾 Ghi {len(take)} chứng từ ({format_vnd(take['amount'].sum())})", type="primary",
+                                     disabled=take.empty, key=f"exec_imp_go_{imp_ver}"):
+                            rows_imp = [{**r, "site_code": r["site_code"] or selected_site,
+                                         "note": (r["note"] + (" [ghi khi vượt]" if r["status"] == ex.IMPORT_STATUS_OVER else "")).strip()}
+                                        for r in take.to_dict("records")]
+                            n = db.add_exec_many(budget_year, rows_imp, current_user.email, source=up.name)
+                            st.session_state["flash"] = f"Đã nạp {n} chứng từ ({format_vnd(take['amount'].sum())}) từ {up.name}."
+                            st.session_state["exec_imp_ver"] = imp_ver + 1
+                            st.rerun()
     with ex_t2:
         led = pd.DataFrame(exec_rows)
         if led.empty:

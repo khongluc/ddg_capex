@@ -100,6 +100,16 @@ class AppUiTest(unittest.TestCase):
             at.run()
             self.assertNoError(at, f"popup rà soát = {m}")
 
+    def test_exec_tab_import_section_when_site_approved(self):
+        """Site đã duyệt: tab Giải ngân hiện phần nạp chứng từ từ file, trang chạy không lỗi."""
+        db.set_status(fx.YEAR, fx.SITE, db.STATUS_APPROVED, "test")
+        try:
+            at = self.start("admin")
+            self.assertTrue(any(e.label.startswith("Nạp nhiều chứng từ từ file") for e in at.expander),
+                            "không thấy phần nạp chứng từ")
+        finally:
+            db.set_status(fx.YEAR, fx.SITE, db.STATUS_DRAFT, "test")
+
     def test_all_sites_view(self):
         at = self.start("admin", site="__ALL__")
         self.assertNoError(at, "admin - tổng hợp tất cả site")

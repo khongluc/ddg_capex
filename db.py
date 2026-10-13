@@ -656,6 +656,26 @@ def add_exec(year: str, site_code: str, item_code: str, kind: str, amount: float
     log(actor, "add_exec", f"{year}/{site_code}/{item_code}: {EXEC_LABELS[kind]} {doc_no} {float(amount):,.0f}".strip())
 
 
+def add_exec_many(year: str, rows: List[Dict[str, Any]], actor: str, source: str = "") -> int:
+    """Ghi nhiều chứng từ trong 1 giao dịch (nạp từ file): mỗi dòng có site_code, item_code, kind, amount,
+    doc_no, doc_date, vendor, note. Lỗi 1 dòng -> không ghi dòng nào. Trả về số dòng đã ghi."""
+    bad = [r.get("kind") for r in rows if r.get("kind") not in EXEC_LABELS]
+    if bad:
+        raise ValueError(f"Loại chứng từ không hợp lệ: {bad[0]}")
+    if not rows:
+        return 0
+    init_db()
+    now = _now()
+    with connect() as conn:
+        conn.executemany("INSERT INTO budget_exec(year, site_code, item_code, kind, doc_no, doc_date, amount, vendor, note, created_by, "
+                         "created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                         [(year, r["site_code"], r["item_code"], r["kind"], r.get("doc_no", ""), r.get("doc_date", ""),
+                           float(r["amount"]), r.get("vendor", ""), r.get("note", ""), actor, now) for r in rows])
+    total = sum(float(r["amount"]) for r in rows)
+    log(actor, "add_exec_many", f"{year}: nạp {len(rows)} chứng từ, tổng {total:,.0f}" + (f" từ {source}" if source else ""))
+    return len(rows)
+
+
 def delete_exec(exec_id: int, actor: str):
     init_db()
     with connect() as conn:

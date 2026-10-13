@@ -3,6 +3,8 @@ Theo dõi thực hiện ngân sách theo Mã hạng mục (cố định): đề 
 Còn lại = Ngân sách - max(Hợp đồng, Đề nghị) (đề nghị chưa ký hợp đồng cũng giữ chỗ ngân sách).
 """
 import datetime
+import io
+import unicodedata
 from typing import List, Dict, Any
 
 import pandas as pd
@@ -109,3 +111,140 @@ def check_new(summary_row: Dict[str, Any], kind: str, amount: float) -> str:
         if after > limit + 0.5:
             return f"Sau khi ghi, thanh toán lũy kế {after:,.0f} vượt {'hợp đồng' if summary_row.get('contracted') else 'ngân sách'} {limit:,.0f}"
     return ""
+
+
+
+# ---------------------------------------------------------------- Nạp chứng từ hàng loạt (file Excel / CSV xuất từ ERP)
+IMPORT_STATUS_OK, IMPORT_STATUS_OVER = "Hợp lệ", "Vượt ngân sách / hợp đồng"
+IMPORT_STATUS_DUP, IMPORT_STATUS_ERR = "Trùng (đã có trong sổ)", "Lỗi"
+_IMPORT_HEADERS = {  # cột chuẩn -> tên cột chấp nhận (so sau khi bỏ dấu, chữ thường, gộp khoảng trắng)
+    "item_code": ("ma hang muc", "item code", "item_code", "ma ngan sach hang muc"),
+    "kind": ("loai chung tu", "loai", "kind"),
+    "doc_no": ("so chung tu", "so ct", "doc no", "doc_no", "so hd", "so po"),
+    "doc_date": ("ngay chung tu", "ngay ct", "ngay", "doc date", "doc_date"),
+    "amount": ("so tien (chua vat)", "so tien", "gia tri", "amount"),
+    "vendor": ("nha cung cap", "ncc", "vendor"),
+    "note": ("ghi chu", "note"),
+}
+_KIND_ALIASES = {
+    db.EXEC_REQUEST: ("de nghi mua", "de nghi", "pr", "request", db.EXEC_REQUEST),
+    db.EXEC_CONTRACT: ("hop dong / po", "hop dong/po", "hop dong", "hd", "po", "contract", db.EXEC_CONTRACT),
+    db.EXEC_PAYMENT: ("thanh toan", "unc", "tt", "payment", db.EXEC_PAYMENT),
+}
+
+
+def _plain(text: Any) -> str:
+    """Chuỗi để so khớp: bỏ dấu tiếng Việt, chữ thường, gộp khoảng trắng."""
+    s = unicodedata.normalize("NFD", str(text or "")).replace("đ", "d").replace("Đ", "D")
+    s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+    return " ".join(s.lower().split())
+
+
+def _cell(v: Any) -> str:
+    return "" if v is None or (isinstance(v, float) and pd.isna(v)) else str(v).strip()
+
+
+def parse_amount(val: Any) -> float:
+    """Số tiền từ file ERP: 1234000 / '1.234.000' / '1,234,000' / '1 234 000 đ' / '1234000.5'. Không đọc được -> 0."""
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return 0.0
+    if isinstance(val, (int, float)):
+        return float(val)
+    s = "".join(c for c in str(val) if c.isdigit() or c in ".,-")
+    if not s:
+        return 0.0
+    if s.count(".") > 1 or (s.count(".") == 1 and "," not in s and len(s.split(".")[1]) == 3):
+        s = s.replace(".", "").replace(",", ".")  # dấu chấm ngăn nghìn (kiểu Việt Nam)
+    else:
+        s = s.replace(",", "")  # dấu phẩy ngăn nghìn
+    try:
+        return float(s)
+    except ValueError:
+        return 0.0
+
+
+def parse_doc_date(val: Any) -> str:
+    """Ngày chứng từ -> 'YYYY-MM-DD'; trống hoặc không đọc được -> ''."""
+    if isinstance(val, (datetime.date, datetime.datetime, pd.Timestamp)) and not pd.isna(val):
+        return pd.Timestamp(val).strftime("%Y-%m-%d")
+    s = _cell(val)
+    for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%Y/%m/%d", "%d/%m/%y"):
+        try:
+            return datetime.datetime.strptime(s[:10], fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    return ""
+
+
+def import_template() -> bytes:
+    """File mẫu nạp chứng từ (.xlsx): sheet dữ liệu có 2 dòng ví dụ + sheet hướng dẫn."""
+    sample = pd.DataFrame([
+        {"Mã hạng mục": "A01A27BDA01-04-001", "Loại chứng từ": "Hợp đồng / PO", "Số chứng từ": "PO-2026-0123",
+         "Ngày chứng từ": "15/11/2026", "Số tiền (chưa VAT)": 125_000_000, "Nhà cung cấp": "Công ty ABC", "Ghi chú": ""},
+        {"Mã hạng mục": "A01A27BDA01-04-001", "Loại chứng từ": "Thanh toán", "Số chứng từ": "UNC-0456",
+         "Ngày chứng từ": "20/12/2026", "Số tiền (chưa VAT)": 62_500_000, "Nhà cung cấp": "Công ty ABC", "Ghi chú": "Đợt 1"},
+    ])
+    guide = pd.DataFrame({
+        "Cột": ["Mã hạng mục", "Loại chứng từ", "Số chứng từ", "Ngày chứng từ", "Số tiền (chưa VAT)", "Nhà cung cấp", "Ghi chú"],
+        "Bắt buộc": ["Có", "Có", "Nên có (để phát hiện trùng)", "Nên có", "Có", "Không", "Không"],
+        "Cách ghi": ["Đúng Mã hạng mục trong ngân sách đã duyệt (cột Mã hạng mục ở tab Giải ngân)",
+                     "Đề nghị mua / Hợp đồng / PO / Thanh toán (hoặc PR, PO, HĐ, UNC, TT)",
+                     "Số ĐN / HĐ / PO / UNC", "dd/mm/yyyy hoặc yyyy-mm-dd",
+                     "Số, chưa VAT; nhận cả 1.234.000 hoặc 1,234,000", "", ""]})
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as w:
+        sample.to_excel(w, sheet_name="Chứng từ", index=False)
+        guide.to_excel(w, sheet_name="Hướng dẫn", index=False)
+    return buf.getvalue()
+
+
+def parse_import(raw: pd.DataFrame, summ: pd.DataFrame, exec_rows: List[Dict[str, Any]]) -> pd.DataFrame:
+    """File chứng từ -> bảng xem trước, mỗi dòng 1 trạng thái: Hợp lệ / Vượt ngân sách / Trùng / Lỗi (kèm lý do).
+    Mã hạng mục phải có trong ngân sách đang xem (summ, trừ dòng đã xóa). Vượt tính lũy kế cả các dòng trên trong file.
+    Trùng = cùng mã + loại + số chứng từ + số tiền đã có trong sổ hoặc ở dòng trên của file."""
+    cols = ["row", "item_code", "item_name", "site_code", "kind", "kind_label", "doc_no", "doc_date", "amount", "vendor", "note",
+            "status", "message"]
+    if raw is None or raw.empty:
+        return pd.DataFrame(columns=cols)
+    head = {_plain(c): c for c in raw.columns}
+    src = {k: next((head[a] for a in aliases if a in head), None) for k, aliases in _IMPORT_HEADERS.items()}
+    kinds = {a: k for k, aliases in _KIND_ALIASES.items() for a in aliases}
+    budget = {} if summ is None else {r["item_code"]: dict(r) for r in summ.to_dict("records") if r.get("flag") != FLAG_NO_LINE}
+    seen = {(r["item_code"], r["kind"], _cell(r.get("doc_no")), round(float(r.get("amount") or 0))) for r in exec_rows or []}
+    out = []
+    for i, r in enumerate(raw.to_dict("records"), start=2):  # dòng 1 trong Excel là tiêu đề
+        def get(k):
+            return r.get(src[k]) if src[k] else None
+        code, raw_kind, raw_date = _cell(get("item_code")), _cell(get("kind")), get("doc_date")
+        kind = kinds.get(_plain(raw_kind))
+        amount = parse_amount(get("amount"))
+        line = budget.get(code, {})
+        rec = {"row": i, "item_code": code, "item_name": line.get("item_name", ""), "site_code": line.get("site_code", ""),
+               "kind": kind or "", "kind_label": db.EXEC_LABELS.get(kind, raw_kind), "doc_no": _cell(get("doc_no")),
+               "doc_date": parse_doc_date(raw_date), "amount": amount, "vendor": _cell(get("vendor")), "note": _cell(get("note"))}
+        if not any(_cell(v) for v in r.values()):
+            continue  # dòng trống
+        errs = []
+        if not code:
+            errs.append("thiếu Mã hạng mục")
+        elif code not in budget:
+            errs.append("Mã hạng mục không có trong ngân sách đang xem")
+        if not kind:
+            errs.append(f"Loại chứng từ không rõ: '{raw_kind}'")
+        if amount <= 0:
+            errs.append("Số tiền phải > 0")
+        if _cell(raw_date) and not rec["doc_date"]:
+            errs.append(f"Ngày chứng từ không đọc được: '{_cell(raw_date)}'")
+        if errs:
+            out.append({**rec, "status": IMPORT_STATUS_ERR, "message": "; ".join(errs)})
+            continue
+        key = (code, kind, rec["doc_no"], round(amount))
+        if key in seen:
+            out.append({**rec, "status": IMPORT_STATUS_DUP, "message": "đã có chứng từ cùng mã, loại, số, số tiền - bỏ qua"})
+            continue
+        seen.add(key)
+        warn = check_new(budget[code], kind, amount)
+        col = {db.EXEC_REQUEST: "requested", db.EXEC_CONTRACT: "contracted", db.EXEC_PAYMENT: "paid"}[kind]
+        budget[code][col] = budget[code].get(col, 0.0) + amount  # lũy kế cho các dòng sau trong file
+        out.append({**rec, "status": IMPORT_STATUS_OVER if warn else IMPORT_STATUS_OK, "message": warn})
+    return pd.DataFrame(out, columns=cols)
