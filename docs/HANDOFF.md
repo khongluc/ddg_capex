@@ -13,12 +13,11 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 ## Đang làm
 | Agent | Việc | File đang sửa | Từ ngày |
 | :--- | :--- | :--- | :--- |
-| _(trống)_ | | | |
+| Antigravity | (D) Kiểm tra dữ liệu trước khi nộp + (C) Tốc độ trang: cảnh báo lỗi, chặn nộp, lọc dòng lỗi, st.fragment | `validators.py` (mới), `workflow.py`, `ui/tab_input.py`, `tests/test_validation.py` | 2026-10-13 |
 
 ## Việc chờ (người dùng giao, chưa ai nhận)
 - **[Antigravity] (C) Tốc độ trang:** đo thời gian chạy lại trang (hiện ~5-8 giây mỗi lần bấm), thêm `st.cache_data` cho các phép tính nặng (tổng hợp Dashboard, báo cáo), `st.fragment` cho các bảng sửa trực tiếp để không chạy lại cả trang.
-- **[Antigravity] (D) Kiểm tra dữ liệu trước khi nộp:** cảnh báo dòng thiếu mã danh mục, đơn giá 0, phân kỳ ≠ 100%, ngày bàn giao trước tháng giải ngân, trùng hạng mục trong 1 phòng; hiện ngay ở tab Lập CapEx và chặn nút Nộp nếu còn lỗi nặng.
-- **[Claude] (E) Nhắc gia hạn × Định biên:** thuê bao tính theo người (M365, diệt virus…) so với số người định biên năm nay thay vì SL năm trước; tránh nhắc sai khi định biên đã sinh lại.
+- **[Claude - sau khi Antigravity xong (C)(D) ở `ui/tab_input.py`] (F) Tách popup checklist / rà soát, trang Phân quyền và hàm hỗ trợ khỏi `app.py`** sang `ui/dialogs.py`, `ui/admin.py`; thêm AppTest mở popup trước khi tách.
 - **[Chưa giao - người dùng đã hoãn] (6) Khấu hao từ tháng bàn giao theo từng đợt mua.** Không làm khi chưa được yêu cầu.
 
 ## Hỏi / Nhắn
@@ -33,6 +32,7 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 | Ngày | Agent | Việc | Commit |
 | :--- | :--- | :--- | :--- |
 | 2026-10-12 | Antigravity | (5) Báo cáo kế hoạch mua theo tháng / quý: bảng SL + tiền 12 tháng & 4 quý, lọc multiselect nhóm CNTT/phòng ban, xuất Excel 3 sheet, kiểm thử | `c7da5bd` |
+| 2026-10-13 | Claude | (E) Nhắc gia hạn × Định biên: dòng định biên không so năm trước (site đã sinh định biên → bỏ qua; chưa sinh → 'Chờ sinh từ Định biên', không cho thêm tay) | _(commit này)_ |
 | 2026-10-13 | Claude | (A) Kiểm thử giao diện AppTest 4 vai trò + (B) tách 11 tab ra `ui/tab_*.py`, CSS ra `ui/styles.py` (app.py 4.733 → ~1.680 dòng) | `67fc223` |
 | 2026-10-13 | Claude | (A) AppTest | `5a10359` |
 | 2026-10-13 | Claude | Nhắc gia hạn: tick dòng + sửa SL + phân kỳ → thêm thẳng vào ngân sách (`renewal_line`); báo cáo kế hoạch mua: tiền tháng giữ theo dòng tiền ngân sách khi phân kỳ lẻ | `3be1753` |

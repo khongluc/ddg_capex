@@ -87,17 +87,21 @@ def render(ctx):
         prev_y = int(budget_year) - 1
         st.caption(f"Thuê bao phần mềm, dịch vụ theo năm / tháng (cloud, đường truyền, thuê thiết bị) và dòng 'Gia hạn, bảo trì' "
                    f"có trong ngân sách {prev_y} nhưng {budget_year} chưa có hoặc ít số lượng hơn. So theo site + mã danh mục, "
-                   "không phân biệt phòng ban. Tiền ước tính = SL thiếu × đơn giá bình quân năm trước.")
+                   "không phân biệt phòng ban. Tiền ước tính = SL thiếu × đơn giá bình quân năm trước. "
+                   "Dòng theo định biên (vd. Microsoft 365 theo người) không so với năm trước: site đã sinh định biên năm nay thì "
+                   "bỏ qua, chưa sinh thì báo 'Chờ sinh từ Định biên' (sinh ở tab Định biên).")
         cur_rn = df_curr if "site_code" in df_curr.columns else df_curr.assign(site_code=selected_site)
         gaps = renewals.renewal_gaps(prev_year_lines(), cur_rn, master)
         if gaps.empty:
             st.success(f"✅ Không thiếu hạng mục định kỳ nào so với {prev_y} trong phạm vi đang chọn.")
         else:
             n_miss = int((gaps["status"] == renewals.STATUS_MISSING).sum())
-            r1, r2, r3 = st.columns(3)
+            n_wait = int((gaps["status"] == renewals.STATUS_WAIT_QUOTA).sum())
+            r1, r2, r3, r4 = st.columns(4)
             r1.metric("Hạng mục cần xem lại", f"{len(gaps)}")
             r2.metric("Chưa có trong năm nay", f"{n_miss}")
-            r3.metric("Tiền ước tính còn thiếu", format_vnd_short(gaps["est_amount"].sum()) + " VNĐ")
+            r3.metric("Chờ sinh từ Định biên", f"{n_wait}")
+            r4.metric("Tiền ước tính còn thiếu", format_vnd_short(gaps["est_amount"].sum()) + " VNĐ")
             show = gaps.assign(site=gaps["site_code"].map(site_label), pick=False, add_qty=gaps["missing_qty"])
             can_add = selected_site != ALL_SITES and site_can_edit
             rn_ver = st.session_state.get("renew_ver", 0)
@@ -124,10 +128,14 @@ def render(ctx):
             if not can_add:
                 st.caption("Chọn 1 site ở thanh bên trái (và có quyền sửa) để tick hạng mục cần gia hạn rồi thêm thẳng vào ngân sách.")
             else:
-                sel_rn = ed_rn[(ed_rn["pick"] == True) & (pd.to_numeric(ed_rn["add_qty"], errors="coerce").fillna(0) > 0)]
+                picked = ed_rn[(ed_rn["pick"] == True) & (pd.to_numeric(ed_rn["add_qty"], errors="coerce").fillna(0) > 0)]
+                wait = picked[picked["status"] == renewals.STATUS_WAIT_QUOTA]
+                sel_rn = picked.drop(wait.index)
                 st.caption("Tick 'Gia hạn', sửa 'SL thêm' nếu cần. Dòng thêm vào: hình thức Gia hạn, bảo trì; đơn giá danh mục hiện hành "
-                           "(không có thì bình quân năm trước); phòng đề xuất = phòng đầu tiên năm trước. "
-                           "Hạng mục theo định biên (vd. Microsoft 365 theo người) nên sinh lại ở tab Định biên thay vì thêm ở đây.")
+                           "(không có thì bình quân năm trước); phòng đề xuất = phòng đầu tiên năm trước.")
+                if not wait.empty:
+                    st.warning("Không thêm tay dòng định biên (sẽ trùng khi sinh định biên) - sinh ở tab Định biên: "
+                               + ", ".join(wait["item_name"].astype(str)))
                 rn_pick = pd.DataFrame({"Tên thiết bị / Hạng mục": sel_rn["item_name"].tolist(),
                                         "Số lượng": [int(round(q)) for q in pd.to_numeric(sel_rn["add_qty"], errors="coerce").fillna(0)]},
                                        index=sel_rn.index)

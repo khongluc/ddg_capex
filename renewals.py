@@ -11,6 +11,8 @@ from master_data import KIND_SW_SUBSCRIPTION, _norm, apply_it_catalog
 RENEW_INVEST = "Gia hạn, bảo trì"
 STATUS_MISSING = "Chưa có"
 STATUS_LESS = "Ít hơn năm trước"
+STATUS_WAIT_QUOTA = "Chờ sinh từ Định biên"  # dòng định biên năm trước, site chưa sinh định biên năm nay
+NEED_QUOTA = "Định biên"
 COLUMNS = ["site_code", "catalog_code", "item_name", "unit", "depts", "prev_qty", "prev_amount",
            "cur_qty", "missing_qty", "est_amount", "status", "entity", "need_type", "invest_type"]
 NEED_INFRA = "Hạ tầng dùng chung"
@@ -31,20 +33,31 @@ def is_recurring(line: Dict[str, Any], item: Optional[Dict[str, Any]] = None) ->
             or _txt(line.get("invest_type")) == RENEW_INVEST)
 
 
+def is_quota_line(line: Dict[str, Any]) -> bool:
+    """Dòng sinh từ Định biên: SL theo số người năm đó, không so với năm trước."""
+    auto = line.get("auto_quota")
+    return _txt(line.get("need_type")) == NEED_QUOTA or (auto is True or str(auto).lower() == "true")
+
+
 def _key(line: Dict[str, Any]) -> tuple:
     code = _txt(line.get("catalog_code"))
-    return _txt(line.get("site_code")), code or "#" + _norm(line.get("item_name"))
+    return _txt(line.get("site_code")), code or "#" + _norm(line.get("item_name")), is_quota_line(line)
 
 
 def renewal_gaps(prev: Optional[pd.DataFrame], cur: Optional[pd.DataFrame], master: Dict[str, Any]) -> pd.DataFrame:
-    """Bảng nhắc gia hạn (tiền ước tính = SL thiếu × đơn giá bình quân năm trước), sắp theo tiền giảm dần."""
+    """Bảng nhắc gia hạn (tiền ước tính = SL thiếu × đơn giá bình quân năm trước), sắp theo tiền giảm dần.
+    Dòng định biên tách riêng: site năm nay đã sinh định biên -> bỏ qua (SL theo số người, giảm là do nhân sự);
+    chưa sinh -> trạng thái "Chờ sinh từ Định biên" (sinh ở tab Định biên, không thêm tay ở đây)."""
     if prev is None or prev.empty:
         return pd.DataFrame(columns=COLUMNS)
     by_code = {it.get("code"): it for it in master.get("standard_items", [])}
     cur_qty: Dict[tuple, float] = {}
+    quota_sites = set()  # site năm nay đã có dòng định biên
     for line in ([] if cur is None or cur.empty else cur.to_dict("records")):
         k = _key(line)
         cur_qty[k] = cur_qty.get(k, 0.0) + clean_number(line.get("quantity"), 0.0)
+        if k[2]:
+            quota_sites.add(k[0])
 
     agg: Dict[tuple, Dict[str, Any]] = {}
     for line in prev.to_dict("records"):
@@ -63,13 +76,16 @@ def renewal_gaps(prev: Optional[pd.DataFrame], cur: Optional[pd.DataFrame], mast
 
     out = []
     for k, a in agg.items():
+        site, _, quota = k
+        if quota and site in quota_sites:
+            continue
         now = cur_qty.get(k, 0.0)
         missing = a["prev_qty"] - now
         if a["prev_qty"] <= 0 or missing <= 1e-9:
             continue
+        status = STATUS_WAIT_QUOTA if quota else (STATUS_MISSING if now <= 0 else STATUS_LESS)
         out.append({**a, "depts": ", ".join(a["depts"]), "cur_qty": now, "missing_qty": missing,
-                    "est_amount": round(missing * a["prev_amount"] / a["prev_qty"]),
-                    "status": STATUS_MISSING if now <= 0 else STATUS_LESS})
+                    "est_amount": round(missing * a["prev_amount"] / a["prev_qty"]), "status": status})
     df = pd.DataFrame(out, columns=COLUMNS)
     return df.sort_values("est_amount", ascending=False, kind="stable").reset_index(drop=True)
 

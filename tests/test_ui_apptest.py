@@ -38,9 +38,8 @@ class AppUiTest(unittest.TestCase):
 
     def setUp(self):
         db.replace_lines(fx.YEAR, fx.SITE, fx.make_lines(), actor="test")
-        prev = fx.make_lines()
-        for r in prev:  # năm trước dùng nhiều thuê bao hơn -> tab Nhắc gia hạn có dòng
-            r["quantity"] = r["quantity"] + 3
+        # năm trước có thêm thuê bao Phát sinh mới (không theo định biên) mà năm nay chưa có -> tab Nhắc gia hạn có dòng
+        prev = fx.make_lines(fx.SPEC + [(fx.IT, fx.M365, "Gia hạn, bảo trì", 5, {0: 5}, "Phát sinh mới", False)])
         db.replace_lines(PREV_YEAR, fx.SITE, prev, actor="test")
 
     def start(self, role: str, site: str = fx.SITE) -> "AppTest":

@@ -4,7 +4,7 @@ import unittest
 import pandas as pd
 
 from capex_engine import calculate_row, even_units
-from renewals import STATUS_LESS, STATUS_MISSING, is_recurring, renewal_gaps, renewal_line
+from renewals import STATUS_LESS, STATUS_MISSING, STATUS_WAIT_QUOTA, is_recurring, renewal_gaps, renewal_line
 from tests import fixtures as fx
 
 MASTER = {"standard_items": [
@@ -55,6 +55,24 @@ class RenewalGapsTest(unittest.TestCase):
         self.assertEqual((m365["est_amount"], m365["status"]), (30_000_000, STATUS_LESS))
         self.assertEqual(m365["depts"], "P.KẾ TOÁN, P.NHÂN SỰ")
         self.assertEqual((net["site_code"], net["status"], net["est_amount"]), ("AHA", STATUS_MISSING, 24_000_000))
+
+    def test_quota_lines_follow_headcount(self):
+        """Thuê bao theo định biên: site đã sinh định biên năm nay -> không nhắc (SL theo số người);
+        site chưa sinh -> 'Chờ sinh từ Định biên'. Dòng thêm tay (Phát sinh mới) vẫn so với năm trước."""
+        q = {"need_type": "Định biên", "auto_quota": True}
+        prev = pd.DataFrame([
+            line("IT09-001", 30, 3_000_000, **q),                                # AHA: định biên năm trước 30
+            line("IT09-001", 5, 3_000_000, need_type="Phát sinh mới"),          # AHA: thêm tay 5
+            line("IT09-001", 10, 3_000_000, site="LAN", **q),                    # LAN: chưa sinh định biên năm nay
+        ])
+        cur = pd.DataFrame([
+            line("IT09-001", 22, 3_000_000, **q),                                # AHA: nhân sự giảm -> 22, không nhắc
+            line("IT09-001", 2, 3_000_000, need_type="Phát sinh mới"),          # AHA: thêm tay còn 2 -> thiếu 3
+        ])
+        out = renewal_gaps(prev, cur, MASTER).set_index("site_code")
+        self.assertEqual(len(out), 2)
+        self.assertEqual((out.loc["AHA", "missing_qty"], out.loc["AHA", "status"]), (3, STATUS_LESS))
+        self.assertEqual((out.loc["LAN", "missing_qty"], out.loc["LAN", "status"]), (10, STATUS_WAIT_QUOTA))
 
     def test_no_catalog_code_matches_by_name(self):
         prev = pd.DataFrame([{"site_code": "AHA", "catalog_code": "", "item_name": "Gia hạn tên miền ddc.vn",
