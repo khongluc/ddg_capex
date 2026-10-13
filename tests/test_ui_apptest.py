@@ -65,6 +65,41 @@ class AppUiTest(unittest.TestCase):
                 at = self.start(role)
                 self.assertTrue(at.tabs, f"{role}: không thấy tab nào")
 
+    def open_popup(self, role: str, label_part: str) -> "AppTest":
+        at = self.start(role)
+        dept = next(s for s in at.selectbox if s.key == "sb_dept")
+        if dept.value != fx.KD:
+            dept.set_value(fx.KD)
+            at.run()
+        n_tabs = len(at.tabs)
+        next(b for b in at.button if label_part in b.label).click()
+        at.run()
+        self.assertNoError(at, f"{role} - mở popup {label_part}")
+        self.assertGreater(len(at.tabs) + len(at.radio), n_tabs, "popup không hiện nội dung")
+        return at
+
+    def test_checklist_popup_all_phasing_modes(self):
+        """Popup checklist: mở được; mỗi tab trong popup chuyển đủ 3 cách phân kỳ (1 tháng / chia đều / tự nhập) không lỗi."""
+        at = self.open_popup("admin", "POPUP CHECKLIST THÔNG MINH")
+        found = [r.key for r in at.radio if r.key in ("dlg_k_mode", "dlg_c_mode", "dlg_n_mode")]
+        self.assertGreaterEqual(len(found), 2, f"popup thiếu ô chọn phân kỳ: {found}")
+        for key in found:
+            for mode in ("Chia đều nhiều tháng", "Tự nhập SL từng tháng", "1 tháng"):
+                radio = next((r for r in at.radio if r.key == key), None)
+                if radio is None:
+                    break
+                radio.set_value(mode)
+                at.run()
+                self.assertNoError(at, f"popup checklist {key} = {mode}")
+
+    def test_review_popup_opens_for_dept_user(self):
+        at = self.open_popup("dept", "POPUP CHECKLIST RÀ SOÁT")
+        mode = next(r for r in at.radio if r.key == "dlg_adj_mode")
+        for m in ("Chia đều nhiều tháng", "Tự nhập SL từng tháng"):
+            mode.set_value(m)
+            at.run()
+            self.assertNoError(at, f"popup rà soát = {m}")
+
     def test_all_sites_view(self):
         at = self.start("admin", site="__ALL__")
         self.assertNoError(at, "admin - tổng hợp tất cả site")
