@@ -17,7 +17,6 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 
 ## Việc chờ (người dùng giao, chưa ai nhận)
 - **[Antigravity] (C) Tốc độ trang:** đo thời gian chạy lại trang (hiện ~5-8 giây mỗi lần bấm), thêm `st.cache_data` cho các phép tính nặng (tổng hợp Dashboard, báo cáo), `st.fragment` cho các bảng sửa trực tiếp để không chạy lại cả trang.
-- **[Claude - sau khi Antigravity xong (C)(D) ở `ui/tab_input.py`] (F) Tách popup checklist / rà soát, trang Phân quyền và hàm hỗ trợ khỏi `app.py`** sang `ui/dialogs.py`, `ui/admin.py`; thêm AppTest mở popup trước khi tách.
 - **[Chưa giao - người dùng đã hoãn] (6) Khấu hao từ tháng bàn giao theo từng đợt mua.** Không làm khi chưa được yêu cầu.
 
 ## Hỏi / Nhắn
@@ -32,6 +31,7 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 | Ngày | Agent | Việc | Commit |
 | :--- | :--- | :--- | :--- |
 | 2026-10-12 | Antigravity | (5) Báo cáo kế hoạch mua theo tháng / quý: bảng SL + tiền 12 tháng & 4 quý, lọc multiselect nhóm CNTT/phòng ban, xuất Excel 3 sheet, kiểm thử | `c7da5bd` |
+| 2026-10-13 | Claude | (F) Tách popup → `ui/dialogs.py`, trang Phân quyền → `ui/admin.py`, nộp/duyệt phòng ban → `ui/dept_workflow.py`, cập nhật giá → `ui/price_update.py`; app.py ~940 dòng; AppTest mở popup | _(commit này)_ |
 | 2026-10-13 | Claude | (E) Nhắc gia hạn × Định biên: dòng định biên không so năm trước (site đã sinh định biên → bỏ qua; chưa sinh → 'Chờ sinh từ Định biên', không cho thêm tay) | `3f15d2b` |
 | 2026-10-13 | Claude | (A) Kiểm thử giao diện AppTest 4 vai trò + (B) tách 11 tab ra `ui/tab_*.py`, CSS ra `ui/styles.py` (app.py 4.733 → ~1.680 dòng) | `67fc223` |
 | 2026-10-13 | Claude | (A) AppTest | `5a10359` |
@@ -47,6 +47,9 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 | 2026-10-12 | Antigravity + Claude | Tài liệu phối hợp CLAUDE.md / AGENTS.md / COLLABORATION.md | `6e2e3fe` |
 
 ## Nhật ký (mới nhất ở trên)
+- **2026-10-13 · Claude → Antigravity:**
+  - Bạn đã thêm `import validators` vào `app.py` (ngoài danh sách file trong "Đang làm"). Claude **giữ nguyên dòng đó trên máy** nhưng commit `app.py` KHÔNG kèm dòng này, vì `validators.py` chưa commit - push lên sẽ làm bản online lỗi ModuleNotFoundError. Khi commit việc (C)(D), nhớ commit cùng lúc `validators.py` + dòng import (hoặc import trong `ui/tab_input.py` thay vì `app.py`).
+  - Popup / trang Phân quyền / nộp-duyệt phòng ban / cập nhật giá đã chuyển sang `ui/dialogs.py`, `ui/admin.py`, `ui/dept_workflow.py`, `ui/price_update.py` (hàm nhận `ctx` đầu tiên). `app.py` giữ hàm vỏ cùng tên (kèm `@st.dialog`) nên `ui/tab_input.py` của bạn gọi như cũ, không cần sửa.
 - **2026-10-13 · Claude → Antigravity (cấu trúc mới, đọc trước khi sửa giao diện):**
   - Mỗi tab giờ ở `ui/tab_<tên>.py` (`tab_dashboard, tab_input, tab_quota, tab_infra, tab_software, tab_excel, tab_scenario, tab_exec, tab_versions, tab_appraisal, tab_master`), hàm `render(ctx)`. `app.py` chỉ gọi `ui.tab_x.render(app_context())`.
   - Đầu `render` có các dòng `a, b = ctx.a, ctx.b`: đó là các giá trị lấy từ app (dữ liệu, quyền, hàm hỗ trợ như `save_site`). Cần thêm giá trị nào thì thêm vào đây; import module (pandas, db, reports...) thì import ở đầu file như bình thường.
