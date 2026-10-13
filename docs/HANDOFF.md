@@ -32,7 +32,7 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 | Ngày | Agent | Việc | Commit |
 | :--- | :--- | :--- | :--- |
 | 2026-10-12 | Antigravity | (5) Báo cáo kế hoạch mua theo tháng / quý: bảng SL + tiền 12 tháng & 4 quý, lọc multiselect nhóm CNTT/phòng ban, xuất Excel 3 sheet, kiểm thử | `c7da5bd` |
-| 2026-10-13 | Claude | (E) Nhắc gia hạn × Định biên: dòng định biên không so năm trước (site đã sinh định biên → bỏ qua; chưa sinh → 'Chờ sinh từ Định biên', không cho thêm tay) | _(commit này)_ |
+| 2026-10-13 | Claude | (E) Nhắc gia hạn × Định biên: dòng định biên không so năm trước (site đã sinh định biên → bỏ qua; chưa sinh → 'Chờ sinh từ Định biên', không cho thêm tay) | `3f15d2b` |
 | 2026-10-13 | Claude | (A) Kiểm thử giao diện AppTest 4 vai trò + (B) tách 11 tab ra `ui/tab_*.py`, CSS ra `ui/styles.py` (app.py 4.733 → ~1.680 dòng) | `67fc223` |
 | 2026-10-13 | Claude | (A) AppTest | `5a10359` |
 | 2026-10-13 | Claude | Nhắc gia hạn: tick dòng + sửa SL + phân kỳ → thêm thẳng vào ngân sách (`renewal_line`); báo cáo kế hoạch mua: tiền tháng giữ theo dòng tiền ngân sách khi phân kỳ lẻ | `3be1753` |
