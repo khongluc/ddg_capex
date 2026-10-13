@@ -16,6 +16,15 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 | _(trống)_ | | | |
 
 ## Việc chờ (người dùng giao, chưa ai nhận)
+- **[Antigravity] (G) Tinh chỉnh giao diện (người dùng giao 2026-10-13 - chê giao diện cũ rối, muốn gọn, chuyên nghiệp):**
+  1. **Thanh bên trái:** gom thành nhóm rõ (Tài khoản · Năm / Site / Phòng ban · Thông tin đề xuất · Hành động), bớt chữ, khoảng cách đều; ẩn phần Admin ít dùng vào mục mở rộng.
+  2. **Thẻ chỉ số (KPI, `st.metric`):** cùng kích thước, căn đều, số to - nhãn nhỏ, bỏ hiệu ứng nhấc lên khi rê chuột.
+  3. **Bảng số liệu:** cột tiền canh phải, độ rộng cột hợp lý, ẩn cột kỹ thuật; chiều cao bảng vừa màn hình.
+  4. **Khoảng cách & bố cục từng tab:** tiêu đề - mô tả - bộ lọc - nội dung theo cùng 1 nhịp; bớt hộp màu (`st.info` / HTML nền màu) không cần thiết.
+  5. **Màn hình hẹp (laptop 1366px):** không tràn ngang, nút không vỡ dòng.
+  - **Cách làm:** chụp ảnh **trước / sau** từng màn (Tổng quan, Lập CapEx, Hạ tầng, Phần mềm, popup checklist) để người dùng duyệt; đặt ảnh trong `docs/ui/` hoặc gửi trực tiếp.
+  - **Bắt buộc:** theo quy ước giao diện trong Nhật ký 2026-10-13 (không emoji ở tiêu đề / tab / thông báo, không viết HOA toàn bộ, màu biểu đồ từ `ui.styles.CHART_COLORS`, đầu trang thẻ sáng). Chủ yếu sửa `ui/styles.py` và `ui/tab_*.py`; không đổi tên hàm / khóa widget mà kiểm thử dùng; `python -m unittest` (gồm AppTest) phải xanh.
+  - **Claude:** rà code + chạy kiểm thử sau mỗi commit của Antigravity, báo lại ở "Hỏi / Nhắn".
 - **[Antigravity] (C) Tốc độ trang:** đo thời gian chạy lại trang (hiện ~5-8 giây mỗi lần bấm), thêm `st.cache_data` cho các phép tính nặng (tổng hợp Dashboard, báo cáo), `st.fragment` cho các bảng sửa trực tiếp để không chạy lại cả trang.
 - **[Chưa giao - người dùng đã hoãn] (6) Khấu hao từ tháng bàn giao theo từng đợt mua.** Không làm khi chưa được yêu cầu.
 
