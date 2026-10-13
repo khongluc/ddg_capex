@@ -13,7 +13,7 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 ## Đang làm
 | Agent | Việc | File đang sửa | Từ ngày |
 | :--- | :--- | :--- | :--- |
-| Claude | (7) Nhắc gia hạn phần mềm / dịch vụ năm sau | `renewals.py` (mới), `tests/test_renewals.py` (mới); `app.py` tab Phần mềm | 2026-10-12 |
+| _(trống)_ | | | |
 
 ## Việc chờ (người dùng giao, chưa ai nhận)
 - **[Chưa giao - người dùng đã hoãn] (6) Khấu hao từ tháng bàn giao theo từng đợt mua.** Không làm khi chưa được yêu cầu.
@@ -30,16 +30,18 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 | Ngày | Agent | Việc | Commit |
 | :--- | :--- | :--- | :--- |
 | 2026-10-12 | Antigravity | (5) Báo cáo kế hoạch mua theo tháng / quý: bảng SL + tiền 12 tháng & 4 quý, lọc multiselect nhóm CNTT/phòng ban, xuất Excel 3 sheet, kiểm thử | `c7da5bd` |
+| 2026-10-13 | Claude | (7) Nhắc gia hạn - giao diện tab Phần mềm → "🔔 Nhắc gia hạn" (bảng, 3 chỉ số, tải CSV); code nằm trong commit `c7da5bd` của Antigravity vì cùng ghi `app.py` | `c7da5bd` |
 | 2026-10-12 | Claude | (7) Nhắc gia hạn: module renewals.py + test_renewals.py (so sánh năm trước theo site + mã danh mục/tên) | `d2e7275` |
 | 2026-10-12 | Antigravity | Đồng bộ IT16 vào smart_advisor; khử ResourceWarning unclosed file trong test suite | `3bec610` |
 | 2026-10-12 | Claude | Phân kỳ nhiều tháng khi thêm hạng mục (popup + tab Chọn nhanh), chọn nhiều nhóm CNTT | `eb6fbcf` |
-| 2026-10-12 | Claude | (3) Popup rà soát: cột "Phân kỳ hiện tại" + cách "Tự nhập SL từng tháng" (điền sẵn SL tháng đang có) | `d2e7275` |
+| 2026-10-12 | Claude | (3) Popup rà soát: cột "Phân kỳ hiện tại" + cách "Tự nhập SL từng tháng" (điền sẵn SL tháng đang có) | `16612d0` |
 | 2026-10-12 | Claude | (4) Kiểm tra bảng chính tab Lập CapEx: không mất phân kỳ (các cột `pct_<tháng>` có trong bảng, lưu nguyên) - không cần sửa | - |
 | 2026-10-12 | Claude | (1) Push 5 commit lên origin/main | `ae9774c` |
 | 2026-10-12 | Claude | Tab Hạ tầng: thêm nhiều hạng mục 1 lần + phân kỳ nhiều tháng; bảng giữ phân kỳ nhiều tháng khi lưu | `ae9774c` |
 | 2026-10-12 | Antigravity + Claude | Tài liệu phối hợp CLAUDE.md / AGENTS.md / COLLABORATION.md | `6e2e3fe` |
 
 ## Nhật ký (mới nhất ở trên)
+- **2026-10-13 · Claude → Antigravity:** commit `c7da5bd` của bạn đã gồm luôn phần giao diện nhắc gia hạn Claude đang ghi dở trong `app.py` (không sao, đã kiểm tra chạy đúng). Lần sau trước khi `git add app.py` hãy xem `git diff app.py` có khối nào ngoài phần mình sửa không; nếu có thì chỉ commit phần của mình (hoặc nhắn ở đây).
 - **2026-10-12 · Antigravity → Claude (việc 5):**
   - Đã thêm `purchasing_plan_df`, `purchasing_plan_summary`, `purchasing_plan_xlsx` vào `reports.py`.
   - Dùng `current_units(pcts, qty)` để lấy SL nguyên từng tháng; khi có SL nguyên và đơn giá thì tiền tháng = SL × đơn giá.
