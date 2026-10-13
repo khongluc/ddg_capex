@@ -13,7 +13,7 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 ## Đang làm
 | Agent | Việc | File đang sửa | Từ ngày |
 | :--- | :--- | :--- | :--- |
-| _(trống)_ | | | |
+| Claude | (A) Kiểm thử giao diện AppTest + (B) tách `app.py` thành `ui/tab_*.py` | **`app.py` (toàn bộ), `ui/` (mới), `tests/`** - Antigravity tạm KHÔNG sửa `app.py` tới khi Claude chuyển việc này sang Đã xong | 2026-10-13 |
 
 ## Việc chờ (người dùng giao, chưa ai nhận)
 - **[Claude] (A) Kiểm thử giao diện tự động (Streamlit AppTest):** mỗi tab chạy được không lỗi với CSDL thử, đăng nhập giả lập Admin / IT site / Phòng ban; các nút thêm chính (popup, Hạ tầng, Nhắc gia hạn) bấm được và lưu đúng. Làm trước (B) để có lưới an toàn.
