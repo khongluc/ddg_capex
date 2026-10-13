@@ -214,60 +214,60 @@ def render(ctx):
                                         "total_pct": st.column_config.ProgressColumn(min_value=0.0, max_value=1.0, format="%.0f%%")})
             edited_df = df_grid
         else:
-            # Khóa gồm cả bộ lọc: đổi bộ lọc -> bảng sửa tạo lại (tránh áp chỗ sửa dở sang dòng khác)
-            _flt_sig = abs(hash((tuple(tuple(st.session_state.get(f"{grid_filter_key}_{c}", [])) for _, c in ITEM_FILTERS), bool(only_errors))))
-            main_editor_key = f"editor_{budget_year}_{selected_site}_{dept_key(selected_dept)}_{_flt_sig}_{st.session_state.get('editor_version', 0)}"
-            edited_df = st.data_editor(
-                df_grid,
-                key=main_editor_key,
-                column_order=column_order,
-                num_rows="dynamic",
-                use_container_width=True,
-                height=450,
-                column_config={
-                    "stt": st.column_config.NumberColumn("STT", width="small", disabled=True),
-                    "entity": st.column_config.SelectboxColumn("Pháp nhân", options=[e["name"] for e in master.get("entities", [])], required=True),
-                    "location": st.column_config.TextColumn("Vị trí/Site", disabled=True),
-                    "asset_cat1": st.column_config.SelectboxColumn("Loại TS 1", options=[c["name"] for c in master.get("asset_cat1", [])]),
-                    "item_name": st.column_config.TextColumn("Tên Tài sản", width="large", required=True),
-                    "quantity": st.column_config.NumberColumn("Số lượng", min_value=1, format=MONEY_FMT),
-                    "unit_price": st.column_config.NumberColumn("Đơn giá (VNĐ)", format=MONEY_FMT),
-                    "total_budget": st.column_config.NumberColumn("Tổng ngân sách (VNĐ)", format=MONEY_FMT, disabled=True),
-                    "total_pct": st.column_config.ProgressColumn("Tổng % Phân kỳ", min_value=0.0, max_value=1.0, format="%.0f%%"),
-                    "project_code": st.column_config.TextColumn("Mã công trình", disabled=True),
-                    "item_code": st.column_config.TextColumn("Mã hạng mục", disabled=True),
-                    "budget_code": st.column_config.TextColumn("Mã ngân sách", disabled=True),
-                    "it_group": st.column_config.TextColumn("Nhóm CNTT", disabled=True),
-                    "catalog_code": st.column_config.TextColumn("Mã danh mục", disabled=True),
-                    "unit": st.column_config.TextColumn("ĐVT"),
-                    "invest_type": st.column_config.SelectboxColumn("Hình thức đầu tư", options=INVEST_TYPES),
-                    "item_kind": None,
-                    "_order": None,
-                    "item_kind_label": st.column_config.TextColumn("Loại hạng mục", disabled=True),
-                    "accounting_class": st.column_config.TextColumn("Phân loại kế toán", disabled=True, width="large"),
-                    "capex_type": st.column_config.TextColumn("CAPEX/CCDC/OPEX", disabled=True),
-                    "need_type": st.column_config.SelectboxColumn("Loại nhu cầu", options=qt.NEED_TYPES),
-                    "need_reason": st.column_config.TextColumn("Lý do / căn cứ", width="medium"),
-                    "auto_quota": None,
-                    "item_seq": None,
-                    "item_code_base": None,
-                    "handover_auto": None,
-                    "review_note": st.column_config.TextColumn("Ghi chú duyệt", disabled=True, help="Ghi chú của IT site khi duyệt / trả lại"),
-                    "handover_date": st.column_config.TextColumn("Ngày bàn giao", help="YYYY-MM-DD. Để trống = cuối tháng giải ngân cuối"),
-                    **{c: st.column_config.NumberColumn(format=MONEY_FMT, disabled=True) for c in df_curr.columns if c.startswith("val_") or c == "total_val"},
-                }
-            )
+            @st.fragment
+            def _render_capex_editor():
+                # Khóa gồm cả bộ lọc: đổi bộ lọc -> bảng sửa tạo lại (tránh áp chỗ sửa dở sang dòng khác)
+                _flt_sig = abs(hash((tuple(tuple(st.session_state.get(f"{grid_filter_key}_{c}", [])) for _, c in ITEM_FILTERS), bool(only_errors))))
+                main_editor_key = f"editor_{budget_year}_{selected_site}_{dept_key(selected_dept)}_{_flt_sig}_{st.session_state.get('editor_version', 0)}"
+                edited_df = st.data_editor(
+                    df_grid,
+                    key=main_editor_key,
+                    column_order=column_order,
+                    num_rows="dynamic",
+                    use_container_width=True,
+                    height=450,
+                    column_config={
+                        "stt": st.column_config.NumberColumn("STT", width="small", disabled=True),
+                        "entity": st.column_config.SelectboxColumn("Pháp nhân", options=[e["name"] for e in master.get("entities", [])], required=True),
+                        "location": st.column_config.TextColumn("Vị trí/Site", disabled=True),
+                        "asset_cat1": st.column_config.SelectboxColumn("Loại TS 1", options=[c["name"] for c in master.get("asset_cat1", [])]),
+                        "item_name": st.column_config.TextColumn("Tên Tài sản", width="large", required=True),
+                        "quantity": st.column_config.NumberColumn("Số lượng", min_value=1, format=MONEY_FMT),
+                        "unit_price": st.column_config.NumberColumn("Đơn giá (VNĐ)", format=MONEY_FMT),
+                        "total_budget": st.column_config.NumberColumn("Tổng ngân sách (VNĐ)", format=MONEY_FMT, disabled=True),
+                        "total_pct": st.column_config.ProgressColumn("Tổng % Phân kỳ", min_value=0.0, max_value=1.0, format="%.0f%%"),
+                        "project_code": st.column_config.TextColumn("Mã công trình", disabled=True),
+                        "item_code": st.column_config.TextColumn("Mã hạng mục", disabled=True),
+                        "budget_code": st.column_config.TextColumn("Mã ngân sách", disabled=True),
+                        "it_group": st.column_config.TextColumn("Nhóm CNTT", disabled=True),
+                        "catalog_code": st.column_config.TextColumn("Mã danh mục", disabled=True),
+                        "unit": st.column_config.TextColumn("ĐVT"),
+                        "invest_type": st.column_config.SelectboxColumn("Hình thức đầu tư", options=INVEST_TYPES),
+                        "item_kind": None,
+                        "_order": None,
+                        "item_kind_label": st.column_config.TextColumn("Loại hạng mục", disabled=True),
+                        "accounting_class": st.column_config.TextColumn("Phân loại kế toán", disabled=True, width="large"),
+                        "capex_type": st.column_config.TextColumn("CAPEX/CCDC/OPEX", disabled=True),
+                        "need_type": st.column_config.SelectboxColumn("Loại nhu cầu", options=qt.NEED_TYPES),
+                        "need_reason": st.column_config.TextColumn("Lý do / căn cứ", width="medium"),
+                        "auto_quota": None,
+                        "item_seq": None,
+                        "item_code_base": None,
+                        "handover_auto": None,
+                        "review_note": st.column_config.TextColumn("Ghi chú duyệt", disabled=True, help="Ghi chú của IT site khi duyệt / trả lại"),
+                        "handover_date": st.column_config.TextColumn("Ngày bàn giao", help="YYYY-MM-DD. Để trống = cuối tháng giải ngân cuối"),
+                        **{c: st.column_config.NumberColumn(format=MONEY_FMT, disabled=True) for c in df_curr.columns if c.startswith("val_") or c == "total_val"},
+                    }
+                )
 
-        # Check if edits happened
-        # Chỉ lưu khi người dùng thật sự sửa bảng (Streamlit ghi nhận ô sửa / dòng thêm / dòng xóa).
-        # So sánh DataFrame đơn thuần có thể khác do kiểu dữ liệu -> tự lưu & chạy lại trang ngoài ý muốn,
-        # làm mất các dòng đang nhập ở bảng khác (vd. Hạ tầng CNTT).
-        _ed_state = st.session_state.get(main_editor_key) if can_edit else None
-        _has_edits = isinstance(_ed_state, dict) and any(_ed_state.get(k) for k in ("edited_rows", "added_rows", "deleted_rows"))
-        if can_edit and _has_edits and not edited_df.equals(df_grid):
-            # Đang lọc: giữ nguyên các dòng bị ẩn của phòng ban, chỉ thay các dòng đang hiển thị
-            save_view(pd.concat([df_curr[~grid_mask], edited_df], ignore_index=True) if grid_filtered else edited_df)
-            st.rerun()
+                _ed_state = st.session_state.get(main_editor_key) if can_edit else None
+                _has_edits = isinstance(_ed_state, dict) and any(_ed_state.get(k) for k in ("edited_rows", "added_rows", "deleted_rows"))
+                if can_edit and _has_edits and not edited_df.equals(df_grid):
+                    # Đang lọc: giữ nguyên các dòng bị ẩn của phòng ban, chỉ thay các dòng đang hiển thị
+                    save_view(pd.concat([df_curr[~grid_mask], edited_df], ignore_index=True) if grid_filtered else edited_df)
+                    st.rerun()
+
+            _render_capex_editor()
 
     if can_edit and dept_state(active_dept)["status"] in db.DEPT_LOCKED_STATUSES:
         st.info(f"{active_dept} đã nộp / đã duyệt - không thêm hạng mục. IT site trả lại hoặc mở lại phòng ban nếu cần bổ sung.")

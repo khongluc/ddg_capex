@@ -14,7 +14,8 @@ def render(ctx):
     ALL_DEPTS, ALL_SITES, MONEY_FMT, XLSX_MIME = ctx.ALL_DEPTS, ctx.ALL_SITES, ctx.MONEY_FMT, ctx.XLSX_MIME
     _cached_division_report, _cached_purchasing_plan_report, budget_year, can_edit = ctx._cached_division_report, ctx._cached_purchasing_plan_report, ctx.budget_year, ctx.can_edit
     current_user, dept_prop, df_curr, distribute_by_location = ctx.current_user, ctx.dept_prop, ctx.df_curr, ctx.distribute_by_location
-    lazy_excel_download, months, prev_year_lines, save_site = ctx.lazy_excel_download, ctx.months, ctx.prev_year_lines, ctx.save_site
+    lazy_download_button, lazy_excel_download = ctx.lazy_download_button, ctx.lazy_excel_download
+    months, prev_year_lines, save_site = ctx.months, ctx.prev_year_lines, ctx.save_site
     save_view, selected_dept, selected_site, site_label = ctx.save_view, ctx.selected_dept, ctx.selected_site, ctx.site_label
     year_code = ctx.year_code
 
@@ -47,16 +48,20 @@ def render(ctx):
             # Báo cáo tổng hợp theo Khối -> Phòng ban -> Hạng mục
             scope_txt = (site_label(selected_site) if selected_site != ALL_SITES else "Tất cả site được xem") +                         ("" if selected_dept == ALL_DEPTS else f" · {selected_dept}")
             rep_meta = (("budget_year", budget_year), ("scope", scope_txt), ("date", datetime.date.today().strftime("%d/%m/%Y")))
-            st.download_button("🏛️ Tải báo cáo theo Khối (.xlsx)",
-                               _cached_division_report(df_curr.drop(columns=["_order"], errors="ignore"), prev_year_lines(), rep_meta),
-                               file_name=f"BaoCao_Khoi_{budget_year}_{scope_tag}_{datetime.date.today():%Y%m%d}.xlsx",
-                               mime=XLSX_MIME, use_container_width=True, key=f"div_rep_{budget_year}_{selected_site}_{selected_dept}",
-                               help=f"Sheet 'Theo Khối' (so sánh năm {int(budget_year) - 1}) và 'Khối - Phòng - Hạng mục' (thu gọn được)")
-            st.download_button("📅 Tải Kế hoạch Mua sắm & Phân kỳ (.xlsx)",
-                               _cached_purchasing_plan_report(df_curr.drop(columns=["_order"], errors="ignore"), tuple(months), rep_meta),
-                               file_name=f"KeHoach_MuaSam_{budget_year}_{scope_tag}_{datetime.date.today():%Y%m%d}.xlsx",
-                               mime=XLSX_MIME, use_container_width=True, key=f"plan_rep_{budget_year}_{selected_site}_{selected_dept}",
-                               help="Báo cáo 3 sheet: Kế hoạch theo Tháng (12 tháng), Kế hoạch theo Quý (4 quý), và Tổng hợp theo Nhóm CNTT")
+            lazy_download_button(
+                "🏛️ Tải báo cáo theo Khối (.xlsx)",
+                lambda: _cached_division_report(df_curr.drop(columns=["_order"], errors="ignore"), prev_year_lines(), rep_meta),
+                file_name=f"BaoCao_Khoi_{budget_year}_{scope_tag}_{datetime.date.today():%Y%m%d}.xlsx",
+                key=f"div_rep_{budget_year}_{selected_site}_{selected_dept}",
+                help_text=f"Sheet 'Theo Khối' (so sánh năm {int(budget_year) - 1}) và 'Khối - Phòng - Hạng mục' (thu gọn được)"
+            )
+            lazy_download_button(
+                "📅 Tải Kế hoạch Mua sắm & Phân kỳ (.xlsx)",
+                lambda: _cached_purchasing_plan_report(df_curr.drop(columns=["_order"], errors="ignore"), tuple(months), rep_meta),
+                file_name=f"KeHoach_MuaSam_{budget_year}_{scope_tag}_{datetime.date.today():%Y%m%d}.xlsx",
+                key=f"plan_rep_{budget_year}_{selected_site}_{selected_dept}",
+                help_text="Báo cáo 3 sheet: Kế hoạch theo Tháng (12 tháng), Kế hoạch theo Quý (4 quý), và Tổng hợp theo Nhóm CNTT"
+            )
 
     with ex_c2:
         st.markdown("""

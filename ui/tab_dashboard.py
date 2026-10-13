@@ -15,6 +15,44 @@ import quota as qt
 import reports
 
 
+def _with_total(t: pd.DataFrame) -> pd.DataFrame:
+    t = t.sort_values("Tổng ngân sách", ascending=False)
+    t.loc["TỔNG CỘNG"] = t.sum(numeric_only=True)
+    return t
+
+
+@st.cache_data(max_entries=16)
+def _cached_dashboard_pivots(df_dept: pd.DataFrame, quarters_items: tuple) -> tuple:
+    quarters = dict(quarters_items)
+    t1 = df_dept.groupby("dept").agg(
+        **{"Số hạng mục": ("dept", "size"), "Tổng ngân sách": ("total_budget", "sum")},
+        **{q: (q, "sum") for q in quarters}
+    )
+    t1["Tỷ trọng"] = t1["Tổng ngân sách"] / t1["Tổng ngân sách"].sum() if t1["Tổng ngân sách"].sum() else 0.0
+    t1 = _with_total(t1)
+
+    t2 = df_dept.pivot_table(index="dept", columns="it_group", values="total_budget", aggfunc="sum", fill_value=0)
+    t2["Tổng ngân sách"] = t2.sum(axis=1)
+    t2 = _with_total(t2)
+
+    ct = df_dept.get("capex_type", pd.Series(index=df_dept.index, dtype=object)).fillna("Chưa phân loại")
+    t3 = df_dept.assign(capex_type=ct).pivot_table(index="dept", columns="capex_type", values="total_budget",
+                                                   aggfunc="sum", fill_value=0)
+    t3["Tổng ngân sách"] = t3.sum(axis=1)
+    t3 = _with_total(t3)
+
+    kind_s = df_dept["item_kind"] if "item_kind" in df_dept.columns else pd.Series(index=df_dept.index, dtype=object)
+    kind_grp = kind_s.map(lambda k: "Phần mềm" if str(k).startswith("software") else ("Dịch vụ" if k == "service" else
+                                                                                       ("Thiết bị" if isinstance(k, str) and k else "Chưa phân loại")))
+    need_s = df_dept["need_type"] if "need_type" in df_dept.columns else pd.Series(index=df_dept.index, dtype=object)
+    t4 = df_dept.assign(col=need_s.fillna("Chưa phân loại") + " – " + kind_grp).pivot_table(
+        index="dept", columns="col", values="total_budget", aggfunc="sum", fill_value=0)
+    t4 = t4[sorted(t4.columns)]
+    t4["Tổng ngân sách"] = t4.sum(axis=1)
+    t4 = _with_total(t4)
+    return t1, t2, t3, t4
+
+
 def render(ctx):
     """Nội dung tab - ctx: giá trị dùng chung của lượt chạy (app.app_context())."""
     MONEY_FMT, budget_year, contingency_pct, current_user = ctx.MONEY_FMT, ctx.budget_year, ctx.contingency_pct, ctx.current_user
@@ -227,41 +265,17 @@ def render(ctx):
                                                       "Phòng ban × CAPEX/CCDC/OPEX", "Phòng ban × Định biên / Phát sinh"])
             money = st.column_config.NumberColumn(format=MONEY_FMT)
 
-            def _with_total(t: pd.DataFrame) -> pd.DataFrame:
-                t = t.sort_values("Tổng ngân sách", ascending=False)
-                t.loc["TỔNG CỘNG"] = t.sum(numeric_only=True)
-                return t
+            t1, t2, t3, t4 = _cached_dashboard_pivots(df_dept, tuple(quarters.items()))
 
             with d_tab1:
-                t1 = df_dept.groupby("dept").agg(**{"Số hạng mục": ("dept", "size"), "Tổng ngân sách": ("total_budget", "sum")},
-                                                 **{q: (q, "sum") for q in quarters})
-                t1["Tỷ trọng"] = t1["Tổng ngân sách"] / t1["Tổng ngân sách"].sum() if t1["Tổng ngân sách"].sum() else 0.0
-                t1 = _with_total(t1)
                 st.dataframe(t1, use_container_width=True,
                              column_config={**{c: money for c in ["Tổng ngân sách", *quarters]},
                                             "Tỷ trọng": st.column_config.ProgressColumn(format="%.1f%%", min_value=0.0, max_value=1.0)})
             with d_tab2:
-                t2 = df_dept.pivot_table(index="dept", columns="it_group", values="total_budget", aggfunc="sum", fill_value=0)
-                t2["Tổng ngân sách"] = t2.sum(axis=1)
-                t2 = _with_total(t2)
                 st.dataframe(t2, use_container_width=True, column_config={c: money for c in t2.columns})
             with d_tab3:
-                ct = df_dept.get("capex_type", pd.Series(index=df_dept.index, dtype=object)).fillna("Chưa phân loại")
-                t3 = df_dept.assign(capex_type=ct).pivot_table(index="dept", columns="capex_type", values="total_budget",
-                                                               aggfunc="sum", fill_value=0)
-                t3["Tổng ngân sách"] = t3.sum(axis=1)
-                t3 = _with_total(t3)
                 st.dataframe(t3, use_container_width=True, column_config={c: money for c in t3.columns})
             with d_tab4:
-                kind_s = df_dept["item_kind"] if "item_kind" in df_dept.columns else pd.Series(index=df_dept.index, dtype=object)
-                kind_grp = kind_s.map(lambda k: "Phần mềm" if str(k).startswith("software") else ("Dịch vụ" if k == "service" else
-                                                                                                 ("Thiết bị" if isinstance(k, str) and k else "Chưa phân loại")))
-                need_s = df_dept["need_type"] if "need_type" in df_dept.columns else pd.Series(index=df_dept.index, dtype=object)
-                t4 = df_dept.assign(col=need_s.fillna("Chưa phân loại") + " – " + kind_grp).pivot_table(
-                    index="dept", columns="col", values="total_budget", aggfunc="sum", fill_value=0)
-                t4 = t4[sorted(t4.columns)]
-                t4["Tổng ngân sách"] = t4.sum(axis=1)
-                t4 = _with_total(t4)
                 st.dataframe(t4, use_container_width=True, column_config={c: money for c in t4.columns})
                 st.caption("Định biên: sinh từ định biên nhân sự × bộ trang bị tiêu chuẩn (tab 'Định biên & Nhu cầu'). "
                            "Phát sinh mới: nhu cầu ngoài định biên, có lý do. 'Chưa phân loại': dữ liệu cũ/nhập Excel.")

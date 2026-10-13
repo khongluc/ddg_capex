@@ -270,6 +270,21 @@ def lazy_excel_download(df: pd.DataFrame, meta: dict, label: str, file_name: str
     return data
 
 
+def lazy_download_button(label: str, data_fn, file_name: str, key: str, mime: str = XLSX_MIME, help_text: str = None):
+    """Chỉ gọi data_fn tạo file khi người dùng bấm 'Chuẩn bị' (tránh chạy openpyxl ở mỗi lượt chạy trang)."""
+    flag = f"lazy_ready_{key}"
+    if not st.session_state.get(flag):
+        if st.button(f"📦 Chuẩn bị {label}", key=f"lazy_prep_{key}", use_container_width=True, help=help_text):
+            st.session_state[flag] = True
+            st.rerun()
+        return None
+    data = data_fn()
+    if st.download_button(label, data=data, file_name=file_name, mime=mime, use_container_width=True,
+                          key=f"lazy_dl_{key}", help=help_text):
+        st.session_state[flag] = False
+    return data
+
+
 @st.cache_data(max_entries=4, show_spinner="Đang đọc file định biên...")
 def _cached_roster(content: bytes, kit_codes: tuple, site_ov_json: str, kit_ov_json: str):
     import io as _io
@@ -561,9 +576,14 @@ with st.sidebar:
 df_curr = df_site[dept_mask(df_site, selected_dept)].reset_index(drop=True)
 
 
+@st.cache_data(max_entries=16)
+def _cached_prev_lines(prev_year: str, scope_sites_tuple: tuple) -> list:
+    return db.load_lines(prev_year, list(scope_sites_tuple))
+
+
 def prev_year_lines() -> pd.DataFrame:
     """Dòng ngân sách năm trước cùng phạm vi site + phòng ban (để so sánh)."""
-    prev = pd.DataFrame(db.load_lines(str(int(budget_year) - 1), scope_sites))
+    prev = pd.DataFrame(_cached_prev_lines(str(int(budget_year) - 1), tuple(scope_sites)))
     if prev.empty:
         return prev
     if current_user.is_dept_user and "dept_proposing" in prev.columns:
