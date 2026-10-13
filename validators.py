@@ -66,7 +66,7 @@ class ValidationReport:
             if code == "CRIT_EMPTY":
                 summaries.append("Phòng ban chưa có dòng ngân sách nào")
             elif code == "CRIT_QTY_PRICE":
-                summaries.append(f"{len(items)} dòng có số lượng hoặc đơn giá <= 0")
+                summaries.append(f"{len(items)} dòng có số lượng <= 0")
             elif code == "CRIT_PHASING":
                 summaries.append(f"{len(items)} dòng có tổng phân kỳ khác 100%")
             elif code == "CRIT_NEED_REASON":
@@ -114,12 +114,13 @@ def validate_budget_rows(
     
     Quy tắc Critical (Chặn nộp):
     1. Phòng ban trống (không có dòng ngân sách).
-    2. Số lượng <= 0 hoặc Đơn giá <= 0.
+    2. Số lượng <= 0.
     3. Tổng tỷ lệ phân kỳ 12 tháng khác 100% (dung sai 0.001).
     4. Căn cứ / lý do phát sinh mới hoặc hạ tầng dùng chung để trống.
     5. Ngày bàn giao tài sản nằm trước tháng giải ngân đầu tiên có phân kỳ.
     
     Quy tắc Warning (Cảnh báo nhắc nhở):
+    0. Đơn giá = 0 (phần mềm miễn phí, hạng mục tư vấn chưa báo giá... - không chặn nộp, luật nộp trước đây cũng không chặn).
     1. Chưa có mã danh mục chuẩn CNTT (catalog_code trống).
     2. Trùng lặp hạng mục trong cùng một phòng ban đề xuất.
     3. Đơn giá lệch > 25% so với giá chuẩn trong Master Data.
@@ -170,27 +171,33 @@ def validate_budget_rows(
         capex_type = str(r.get("capex_type") or "").strip()
         label_code = it_code or f"Dòng #{idx + 1}"
 
-        # --- 1. CRITICAL: Số lượng <= 0 hoặc Đơn giá <= 0 ---
-        if qty <= 0 or price <= 0:
-            msg = f"{label_code} ({it_name}): "
-            if qty <= 0 and price <= 0:
-                msg += "Số lượng và Đơn giá đều phải > 0"
-            elif qty <= 0:
-                msg += f"Số lượng ({qty}) phải > 0"
-            else:
-                msg += f"Đơn giá ({price:,.0f} VNĐ) phải > 0"
-            
+        # --- 1. CRITICAL: Số lượng <= 0; WARNING: Đơn giá = 0 ---
+        # Đơn giá 0 chỉ cảnh báo: danh mục có hạng mục giá 0 thật (vd. phần mềm đọc PDF miễn phí trong bộ trang bị chuẩn,
+        # tư vấn chưa báo giá) - chặn nộp làm phần lớn phòng ban không nộp được.
+        if qty <= 0:
             report.issues.append(ValidationIssue(
                 severity=SEV_CRITICAL,
                 code="CRIT_QTY_PRICE",
-                title="Số lượng hoặc Đơn giá không hợp lệ",
-                message=msg,
+                title="Số lượng không hợp lệ",
+                message=f"{label_code} ({it_name}): Số lượng ({qty}) phải > 0",
                 item_code=it_code,
                 item_name=it_name,
                 row_index=idx,
-                action="Nhập lại số lượng và đơn giá hợp lệ > 0"
+                action="Nhập lại số lượng > 0 hoặc xóa dòng"
             ))
             report.critical_item_codes.add(it_code)
+        if price <= 0:
+            report.issues.append(ValidationIssue(
+                severity=SEV_WARNING,
+                code="WARN_ZERO_PRICE",
+                title="Chưa có đơn giá",
+                message=f"{label_code} ({it_name}): Đơn giá = 0 - kiểm tra lại nếu không phải hạng mục miễn phí",
+                item_code=it_code,
+                item_name=it_name,
+                row_index=idx,
+                action="Nhập đơn giá theo báo giá, hoặc bỏ qua nếu hạng mục miễn phí"
+            ))
+            report.warning_item_codes.add(it_code)
 
         # --- 2. CRITICAL: Tổng tỷ lệ phân kỳ != 100% ---
         pcts = [clean_number(r.get(f"pct_{m}"), 0.0) for m in months]

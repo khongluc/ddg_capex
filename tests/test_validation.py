@@ -65,11 +65,14 @@ class TestValidationEngine(unittest.TestCase):
         df = pd.DataFrame([r1, r2])
         rep = validate_budget_rows(df, self.months)
         self.assertFalse(rep.is_valid)
-        self.assertEqual(rep.critical_count, 2)
+        self.assertEqual(rep.critical_count, 1)                     # SL = 0 chặn nộp
         codes = [iss.code for iss in rep.issues if iss.severity == SEV_CRITICAL]
-        self.assertEqual(codes, ["CRIT_QTY_PRICE", "CRIT_QTY_PRICE"])
+        self.assertEqual(codes, ["CRIT_QTY_PRICE"])
         self.assertIn("IT-01", rep.critical_item_codes)
-        self.assertIn("IT-02", rep.critical_item_codes)
+        # Đơn giá 0 chỉ cảnh báo (phần mềm miễn phí trong bộ trang bị chuẩn, tư vấn chưa báo giá) - không chặn nộp
+        self.assertIn("IT-02", rep.warning_item_codes)
+        self.assertNotIn("IT-02", rep.critical_item_codes)
+        self.assertIn("WARN_ZERO_PRICE", [iss.code for iss in rep.issues])
 
     def test_phasing_not_100_percent(self):
         # Tổng tỷ lệ phân kỳ chỉ đạt 80% (0.8)
