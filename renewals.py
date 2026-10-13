@@ -6,13 +6,15 @@ from typing import Any, Dict, Optional
 import pandas as pd
 
 from capex_engine import clean_number
-from master_data import KIND_SW_SUBSCRIPTION, _norm
+from master_data import KIND_SW_SUBSCRIPTION, _norm, apply_it_catalog
 
 RENEW_INVEST = "Gia hạn, bảo trì"
 STATUS_MISSING = "Chưa có"
 STATUS_LESS = "Ít hơn năm trước"
 COLUMNS = ["site_code", "catalog_code", "item_name", "unit", "depts", "prev_qty", "prev_amount",
-           "cur_qty", "missing_qty", "est_amount", "status"]
+           "cur_qty", "missing_qty", "est_amount", "status", "entity", "need_type", "invest_type"]
+NEED_INFRA = "Hạ tầng dùng chung"
+NEED_NEW = "Phát sinh mới"
 
 
 def _txt(v: Any) -> str:
@@ -51,7 +53,8 @@ def renewal_gaps(prev: Optional[pd.DataFrame], cur: Optional[pd.DataFrame], mast
         k = _key(line)
         a = agg.setdefault(k, {"site_code": k[0], "catalog_code": _txt(line.get("catalog_code")),
                                "item_name": _txt(line.get("item_name")), "unit": _txt(line.get("unit")),
-                               "depts": [], "prev_qty": 0.0, "prev_amount": 0.0})
+                               "depts": [], "prev_qty": 0.0, "prev_amount": 0.0, "entity": _txt(line.get("entity")),
+                               "need_type": _txt(line.get("need_type")), "invest_type": _txt(line.get("invest_type"))})
         a["prev_qty"] += clean_number(line.get("quantity"), 0.0)
         a["prev_amount"] += clean_number(line.get("total_budget"), 0.0)
         dept = _txt(line.get("dept_proposing"))
@@ -69,3 +72,30 @@ def renewal_gaps(prev: Optional[pd.DataFrame], cur: Optional[pd.DataFrame], mast
                     "status": STATUS_MISSING if now <= 0 else STATUS_LESS})
     df = pd.DataFrame(out, columns=COLUMNS)
     return df.sort_values("est_amount", ascending=False, kind="stable").reset_index(drop=True)
+
+
+def renewal_line(gap: Dict[str, Any], qty: float, units: Optional[list], months: list, master: Dict[str, Any],
+                 prev_year: Any, location: str) -> Dict[str, Any]:
+    """Dòng ngân sách gia hạn cho 1 hạng mục trong bảng nhắc (chưa tính - gọi calculate_row sau).
+    Đơn giá: giá danh mục hiện hành, không có thì bình quân năm trước. Phòng ban: phòng đầu tiên năm trước.
+    Nhu cầu: hạ tầng dùng chung giữ nguyên, còn lại "Phát sinh mới" (dòng định biên do tab Định biên tự sinh)."""
+    by_code = {it.get("code"): it for it in master.get("standard_items", [])}
+    item = by_code.get(gap.get("catalog_code")) if gap.get("catalog_code") else None
+    prev_price = clean_number(gap.get("prev_amount"), 0.0) / clean_number(gap.get("prev_qty"), 1.0) if gap.get("prev_qty") else 0.0
+    price = clean_number((item or {}).get("price"), 0.0) or prev_price
+    dept = (_txt(gap.get("depts")).split(", ") or [""])[0]
+    infra = gap.get("need_type") == NEED_INFRA
+    row = {"entity": gap.get("entity") or "DDC", "location": location, "item_name": gap.get("item_name"),
+           "unit": gap.get("unit"), "quantity": float(qty), "unit_price": float(price),
+           "dept_proposing": dept, "dept_using": "Dùng chung toàn site" if infra else dept,
+           "need_type": NEED_INFRA if infra else NEED_NEW,
+           "need_reason": f"Gia hạn từ ngân sách {prev_year}", "detail_work": f"Gia hạn ({prev_year})",
+           "catalog_code": gap.get("catalog_code") or ""}
+    invest = RENEW_INVEST  # năm trước có thể là "Mua mới" (năm đầu) - năm nay là gia hạn
+    if item:
+        apply_it_catalog(row, master, item=item, invest_type=invest)
+    row["unit_price"], row["invest_type"] = float(price), invest
+    units = units if units and len(units) == len(months) and sum(units) > 0 else None
+    for i, m in enumerate(months):
+        row[f"pct_{m}"] = units[i] / sum(units) if units else (1.0 if i == 0 else 0.0)
+    return row

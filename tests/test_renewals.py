@@ -3,7 +3,9 @@ import unittest
 
 import pandas as pd
 
-from renewals import STATUS_LESS, STATUS_MISSING, is_recurring, renewal_gaps
+from capex_engine import calculate_row, even_units
+from renewals import STATUS_LESS, STATUS_MISSING, is_recurring, renewal_gaps, renewal_line
+from tests import fixtures as fx
 
 MASTER = {"standard_items": [
     {"code": "IT09-001", "name": "Microsoft 365 Business Standard", "unit": "User/năm", "kind": "software_subscription"},
@@ -64,6 +66,28 @@ class RenewalGapsTest(unittest.TestCase):
     def test_empty(self):
         self.assertTrue(renewal_gaps(pd.DataFrame(), None, MASTER).empty)
         self.assertTrue(renewal_gaps(None, None, MASTER).empty)
+
+
+class RenewalLineTest(unittest.TestCase):
+    GAP = {"site_code": "AHA", "catalog_code": "", "item_name": "Gia hạn tên miền ddc.vn", "unit": "Tên miền/năm",
+           "depts": "P.CNTT, P.HÀNH CHÍNH", "prev_qty": 2, "prev_amount": 2_000_000, "entity": "DDC",
+           "need_type": "Định biên", "invest_type": "Mua mới"}
+
+    def test_line_from_previous_year(self):
+        units = even_units(4, fx.MONTHS, [fx.MONTHS[0], fx.MONTHS[6]])
+        row = calculate_row(renewal_line(self.GAP, 4, units, fx.MONTHS, MASTER, 2026, "VP Bạch Đằng"), months=fx.MONTHS, master={})
+        self.assertEqual((row["quantity"], row["unit_price"], row["total_budget"]), (4, 1_000_000, 4_000_000))  # giá bình quân năm trước
+        self.assertEqual((row["dept_proposing"], row["need_type"], row["invest_type"]), ("P.CNTT", "Phát sinh mới", "Gia hạn, bảo trì"))
+        self.assertEqual((row[f"val_{fx.MONTHS[0]}"], row[f"val_{fx.MONTHS[6]}"]), (2_000_000, 2_000_000))
+        self.assertIn("2026", row["need_reason"])
+
+    def test_infra_kept_and_catalog_price(self):
+        master = {"standard_items": [{"code": "IT12-005", "name": "Đường truyền Internet", "unit": "Tháng", "kind": "service",
+                                      "price": 3_000_000, "group": "IT12"}], "it_groups": []}
+        gap = {**self.GAP, "catalog_code": "IT12-005", "item_name": "Đường truyền Internet", "need_type": "Hạ tầng dùng chung"}
+        row = renewal_line(gap, 12, None, fx.MONTHS, master, 2026, "VP")
+        self.assertEqual((row["unit_price"], row["need_type"], row["dept_using"]), (3_000_000, "Hạ tầng dùng chung", "Dùng chung toàn site"))
+        self.assertEqual(row[f"pct_{fx.MONTHS[0]}"], 1.0)                       # chưa phân kỳ -> tháng đầu
 
 
 if __name__ == "__main__":

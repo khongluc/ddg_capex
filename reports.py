@@ -252,10 +252,12 @@ def purchasing_plan_df(df: Optional[pd.DataFrame], months: Optional[List[str]] =
                 else:
                     units = [0.0] * len(months)
 
-        # Tính tiền từng tháng: khi có SL nguyên và đơn giá -> tiền = SL × đơn giá
+        # Tính tiền từng tháng: SL nguyên khớp đúng phân kỳ -> tiền = SL × đơn giá; phân kỳ lẻ (vd. 50/50 cho 3 máy, SL làm tròn 2-1)
+        # -> giữ tiền tháng của ngân sách (val_ / tỷ lệ) để khớp dòng tiền giải ngân ở các báo cáo khác
+        exact_units = is_int_qty and snap_units(pcts, qty) is not None
         amts = []
         for i, m in enumerate(months):
-            if is_int_qty and price > 0:
+            if exact_units and price > 0:
                 amts.append(units[i] * price)
             else:
                 val_col = f"val_{m}"

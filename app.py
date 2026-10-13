@@ -3708,23 +3708,56 @@ with tab_software:
             r1.metric("Hạng mục cần xem lại", f"{len(gaps)}")
             r2.metric("Chưa có trong năm nay", f"{n_miss}")
             r3.metric("Tiền ước tính còn thiếu", format_vnd_short(gaps["est_amount"].sum()) + " VNĐ")
-            show = gaps.assign(site=gaps["site_code"].map(site_label))
-            st.dataframe(show, use_container_width=True, hide_index=True,
-                         column_order=["status", "site", "catalog_code", "item_name", "unit", "depts", "prev_qty", "cur_qty",
-                                       "missing_qty", "prev_amount", "est_amount"],
-                         column_config={"status": "Tình trạng", "site": "Site", "catalog_code": "Mã danh mục",
-                                        "item_name": st.column_config.TextColumn("Hạng mục", width="large"), "unit": "ĐVT",
-                                        "depts": f"Phòng ban năm {prev_y}",
-                                        "prev_qty": st.column_config.NumberColumn(f"SL {prev_y}", format=MONEY_FMT),
-                                        "cur_qty": st.column_config.NumberColumn(f"SL {budget_year}", format=MONEY_FMT),
-                                        "missing_qty": st.column_config.NumberColumn("SL thiếu", format=MONEY_FMT),
-                                        "prev_amount": st.column_config.NumberColumn(f"Tiền {prev_y} (VNĐ)", format=MONEY_FMT),
-                                        "est_amount": st.column_config.NumberColumn("Tiền ước tính thiếu (VNĐ)", format=MONEY_FMT)})
+            show = gaps.assign(site=gaps["site_code"].map(site_label), pick=False, add_qty=gaps["missing_qty"])
+            can_add = selected_site != ALL_SITES and site_can_edit
+            rn_ver = st.session_state.get("renew_ver", 0)
+            ed_rn = st.data_editor(
+                show, key=f"renew_grid_{budget_year}_{selected_site}_{dept_key(selected_dept)}_{rn_ver}",
+                use_container_width=True, hide_index=True, disabled=[c for c in show.columns if c not in ("pick", "add_qty")],
+                column_order=(["pick", "add_qty"] if can_add else []) + [
+                    "status", "site", "catalog_code", "item_name", "unit", "depts", "prev_qty", "cur_qty",
+                    "missing_qty", "prev_amount", "est_amount"],
+                column_config={"pick": st.column_config.CheckboxColumn("Gia hạn", default=False),
+                               "add_qty": st.column_config.NumberColumn("SL thêm", min_value=0, step=1, format=MONEY_FMT),
+                               "status": "Tình trạng", "site": "Site", "catalog_code": "Mã danh mục",
+                               "item_name": st.column_config.TextColumn("Hạng mục", width="large"), "unit": "ĐVT",
+                               "depts": f"Phòng ban năm {prev_y}",
+                               "prev_qty": st.column_config.NumberColumn(f"SL {prev_y}", format=MONEY_FMT),
+                               "cur_qty": st.column_config.NumberColumn(f"SL {budget_year}", format=MONEY_FMT),
+                               "missing_qty": st.column_config.NumberColumn("SL thiếu", format=MONEY_FMT),
+                               "prev_amount": st.column_config.NumberColumn(f"Tiền {prev_y} (VNĐ)", format=MONEY_FMT),
+                               "est_amount": st.column_config.NumberColumn("Tiền ước tính thiếu (VNĐ)", format=MONEY_FMT)})
             st.download_button("📥 Tải danh sách nhắc gia hạn (CSV)",
-                               show.drop(columns=["site_code"]).to_csv(index=False).encode("utf-8-sig"),
+                               show.drop(columns=["site_code", "pick", "add_qty", "entity", "need_type", "invest_type"])
+                               .to_csv(index=False).encode("utf-8-sig"),
                                file_name=f"NhacGiaHan_{budget_year}.csv", mime="text/csv", key="renew_csv")
-            st.caption("Thêm các hạng mục cần gia hạn ở tab Lập CapEx (popup checklist) hoặc tab Hạ tầng; "
-                       "hạng mục không gia hạn nữa thì bỏ qua.")
+            if not can_add:
+                st.caption("Chọn 1 site ở thanh bên trái (và có quyền sửa) để tick hạng mục cần gia hạn rồi thêm thẳng vào ngân sách.")
+            else:
+                sel_rn = ed_rn[(ed_rn["pick"] == True) & (pd.to_numeric(ed_rn["add_qty"], errors="coerce").fillna(0) > 0)]
+                st.caption("Tick 'Gia hạn', sửa 'SL thêm' nếu cần. Dòng thêm vào: hình thức Gia hạn, bảo trì; đơn giá danh mục hiện hành "
+                           "(không có thì bình quân năm trước); phòng đề xuất = phòng đầu tiên năm trước. "
+                           "Hạng mục theo định biên (vd. Microsoft 365 theo người) nên sinh lại ở tab Định biên thay vì thêm ở đây.")
+                rn_pick = pd.DataFrame({"Tên thiết bị / Hạng mục": sel_rn["item_name"].tolist(),
+                                        "Số lượng": [int(round(q)) for q in pd.to_numeric(sel_rn["add_qty"], errors="coerce").fillna(0)]},
+                                       index=sel_rn.index)
+                rn_pick, rn_err = phasing_picker(rn_pick, f"renew_{rn_ver}")
+                if st.button(f"🔁 Thêm {len(sel_rn)} hạng mục gia hạn vào ngân sách {budget_year}", type="primary",
+                             disabled=sel_rn.empty, key=f"renew_add_{rn_ver}"):
+                    if rn_err:
+                        st.error(rn_err)
+                    else:
+                        loc = SITE_NAME.get(selected_site, selected_site)
+                        new_rn = [calculate_row(renewals.renewal_line(ed_rn.loc[ix].to_dict(), sum(rn_pick.at[ix, "_units"]),
+                                                                      rn_pick.at[ix, "_units"], months, master, prev_y, loc),
+                                                months=months, year_code=year_code, master=master)
+                                  for ix in rn_pick.index]
+                        base_rn = pd.DataFrame(db.load_lines(budget_year, [selected_site])).drop(columns=["site_code"], errors="ignore")
+                        save_site(pd.concat([base_rn, pd.DataFrame(new_rn)], ignore_index=True), selected_site)
+                        st.session_state["renew_ver"] = rn_ver + 1
+                        st.session_state["flash"] = (f"🔁 Đã thêm {len(new_rn)} hạng mục gia hạn vào ngân sách {budget_year} "
+                                                     f"({format_vnd(sum(r.get('total_budget', 0) for r in new_rn))}).")
+                        st.rerun()
 
     with sw_cat_tab:
         groups_cfg = it_groups(master)

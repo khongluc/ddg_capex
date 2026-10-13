@@ -94,13 +94,17 @@ class TestPurchasingPlan(unittest.TestCase):
         self.assertEqual(r0["qty_Q3"], 2)
         self.assertEqual(r0["qty_Q4"], 2)
 
-        # Tổng tiền các tháng phải bằng 35_000_000 và khớp SL x đơn giá từng quý
+        # Tổng tiền các tháng = 35_000_000. Tỷ lệ 25% không ứng SL nguyên (2,5 máy) -> tiền giữ theo dòng tiền ngân sách
+        # (25% × 35tr = 8,75tr / quý, khớp biểu đồ giải ngân), SL làm tròn 3-3-2-2 chỉ để biết số máy cần mua
         total_amt = sum(r0[f"amt_{m}"] for m in self.months)
         self.assertEqual(total_amt, 35_000_000)
-        self.assertEqual(r0["amt_Q1"], 10_500_000)
-        self.assertEqual(r0["amt_Q2"], 10_500_000)
-        self.assertEqual(r0["amt_Q3"], 7_000_000)
-        self.assertEqual(r0["amt_Q4"], 7_000_000)
+        for q in ("Q1", "Q2", "Q3", "Q4"):
+            self.assertEqual(r0[f"amt_{q}"], 8_750_000)
+
+        # Phân kỳ theo SL nguyên (cách app lưu khi chia đều SL: 30-30-20-20%) -> tiền = SL × đơn giá
+        row.update({f"pct_{self.months[i]}": p for i, p in zip((0, 3, 6, 9), (0.3, 0.3, 0.2, 0.2))})
+        r1 = purchasing_plan_df(pd.DataFrame([row]), self.months).iloc[0]
+        self.assertEqual([r1[f"amt_{q}"] for q in ("Q1", "Q2", "Q3", "Q4")], [10_500_000, 10_500_000, 7_000_000, 7_000_000])
 
     def test_summary_and_xlsx_export(self):
         rows = [
@@ -160,6 +164,17 @@ class TestPurchasingPlan(unittest.TestCase):
         ws_grp = wb["Tổng hợp Nhóm CNTT"]
         self.assertEqual(ws_grp.cell(row=7, column=1).value, "TỔNG CỘNG")
         wb.close()
+
+
+class PlanAmountsMatchCashflowTest(unittest.TestCase):
+    def test_uneven_ratio_keeps_budget_cashflow(self):
+        """3 máy chia 50/50 (SL làm tròn 2-1): tiền tháng giữ theo ngân sách 15tr/15tr, không phải 20tr/10tr."""
+        m = DEFAULT_MONTHS
+        row = {"item_name": "Máy in", "quantity": 3, "unit_price": 10_000_000, "total_budget": 30_000_000,
+               f"pct_{m[0]}": 0.5, f"pct_{m[1]}": 0.5, f"val_{m[0]}": 15_000_000, f"val_{m[1]}": 15_000_000}
+        plan = purchasing_plan_df(pd.DataFrame([row]), m).iloc[0]
+        self.assertEqual((plan[f"amt_{m[0]}"], plan[f"amt_{m[1]}"]), (15_000_000, 15_000_000))
+        self.assertEqual(plan[f"qty_{m[0]}"] + plan[f"qty_{m[1]}"], 3)
 
 
 if __name__ == "__main__":
