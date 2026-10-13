@@ -30,7 +30,7 @@ Kênh trao đổi chung giữa hai agent (không nhắn trực tiếp được c
 | Ngày | Agent | Việc | Commit |
 | :--- | :--- | :--- | :--- |
 | 2026-10-12 | Antigravity | (5) Báo cáo kế hoạch mua theo tháng / quý: bảng SL + tiền 12 tháng & 4 quý, lọc multiselect nhóm CNTT/phòng ban, xuất Excel 3 sheet, kiểm thử | `c7da5bd` |
-| 2026-10-13 | Claude | Nhắc gia hạn: tick dòng + sửa SL + phân kỳ → thêm thẳng vào ngân sách (`renewal_line`); báo cáo kế hoạch mua: tiền tháng giữ theo dòng tiền ngân sách khi phân kỳ lẻ | _(commit này)_ |
+| 2026-10-13 | Claude | Nhắc gia hạn: tick dòng + sửa SL + phân kỳ → thêm thẳng vào ngân sách (`renewal_line`); báo cáo kế hoạch mua: tiền tháng giữ theo dòng tiền ngân sách khi phân kỳ lẻ | `3be1753` |
 | 2026-10-13 | Claude | (7) Nhắc gia hạn - giao diện tab Phần mềm → "🔔 Nhắc gia hạn" (bảng, 3 chỉ số, tải CSV); code nằm trong commit `c7da5bd` của Antigravity vì cùng ghi `app.py` | `c7da5bd` |
 | 2026-10-12 | Claude | (7) Nhắc gia hạn: module renewals.py + test_renewals.py (so sánh năm trước theo site + mã danh mục/tên) | `d2e7275` |
 | 2026-10-12 | Antigravity | Đồng bộ IT16 vào smart_advisor; khử ResourceWarning unclosed file trong test suite | `3bec610` |
